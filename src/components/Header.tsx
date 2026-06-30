@@ -36,11 +36,10 @@ export default function Header({ onAuthClick }: HeaderProps) {
       className="sticky top-0 z-50 w-full border-b border-brand-charcoal/5 bg-brand-bg/85 backdrop-blur-md"
     >
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6 sm:px-8">
-        {/* Left Side: Brand Logo */}
         <div className="flex items-center">
           <Link href="/" className="flex items-center">
-            <div className="relative h-10 w-32 flex items-center justify-center">
-              <img src={logoUrl} alt={companyName} className="object-contain h-full w-full" />
+            <div className="relative h-16 w-48 flex items-center justify-start">
+              <img src={logoUrl} alt={companyName} className="object-contain h-full w-auto" />
             </div>
           </Link>
         </div>
@@ -50,7 +49,7 @@ export default function Header({ onAuthClick }: HeaderProps) {
           {["Home", "Product", "About Us", "Contact"].map((link) => (
             <Link
               key={link}
-              href={link === "Home" ? "/" : `/#${link.toLowerCase().replace(" ", "-")}`}
+              href={link === "Home" ? "/" : link === "Contact" ? "/contactpage" : `/#${link.toLowerCase().replace(" ", "-")}`}
               className="text-xs font-bold tracking-widest text-brand-charcoal/70 transition-all hover:text-brand-charcoal uppercase"
             >
               {link.toUpperCase()}
