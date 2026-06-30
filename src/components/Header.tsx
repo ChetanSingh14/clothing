@@ -35,11 +35,11 @@ export default function Header({ onAuthClick }: HeaderProps) {
       transition={{ duration: 0.8, ease: "easeOut" }}
       className="sticky top-0 z-50 w-full border-b border-brand-charcoal/5 bg-brand-bg/85 backdrop-blur-md"
     >
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6 sm:px-8">
+      <div className="mx-auto flex min-h-[4.5rem] md:min-h-[5.5rem] py-2 max-w-7xl items-center justify-between px-6 sm:px-8">
         <div className="flex items-center">
           <Link href="/" className="flex items-center">
-            <div className="relative h-16 w-48 flex items-center justify-start">
-              <img src={logoUrl} alt={companyName} className="object-contain h-full w-auto" />
+            <div className="relative w-32 sm:w-40 md:w-52 lg:w-60 flex items-center justify-start">
+              <img src={logoUrl} alt={companyName} className="object-contain h-auto max-h-[92px] w-full" />
             </div>
           </Link>
         </div>
