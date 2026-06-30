@@ -65,10 +65,11 @@ export default function Hero({ user, onStartClick }: HeroProps) {
           className="text-4xl font-semibold tracking-tight text-brand-charcoal sm:text-6xl md:text-7xl leading-[1.1]"
         >
           <span className="font-serif italic font-normal text-brand-charcoal/80 block sm:inline sm:mr-3">
-            {companyName},
+            {/* {companyName}, */}
+                  MDFK CLOTHING,
           </span>
           <span className="block sm:inline">
-            Printed Streetwear Tees
+      Printed Streetwear Tees
           </span>
         </motion.h1>
 

@@ -38,13 +38,10 @@ export default function Header({ onAuthClick }: HeaderProps) {
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6 sm:px-8">
         {/* Left Side: Brand Logo */}
         <div className="flex items-center">
-          <Link href="/" className="flex items-center space-x-3.5">
-            <div className="relative h-11 w-11 overflow-hidden rounded-xl bg-brand-charcoal flex items-center justify-center shadow-md p-1">
-              <img src={logoUrl} alt="Logo" className="object-contain h-full w-full" />
+          <Link href="/" className="flex items-center">
+            <div className="relative h-10 w-32 flex items-center justify-center">
+              <img src={logoUrl} alt={companyName} className="object-contain h-full w-full" />
             </div>
-            <span className="text-xs font-black tracking-widest text-brand-charcoal uppercase font-serif">
-              {companyName}
-            </span>
           </Link>
         </div>
 

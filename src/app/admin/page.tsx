@@ -873,11 +873,11 @@ export default function AdminDashboardPage() {
                       Company Logo Graphic
                     </label>
                     <div className="mt-2 flex items-center gap-6">
-                      <div className="relative h-16 w-16 overflow-hidden rounded-xl border border-brand-charcoal/10 bg-brand-charcoal flex items-center justify-center">
+                      <div className="relative h-16 w-36 overflow-hidden rounded-xl border border-brand-charcoal/10 bg-brand-gray flex items-center justify-center p-2">
                         {tempLogoUrl ? (
-                          <img src={tempLogoUrl} alt="Preview logo" className="object-cover h-full w-full invert" />
+                          <img src={tempLogoUrl} alt="Preview logo" className="object-contain h-full w-full" />
                         ) : (
-                          <span className="text-[10px] text-brand-bg font-bold">NO LOGO</span>
+                          <span className="text-[10px] text-brand-charcoal/40 font-bold">NO LOGO</span>
                         )}
                       </div>
                       <div className="relative flex-grow border border-dashed border-brand-charcoal/20 rounded-xl bg-brand-bg p-6 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-brand-charcoal/5 transition-colors">
