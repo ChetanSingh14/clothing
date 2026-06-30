@@ -6,12 +6,16 @@ import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 
 export default function CartDrawer() {
-  const { items, isOpen, setIsOpen, updateQuantity, removeItem, getCartTotal, clearCart } = useCartStore();
+  const { items, isOpen, setIsOpen, updateQuantity, removeItem, getCartTotal, clearCart, checkout } = useCartStore();
 
-  const handleCheckout = () => {
-    alert("Thank you for your order! Your luxury items are being prepared for dispatch.");
-    clearCart();
-    setIsOpen(false);
+  const handleCheckout = async () => {
+    const success = await checkout();
+    if (success) {
+      alert("Thank you for your order! Your garments are recorded in the system and being prepared for dispatch.");
+      setIsOpen(false);
+    } else {
+      alert("Checkout failed. Please ensure you have items in your bag and are logged in.");
+    }
   };
 
   return (

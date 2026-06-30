@@ -7,13 +7,22 @@ interface AdminStats {
   totalUsers: number;
   totalCategories: number;
   averageRating: number;
+  totalOrders: number;
+  totalRevenue: number;
 }
 
 interface AdminState {
   stats: AdminStats | null;
+  users: any[];
+  orders: any[];
+  reviews: any[];
   loading: boolean;
   error: string | null;
   fetchStats: () => Promise<void>;
+  fetchUsers: () => Promise<void>;
+  fetchOrders: () => Promise<void>;
+  fetchReviews: () => Promise<void>;
+  deleteReview: (id: number) => Promise<boolean>;
   uploadProductImage: (base64Image: string) => Promise<string | null>;
   createProduct: (data: {
     title: string;
@@ -30,6 +39,9 @@ interface AdminState {
 
 export const useAdminStore = create<AdminState>((set, get) => ({
   stats: null,
+  users: [],
+  orders: [],
+  reviews: [],
   loading: false,
   error: null,
 
@@ -42,6 +54,61 @@ export const useAdminStore = create<AdminState>((set, get) => ({
       }
     } catch (err: any) {
       set({ error: err.message || "Failed to load admin stats", loading: false });
+    }
+  },
+
+  fetchUsers: async () => {
+    set({ loading: true, error: null });
+    try {
+      const res = await apiFetch("/products/admin/users");
+      if (res.success && res.data) {
+        set({ users: res.data, loading: false });
+      }
+    } catch (err: any) {
+      set({ error: err.message || "Failed to load admin users", loading: false });
+    }
+  },
+
+  fetchOrders: async () => {
+    set({ loading: true, error: null });
+    try {
+      const res = await apiFetch("/orders/admin");
+      if (res.success && res.data) {
+        set({ orders: res.data, loading: false });
+      }
+    } catch (err: any) {
+      set({ error: err.message || "Failed to load admin orders", loading: false });
+    }
+  },
+
+  fetchReviews: async () => {
+    set({ loading: true, error: null });
+    try {
+      const res = await apiFetch("/products/admin/reviews");
+      if (res.success && res.data) {
+        set({ reviews: res.data, loading: false });
+      }
+    } catch (err: any) {
+      set({ error: err.message || "Failed to load admin reviews", loading: false });
+    }
+  },
+
+  deleteReview: async (id) => {
+    set({ loading: true, error: null });
+    try {
+      const res = await apiFetch(`/products/admin/reviews/${id}`, {
+        method: "DELETE",
+      });
+      if (res.success) {
+        set({ loading: false });
+        await get().fetchReviews();
+        await get().fetchStats();
+        return true;
+      }
+      return false;
+    } catch (err: any) {
+      set({ error: err.message || "Failed to delete review", loading: false });
+      return false;
     }
   },
 

@@ -9,7 +9,7 @@ import AuthModal from "@/components/AuthModal";
 import { useProductStore, ProductItem } from "@/store/useProductStore";
 import { useCartStore } from "@/store/useCartStore";
 import { useAuthStore } from "@/store/useAuthStore";
-import { ArrowLeft, Star, Plus, Minus, Loader2, Check } from "lucide-react";
+import { ArrowLeft, Star, Plus, Minus, Loader2, Check, Heart } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 
@@ -19,7 +19,7 @@ export default function ProductDetailPage() {
   const productId = Number(params.id);
 
   const { user } = useAuthStore();
-  const { activeProduct, loading, fetchProductDetails, submitReview } = useProductStore();
+  const { activeProduct, loading, fetchProductDetails, submitReview, wishlist, toggleWishlist, fetchWishlist } = useProductStore();
   const { addItem, setIsOpen } = useCartStore();
 
   const [activeImageIdx, setActiveImageIdx] = useState(0);
@@ -34,6 +34,12 @@ export default function ProductDetailPage() {
   const [reviewName, setReviewName] = useState("");
   const [reviewSuccess, setReviewSuccess] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      fetchWishlist();
+    }
+  }, [user]);
 
   useEffect(() => {
     if (!isNaN(productId)) {
@@ -88,6 +94,16 @@ export default function ProductDetailPage() {
       size: selectedSize,
     });
     setIsOpen(true);
+  };
+
+  const isWishlisted = wishlist.some((w) => w.id === activeProduct.id);
+
+  const handleWishlistToggle = () => {
+    if (!user) {
+      setIsAuthModalOpen(true);
+      return;
+    }
+    toggleWishlist(activeProduct.id);
   };
 
   const handleReviewSubmit = async (e: React.FormEvent) => {
@@ -281,6 +297,17 @@ export default function ProductDetailPage() {
                 className="flex-1 bg-brand-charcoal text-brand-bg border border-brand-charcoal rounded-2xl py-4 text-sm font-semibold tracking-wide hover:bg-brand-charcoal/90 transition-all duration-300 cursor-pointer"
               >
                 Buy Now
+              </button>
+              <button
+                onClick={handleWishlistToggle}
+                className={`p-4 border rounded-2xl transition-all duration-300 cursor-pointer flex items-center justify-center ${
+                  isWishlisted 
+                    ? "bg-rose-50 border-rose-300 text-rose-500 hover:bg-rose-100" 
+                    : "border-brand-charcoal/15 text-brand-charcoal/60 hover:border-brand-charcoal"
+                }`}
+                aria-label="Wishlist"
+              >
+                <Heart className={`h-5 w-5 ${isWishlisted ? "fill-rose-500 text-rose-500" : ""}`} />
               </button>
             </div>
 

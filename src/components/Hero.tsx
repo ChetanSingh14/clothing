@@ -53,10 +53,10 @@ export default function Hero({ user, onStartClick }: HeroProps) {
           className="text-4xl font-semibold tracking-tight text-brand-charcoal sm:text-6xl md:text-7xl leading-[1.1]"
         >
           <span className="font-serif italic font-normal text-brand-charcoal/80 block sm:inline sm:mr-3">
-            Streamline Your Team,
+            Flowbox Atelier,
           </span>
           <span className="block sm:inline">
-            Supercharge Your Workflow
+            Sartorial Collections
           </span>
         </motion.h1>
 
@@ -66,7 +66,7 @@ export default function Hero({ user, onStartClick }: HeroProps) {
           transition={{ duration: 1, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
           className="mt-6 max-w-2xl text-base text-brand-charcoal/60 sm:text-lg tracking-wide font-light"
         >
-          All-in-one platform to plan, collaborate, and deliver — faster and smarter.
+          Experience pure virgin wool double-breasted trench coats and cashmere-knit pieces handcrafted with timeless structured designs.
         </motion.p>
 
         {/* Pill-shaped Action Button */}
@@ -80,7 +80,7 @@ export default function Hero({ user, onStartClick }: HeroProps) {
             onClick={onStartClick}
             className="group relative flex items-center gap-3 overflow-hidden rounded-full bg-brand-charcoal px-6.5 py-4 text-sm font-semibold tracking-wide text-brand-bg transition-all duration-300 hover:bg-brand-charcoal/90 hover:shadow-lg cursor-pointer"
           >
-            <span>{user ? "View Dashboard" : "Get started for Free"}</span>
+            <span>{user ? "Explore Catalog" : "Explore Collections"}</span>
             <div className="flex h-5 w-5 items-center justify-center rounded-full bg-brand-bg text-brand-charcoal transition-transform duration-300 group-hover:rotate-45">
               <ArrowRight className="h-3.5 w-3.5" />
             </div>

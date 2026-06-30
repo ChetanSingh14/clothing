@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { apiFetch } from "@/utils/api";
 
 export interface CartItem {
   productId: number;
@@ -21,6 +22,7 @@ interface CartState {
   getCartTotal: () => number;
   getCartCount: () => number;
   loadCart: () => void;
+  checkout: () => Promise<boolean>;
 }
 
 export const useCartStore = create<CartState>((set, get) => ({
@@ -100,5 +102,26 @@ export const useCartStore = create<CartState>((set, get) => ({
 
   getCartCount: () => {
     return get().items.reduce((sum, item) => sum + item.quantity, 0);
+  },
+
+  checkout: async () => {
+    const totalAmount = get().getCartTotal();
+    const items = get().items;
+    if (items.length === 0) return false;
+
+    try {
+      const res = await apiFetch("/orders", {
+        method: "POST",
+        body: JSON.stringify({ totalAmount, items }),
+      });
+      if (res.success) {
+        get().clearCart();
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error("Checkout request failed:", err);
+      return false;
+    }
   },
 }));

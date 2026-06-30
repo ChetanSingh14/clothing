@@ -26,6 +26,7 @@ export interface ProductItem {
 
 interface ProductState {
   products: ProductItem[];
+  wishlist: ProductItem[];
   selectedCategory: string;
   activeProduct: ProductItem | null;
   loading: boolean;
@@ -34,10 +35,13 @@ interface ProductState {
   fetchProductDetails: (id: number) => Promise<ProductItem | null>;
   setSelectedCategory: (cat: string) => void;
   submitReview: (productId: number, userName: string, rating: number, comment: string) => Promise<boolean>;
+  fetchWishlist: () => Promise<void>;
+  toggleWishlist: (productId: number) => Promise<boolean>;
 }
 
 export const useProductStore = create<ProductState>((set, get) => ({
   products: [],
+  wishlist: [],
   selectedCategory: "All",
   activeProduct: null,
   loading: false,
@@ -91,6 +95,33 @@ export const useProductStore = create<ProductState>((set, get) => ({
       return false;
     } catch (err) {
       console.error("Failed to submit review:", err);
+      return false;
+    }
+  },
+
+  fetchWishlist: async () => {
+    try {
+      const res = await apiFetch("/wishlist");
+      if (res.success && res.data) {
+        set({ wishlist: res.data });
+      }
+    } catch (err) {
+      console.error("Failed to fetch wishlist:", err);
+    }
+  },
+
+  toggleWishlist: async (productId) => {
+    try {
+      const res = await apiFetch(`/wishlist/${productId}`, {
+        method: "POST",
+      });
+      if (res.success) {
+        await get().fetchWishlist();
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error("Failed to toggle wishlist:", err);
       return false;
     }
   },

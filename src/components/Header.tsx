@@ -65,6 +65,14 @@ export default function Header({ onAuthClick }: HeaderProps) {
         <div className="flex items-center space-x-3">
           {/* Wishlist */}
           <button
+            onClick={() => {
+              if (!user) {
+                onAuthClick();
+              } else {
+                // Redirect user to catalog view
+                window.location.hash = "catalog";
+              }
+            }}
             aria-label="Wishlist"
             className="rounded-full p-2 text-brand-charcoal/70 hover:bg-brand-charcoal/5 hover:text-brand-charcoal transition-all duration-200 cursor-pointer"
           >
@@ -73,7 +81,13 @@ export default function Header({ onAuthClick }: HeaderProps) {
 
           {/* Cart Bag with dynamic badge */}
           <button
-            onClick={() => setIsOpen(true)}
+            onClick={() => {
+              if (!user) {
+                onAuthClick();
+              } else {
+                setIsOpen(true);
+              }
+            }}
             aria-label="Shopping Cart"
             className="relative rounded-full p-2 text-brand-charcoal/70 hover:bg-brand-charcoal/5 hover:text-brand-charcoal transition-all duration-200 cursor-pointer"
           >

@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import Image from "next/image";
-import { Star, TrendingUp, Users, ArrowUpRight } from "lucide-react";
+import { Star, Award, Heart, ArrowUpRight } from "lucide-react";
 
 export default function Testimonials() {
   return (
@@ -15,9 +15,9 @@ export default function Testimonials() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
-            className="text-3xl font-semibold tracking-tight text-brand-charcoal sm:text-4xl md:text-5xl"
+            className="text-3xl font-semibold tracking-tight text-brand-charcoal sm:text-4xl md:text-5xl font-serif"
           >
-            Proven Results, Real Impact
+            Crafting Client Satisfaction
           </motion.h2>
           <motion.p 
             initial={{ opacity: 0, y: 20 }}
@@ -26,7 +26,7 @@ export default function Testimonials() {
             transition={{ duration: 0.8, delay: 0.1 }}
             className="mt-4 text-base text-brand-charcoal/60 sm:text-lg tracking-wide font-light"
           >
-            See how teams around the world are working faster, communicating better, and getting more done.
+            Discover what clients around the world are saying about our tailored cuts, fabric weights, and structured silhouettes.
           </motion.p>
         </div>
 
@@ -49,7 +49,7 @@ export default function Testimonials() {
                 ))}
               </div>
               <p className="text-base text-brand-charcoal/80 tracking-wide font-light italic leading-relaxed">
-                "Flowbox cut down our project delivery times by 40% and simplified team coordination. The interface is clean, fast, and exactly what our remote creative team needed."
+                "The double-breasted coat is a sartorial masterpiece. The wool drape is structured but soft, the shoulder padding is precise, and it arrived in elegant protective packaging."
               </p>
             </div>
             
@@ -64,12 +64,12 @@ export default function Testimonials() {
               </div>
               <div>
                 <h4 className="text-sm font-semibold tracking-wide text-brand-charcoal">Sarah Jenkins</h4>
-                <p className="text-xs text-brand-charcoal/50 font-light">Director of Operations, Loom Studio</p>
+                <p className="text-xs text-brand-charcoal/50 font-light">Creative Director, Loom Studio</p>
               </div>
             </div>
           </motion.div>
 
-          {/* Card 2: Impact Metrics */}
+          {/* Card 2: Fabric Standards */}
           <motion.div 
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -78,36 +78,36 @@ export default function Testimonials() {
             whileHover={{ y: -6 }}
             className="rounded-3xl bg-brand-tan/10 p-8 flex flex-col justify-between shadow-sm border border-brand-tan/20 relative overflow-hidden"
           >
-            <div className="absolute top-0 right-0 p-6 opacity-10">
-              <TrendingUp className="h-32 w-32 text-brand-tan" />
+            <div className="absolute top-0 right-0 p-6 opacity-5">
+              <Award className="h-32 w-32 text-brand-tan" />
             </div>
             
             <div className="space-y-4 z-10">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-tan/20 border border-brand-tan/30">
-                <TrendingUp className="h-5 w-5 text-brand-tan-dark" />
+                <Award className="h-5 w-5 text-brand-tan-dark" />
               </div>
               <h3 className="text-5xl font-bold tracking-tight text-brand-charcoal font-serif">
-                1.8x
+                100%
               </h3>
               <h4 className="text-lg font-semibold tracking-tight text-brand-charcoal">
-                Faster Delivery Times
+                Traceable Cashmere & Wool
               </h4>
               <p className="text-sm text-brand-charcoal/60 tracking-wide font-light leading-relaxed">
-                Teams utilizing Flowbox report a significant speed increase in finalizing tasks, shipping code, and publishing content.
+                Every coat and sweater is crafted using certified raw fibers sourced from heritage Italian mills with transparent supply chains.
               </p>
             </div>
 
             <div className="mt-8 pt-6 border-t border-brand-charcoal/5 z-10">
               <div className="flex justify-between items-center text-xs tracking-wide text-brand-charcoal/50">
-                <span>Based on 2026 client surveys</span>
+                <span>Certified Mill Standards</span>
                 <span className="font-semibold text-brand-tan-dark flex items-center gap-0.5 cursor-pointer">
-                  learn more <ArrowUpRight className="h-3 w-3" />
+                  our mills <ArrowUpRight className="h-3 w-3" />
                 </span>
               </div>
             </div>
           </motion.div>
 
-          {/* Card 3: Interactive Dashboard Widget Mockup */}
+          {/* Card 3: Curators Trust */}
           <motion.div 
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -118,20 +118,20 @@ export default function Testimonials() {
           >
             <div className="space-y-4">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-bg/10 border border-brand-bg/15">
-                <Users className="h-5 w-5 text-brand-bg" />
+                <Heart className="h-5 w-5 text-brand-bg" />
               </div>
               <h3 className="text-2xl font-semibold tracking-tight font-serif text-brand-bg">
-                Trusted by 50,000+
+                Wardrobe Curators
               </h3>
               <p className="text-sm text-brand-bg/70 tracking-wide font-light leading-relaxed">
-                From fast-growing startups to established remote agencies, creators depend on Flowbox to manage their everyday workflows.
+                From luxury fashion stylists to minimalist outerwear collectors, designers trust our pieces to stand the test of time.
               </p>
             </div>
 
-            {/* Micro Team Dashboard Mockup inside Card */}
+            {/* Avatars */}
             <div className="mt-8 space-y-3 bg-brand-bg/10 p-4.5 rounded-2xl border border-brand-bg/15">
               <div className="flex justify-between items-center text-[9px] tracking-widest font-semibold text-brand-bg/50 uppercase">
-                <span>active members</span>
+                <span>capsule community</span>
                 <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
               </div>
               
@@ -152,7 +152,7 @@ export default function Testimonials() {
                   </div>
                 ))}
                 <div className="flex h-7 w-7 items-center justify-center rounded-full bg-brand-tan text-[9px] font-bold text-brand-charcoal border-2 border-brand-charcoal">
-                  +12
+                  +48
                 </div>
               </div>
             </div>
