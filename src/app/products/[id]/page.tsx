@@ -9,9 +9,10 @@ import AuthModal from "@/components/AuthModal";
 import { useProductStore, ProductItem } from "@/store/useProductStore";
 import { useCartStore } from "@/store/useCartStore";
 import { useAuthStore } from "@/store/useAuthStore";
-import { ArrowLeft, Star, Plus, Minus, Loader2, Check, Heart } from "lucide-react";
+import { ArrowLeft, Star, Plus, Minus, Loader2, Check, Heart, Cuboid } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import ModelViewer from "@/components/ModelViewer";
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -98,6 +99,10 @@ export default function ProductDetailPage() {
 
   const isWishlisted = wishlist.some((w) => w.id === activeProduct.id);
 
+  const productImages = activeProduct.images.filter(img => !img.toLowerCase().endsWith('.glb'));
+  const productModel = activeProduct.images.find(img => img.toLowerCase().endsWith('.glb'));
+
+
   const handleWishlistToggle = () => {
     if (!user) {
       setIsAuthModalOpen(true);
@@ -139,30 +144,47 @@ export default function ProductDetailPage() {
           
           {/* Left Column: Image switcher (Image 3 style) */}
           <div className="lg:col-span-7 space-y-4">
-            <div className="relative aspect-[4/5] w-full rounded-3xl overflow-hidden bg-brand-gray border border-brand-charcoal/5">
+            <div className="relative aspect-[4/5] w-full rounded-3xl overflow-hidden bg-[#f8f9fa] border border-brand-charcoal/5">
+              <div className={`absolute inset-0 transition-opacity duration-300 ${activeImageIdx === -1 ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none z-0'}`}>
+                <ModelViewer 
+                  url={productModel}
+                  decalUrl={!productModel ? productImages[0] : undefined} 
+                  color={selectedColor || "#ffffff"} 
+                />
+              </div>
               <img
-                src={activeProduct.images[activeImageIdx] || "https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=1200&auto=format&fit=crop"}
+                src={productImages[activeImageIdx] || "https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=1200&auto=format&fit=crop"}
                 alt={activeProduct.title}
-                className="object-cover h-full w-full"
+                className={`object-cover h-full w-full transition-opacity duration-300 ${activeImageIdx !== -1 ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none z-0 absolute inset-0'}`}
               />
             </div>
             
             {/* Gallery thumbnails */}
-            {activeProduct.images && activeProduct.images.length > 1 && (
-              <div className="flex gap-4">
-                {activeProduct.images.map((img, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setActiveImageIdx(idx)}
-                    className={`relative h-20 w-16 rounded-xl overflow-hidden bg-brand-gray border transition-all cursor-pointer ${
-                      activeImageIdx === idx ? "border-brand-charcoal ring-1 ring-brand-charcoal" : "border-brand-charcoal/5 hover:border-brand-charcoal/30"
-                    }`}
-                  >
-                    <img src={img} alt="thumbnail" className="object-cover h-full w-full" />
-                  </button>
-                ))}
-              </div>
-            )}
+            <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
+              {/* 360 View Button */}
+              <button
+                onClick={() => setActiveImageIdx(-1)}
+                className={`flex-shrink-0 relative h-20 w-16 rounded-xl overflow-hidden bg-brand-gray border transition-all cursor-pointer flex flex-col items-center justify-center gap-1 ${
+                  activeImageIdx === -1 ? "border-brand-charcoal ring-1 ring-brand-charcoal bg-[#f0f0f0]" : "border-brand-charcoal/10 hover:border-brand-charcoal/30 bg-[#f8f9fa]"
+                }`}
+              >
+                <Cuboid className={`w-6 h-6 ${activeImageIdx === -1 ? "text-brand-charcoal" : "text-brand-charcoal/60"}`} />
+                <span className={`text-[9px] font-bold uppercase tracking-wider ${activeImageIdx === -1 ? "text-brand-charcoal" : "text-brand-charcoal/60"}`}>360°</span>
+              </button>
+
+              {/* Standard Images */}
+              {productImages && productImages.length > 0 && productImages.map((img, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setActiveImageIdx(idx)}
+                  className={`flex-shrink-0 relative h-20 w-16 rounded-xl overflow-hidden bg-brand-gray border transition-all cursor-pointer ${
+                    activeImageIdx === idx ? "border-brand-charcoal ring-1 ring-brand-charcoal" : "border-brand-charcoal/10 hover:border-brand-charcoal/30"
+                  }`}
+                >
+                  <img src={img} alt="thumbnail" className="object-cover h-full w-full" />
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Right Column: Spec Selector Panel */}

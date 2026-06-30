@@ -62,8 +62,10 @@ export default function AdminDashboardPage() {
   const [colorsInput, setColorsInput] = useState("#8B5A2B, #4A3B32, #A0522D");
   const [selectedSizes, setSelectedSizes] = useState<string[]>(["S", "M", "L"]);
   const [uploadedImageUrl, setUploadedImageUrl] = useState("");
+  const [uploadedModelUrl, setUploadedModelUrl] = useState("");
   
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadingModel, setUploadingModel] = useState(false);
   const [formSuccess, setFormSuccess] = useState(false);
 
   const availableSizesList = ["S", "M", "L", "XL", "XXL", "7", "8", "9", "10", "11"];
@@ -119,6 +121,25 @@ export default function AdminDashboardPage() {
     reader.readAsDataURL(file);
   };
 
+  const handleModelFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingModel(true);
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const base64Data = reader.result as string;
+      const url = await uploadProductImage(base64Data);
+      if (url) {
+        setUploadedModelUrl(url);
+      } else {
+        alert("Failed to upload 3D model. Make sure server is running.");
+      }
+      setUploadingModel(false);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleSizeToggle = (size: string) => {
     if (selectedSizes.includes(size)) {
       setSelectedSizes(selectedSizes.filter((s) => s !== size));
@@ -135,13 +156,18 @@ export default function AdminDashboardPage() {
     }
 
     const colors = colorsInput.split(",").map((c) => c.trim()).filter((c) => c !== "");
+    
+    const imagesToSubmit = [uploadedImageUrl];
+    if (uploadedModelUrl) {
+      imagesToSubmit.push(uploadedModelUrl);
+    }
 
     const success = await createProduct({
       title,
       description,
       price: Number(price),
       category,
-      images: [uploadedImageUrl],
+      images: imagesToSubmit,
       colors,
       sizes: selectedSizes,
     });
@@ -151,6 +177,7 @@ export default function AdminDashboardPage() {
       setDescription("");
       setPrice("");
       setUploadedImageUrl("");
+      setUploadedModelUrl("");
       setFormSuccess(true);
       await fetchProducts(); // reload products listing
       await fetchStats(); // reload stats
@@ -522,6 +549,25 @@ export default function AdminDashboardPage() {
                       </div>
                     </div>
 
+                    <div>
+                      <label className="font-semibold uppercase tracking-wider text-brand-charcoal/60">
+                        3D Model (.glb) [Optional]
+                      </label>
+                      <div className="mt-1.5 relative border border-dashed border-brand-charcoal/20 rounded-xl bg-brand-bg p-4 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-brand-charcoal/5 transition-colors">
+                        <UploadCloud className="h-6 w-6 text-brand-charcoal/40 mb-1.5" />
+                        <span className="text-[10px] font-semibold text-brand-charcoal/60">
+                          {uploadingModel ? "Uploading model..." : uploadedModelUrl ? "Model uploaded ✓" : "Attach .glb file (Max 10MB)"}
+                        </span>
+                        <input
+                          type="file"
+                          accept=".glb"
+                          disabled={uploadingModel}
+                          onChange={handleModelFileChange}
+                          className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                        />
+                      </div>
+                    </div>
+
                     {formSuccess && (
                       <div className="text-xs text-brand-green font-semibold bg-brand-green/10 border border-brand-green/20 rounded-xl p-3">
                         ✓ Product published on live catalog successfully!
@@ -530,7 +576,7 @@ export default function AdminDashboardPage() {
 
                     <button
                       type="submit"
-                      disabled={loading || uploadingImage}
+                      disabled={loading || uploadingImage || uploadingModel}
                       className="w-full bg-brand-charcoal text-brand-bg rounded-xl py-3.5 text-xs font-semibold tracking-wide hover:bg-brand-charcoal/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer mt-4"
                     >
                       {loading ? "Publishing product..." : "Publish Product"}

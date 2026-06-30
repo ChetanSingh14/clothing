@@ -22,6 +22,7 @@ export interface ProductItem {
   rating: number;
   createdAt: string;
   reviews?: ProductReview[];
+  modelUrl?: string;
 }
 
 interface ProductState {
