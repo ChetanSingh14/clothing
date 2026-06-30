@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { X, Sparkles, AlertCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { apiFetch } from "@/utils/api";
+import { useAuthStore } from "@/store/useAuthStore";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -16,38 +16,33 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const { login, signup, error, setError } = useAuthStore();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
+    setError(null);
     setLoading(true);
 
-    try {
-      const endpoint = isLogin ? "/auth/login" : "/auth/signup";
-      const payload = isLogin ? { email, password } : { name, email, password };
-      
-      const res = await apiFetch(endpoint, {
-        method: "POST",
-        body: JSON.stringify(payload),
-      });
+    let success = false;
+    if (isLogin) {
+      success = await login(email, password);
+    } else {
+      success = await signup(name, email, password);
+    }
 
-      if (res.success && res.data) {
-        localStorage.setItem("authToken", res.data.token);
-        onSuccess(res.data.user);
-        onClose();
-        // Reset form
-        setName("");
-        setEmail("");
-        setPassword("");
-      }
-    } catch (err: any) {
-      setError(err.message || "Authentication failed. Please check details.");
-    } finally {
-      setLoading(false);
+    setLoading(false);
+
+    if (success) {
+      onSuccess(useAuthStore.getState().user);
+      onClose();
+      // Reset form
+      setName("");
+      setEmail("");
+      setPassword("");
     }
   };
+
 
   return (
     <AnimatePresence>

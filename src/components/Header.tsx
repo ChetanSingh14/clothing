@@ -1,16 +1,28 @@
 "use client";
 
 import Link from "next/link";
-import { Heart, User } from "lucide-react";
+import { Heart, User, ShoppingBag } from "lucide-react";
 import { motion } from "framer-motion";
+import { useCartStore } from "@/store/useCartStore";
+import { useAuthStore } from "@/store/useAuthStore";
+import { useEffect } from "react";
 
 interface HeaderProps {
-  user: any;
   onAuthClick: () => void;
-  onLogout: () => void;
 }
 
-export default function Header({ user, onAuthClick, onLogout }: HeaderProps) {
+export default function Header({ onAuthClick }: HeaderProps) {
+  const { user, logout, fetchMe } = useAuthStore();
+  const { setIsOpen, getCartCount, loadCart } = useCartStore();
+
+  // Load cart and check user state on mount
+  useEffect(() => {
+    loadCart();
+    fetchMe();
+  }, []);
+
+  const cartCount = getCartCount();
+
   return (
     <motion.header
       initial={{ y: -50, opacity: 0 }}
@@ -33,21 +45,48 @@ export default function Header({ user, onAuthClick, onLogout }: HeaderProps) {
           {["Home", "Product", "About Us", "Contact"].map((link) => (
             <Link
               key={link}
-              href={`#${link.toLowerCase().replace(" ", "-")}`}
+              href={link === "Home" ? "/" : `/#${link.toLowerCase().replace(" ", "-")}`}
               className="text-sm font-medium tracking-wide text-brand-charcoal/70 transition-colors hover:text-brand-charcoal"
             >
               {link.toLowerCase()}
             </Link>
           ))}
+          {user?.role === "ADMIN" && (
+            <Link
+              href="/admin"
+              className="text-sm font-semibold tracking-wide text-brand-green transition-colors hover:text-brand-green-dark border-b border-brand-green/20"
+            >
+              admin panel
+            </Link>
+          )}
         </nav>
 
         {/* Right Side: Interaction Elements */}
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-3">
+          {/* Wishlist */}
           <button
             aria-label="Wishlist"
             className="rounded-full p-2 text-brand-charcoal/70 hover:bg-brand-charcoal/5 hover:text-brand-charcoal transition-all duration-200 cursor-pointer"
           >
             <Heart className="h-5 w-5" />
+          </button>
+
+          {/* Cart Bag with dynamic badge */}
+          <button
+            onClick={() => setIsOpen(true)}
+            aria-label="Shopping Cart"
+            className="relative rounded-full p-2 text-brand-charcoal/70 hover:bg-brand-charcoal/5 hover:text-brand-charcoal transition-all duration-200 cursor-pointer"
+          >
+            <ShoppingBag className="h-5 w-5" />
+            {cartCount > 0 && (
+              <motion.span
+                initial={{ scale: 0.8 }}
+                animate={{ scale: 1 }}
+                className="absolute top-1.5 right-1.5 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-brand-green text-[9px] font-bold text-brand-bg shadow-sm"
+              >
+                {cartCount}
+              </motion.span>
+            )}
           </button>
           
           {user ? (
@@ -56,7 +95,7 @@ export default function Header({ user, onAuthClick, onLogout }: HeaderProps) {
                 hi, <span className="font-bold text-brand-charcoal">{user.name.split(" ")[0]}</span>
               </span>
               <button
-                onClick={onLogout}
+                onClick={logout}
                 className="rounded-full border border-brand-charcoal/15 bg-brand-bg px-3 py-1.5 text-[10px] font-bold tracking-wide uppercase text-brand-charcoal/70 hover:bg-brand-charcoal/5 hover:text-brand-charcoal transition-all duration-200 cursor-pointer"
               >
                 logout

@@ -1,0 +1,97 @@
+import { create } from "zustand";
+import { apiFetch } from "@/utils/api";
+
+export interface ProductReview {
+  id: number;
+  rating: number;
+  comment: string;
+  userName: string;
+  productId: number;
+  createdAt: string;
+}
+
+export interface ProductItem {
+  id: number;
+  title: string;
+  description: string;
+  price: number;
+  category: string;
+  images: string[];
+  colors: string[];
+  sizes: string[];
+  rating: number;
+  createdAt: string;
+  reviews?: ProductReview[];
+}
+
+interface ProductState {
+  products: ProductItem[];
+  selectedCategory: string;
+  activeProduct: ProductItem | null;
+  loading: boolean;
+  error: string | null;
+  fetchProducts: (category?: string) => Promise<void>;
+  fetchProductDetails: (id: number) => Promise<ProductItem | null>;
+  setSelectedCategory: (cat: string) => void;
+  submitReview: (productId: number, userName: string, rating: number, comment: string) => Promise<boolean>;
+}
+
+export const useProductStore = create<ProductState>((set, get) => ({
+  products: [],
+  selectedCategory: "All",
+  activeProduct: null,
+  loading: false,
+  error: null,
+
+  setSelectedCategory: (cat) => {
+    set({ selectedCategory: cat });
+    get().fetchProducts(cat === "All" ? undefined : cat);
+  },
+
+  fetchProducts: async (category) => {
+    set({ loading: true, error: null });
+    try {
+      const endpoint = category ? `/products?category=${encodeURIComponent(category)}` : "/products";
+      const res = await apiFetch(endpoint);
+      if (res.success && res.data) {
+        set({ products: res.data, loading: false });
+      }
+    } catch (err: any) {
+      set({ error: err.message || "Failed to fetch products", loading: false });
+    }
+  },
+
+  fetchProductDetails: async (id) => {
+    set({ loading: true, error: null, activeProduct: null });
+    try {
+      const res = await apiFetch(`/products/${id}`);
+      if (res.success && res.data) {
+        set({ activeProduct: res.data, loading: false });
+        return res.data;
+      }
+      set({ loading: false });
+      return null;
+    } catch (err: any) {
+      set({ error: err.message || "Failed to load product details", loading: false });
+      return null;
+    }
+  },
+
+  submitReview: async (productId, userName, rating, comment) => {
+    try {
+      const res = await apiFetch(`/products/${productId}/reviews`, {
+        method: "POST",
+        body: JSON.stringify({ userName, rating, comment }),
+      });
+      if (res.success && res.data) {
+        await get().fetchProductDetails(productId);
+        await get().fetchProducts(get().selectedCategory === "All" ? undefined : get().selectedCategory);
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error("Failed to submit review:", err);
+      return false;
+    }
+  },
+}));
