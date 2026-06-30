@@ -15,7 +15,12 @@ const PORTRAITS = [
   "https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=400&h=600&fit=crop",
 ];
 
-export default function Hero() {
+interface HeroProps {
+  user: any;
+  onStartClick: () => void;
+}
+
+export default function Hero({ user, onStartClick }: HeroProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   
   // Track scroll progress of the hero section
@@ -71,8 +76,11 @@ export default function Hero() {
           transition={{ duration: 1, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
           className="mt-10"
         >
-          <button className="group relative flex items-center gap-3 overflow-hidden rounded-full bg-brand-charcoal px-6.5 py-4 text-sm font-semibold tracking-wide text-brand-bg transition-all duration-300 hover:bg-brand-charcoal/90 hover:shadow-lg cursor-pointer">
-            <span>Get started for Free</span>
+          <button 
+            onClick={onStartClick}
+            className="group relative flex items-center gap-3 overflow-hidden rounded-full bg-brand-charcoal px-6.5 py-4 text-sm font-semibold tracking-wide text-brand-bg transition-all duration-300 hover:bg-brand-charcoal/90 hover:shadow-lg cursor-pointer"
+          >
+            <span>{user ? "View Dashboard" : "Get started for Free"}</span>
             <div className="flex h-5 w-5 items-center justify-center rounded-full bg-brand-bg text-brand-charcoal transition-transform duration-300 group-hover:rotate-45">
               <ArrowRight className="h-3.5 w-3.5" />
             </div>
@@ -88,7 +96,6 @@ export default function Hero() {
             const diff = i - centerIdx;
             
             // Custom transforms linked to scroll progress
-            // As user scrolls, the cards flatten and translate back to center
             const rotateYVal = useTransform(scrollYProgress, [0, 0.6], [diff * 14, diff * 2]);
             const zVal = useTransform(scrollYProgress, [0, 0.6], [Math.abs(diff) * -45, 0]);
             const yVal = useTransform(scrollYProgress, [0, 0.6], [Math.abs(diff) * 15, 0]);

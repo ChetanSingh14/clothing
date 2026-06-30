@@ -4,7 +4,13 @@ import Link from "next/link";
 import { Heart, User } from "lucide-react";
 import { motion } from "framer-motion";
 
-export default function Header() {
+interface HeaderProps {
+  user: any;
+  onAuthClick: () => void;
+  onLogout: () => void;
+}
+
+export default function Header({ user, onAuthClick, onLogout }: HeaderProps) {
   return (
     <motion.header
       initial={{ y: -50, opacity: 0 }}
@@ -43,13 +49,29 @@ export default function Header() {
           >
             <Heart className="h-5 w-5" />
           </button>
-          <button
-            aria-label="Account"
-            className="flex items-center space-x-1.5 rounded-full border border-brand-charcoal/10 bg-brand-bg px-3.5 py-1.5 text-sm font-medium text-brand-charcoal/80 hover:bg-brand-charcoal/5 hover:text-brand-charcoal transition-all duration-200 cursor-pointer"
-          >
-            <User className="h-4 w-4" />
-            <span className="hidden sm:inline text-xs font-medium tracking-wide lowercase">account</span>
-          </button>
+          
+          {user ? (
+            <div className="flex items-center gap-3">
+              <span className="hidden sm:inline text-xs font-medium text-brand-charcoal/70 tracking-wide">
+                hi, <span className="font-bold text-brand-charcoal">{user.name.split(" ")[0]}</span>
+              </span>
+              <button
+                onClick={onLogout}
+                className="rounded-full border border-brand-charcoal/15 bg-brand-bg px-3 py-1.5 text-[10px] font-bold tracking-wide uppercase text-brand-charcoal/70 hover:bg-brand-charcoal/5 hover:text-brand-charcoal transition-all duration-200 cursor-pointer"
+              >
+                logout
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={onAuthClick}
+              aria-label="Account"
+              className="flex items-center space-x-1.5 rounded-full border border-brand-charcoal/10 bg-brand-bg px-3.5 py-1.5 text-sm font-medium text-brand-charcoal/80 hover:bg-brand-charcoal/5 hover:text-brand-charcoal transition-all duration-200 cursor-pointer"
+            >
+              <User className="h-4 w-4" />
+              <span className="hidden sm:inline text-xs font-medium tracking-wide lowercase">account</span>
+            </button>
+          )}
         </div>
       </div>
     </motion.header>
