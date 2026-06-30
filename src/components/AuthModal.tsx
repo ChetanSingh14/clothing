@@ -4,6 +4,8 @@ import { useState } from "react";
 import { X, Sparkles, AlertCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useSettingsStore } from "@/store/useSettingsStore";
+import { shallow } from "zustand/shallow";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -18,6 +20,8 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const { login, signup, error, setError } = useAuthStore();
+  
+  const companyName = useSettingsStore((state) => state.companyName);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,14 +80,14 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
             {/* Header info */}
             <div className="flex items-center gap-2 bg-brand-tan/10 text-brand-tan-dark px-3 py-1 rounded-full text-xs font-semibold w-fit mb-4">
               <Sparkles className="h-3.5 w-3.5" />
-              <span>flowbox members</span>
+              <span className="uppercase tracking-widest text-[9px]">{companyName} club</span>
             </div>
 
             <h2 className="text-3xl font-bold font-serif text-brand-charcoal tracking-tight">
               {isLogin ? "Welcome Back" : "Create Account"}
             </h2>
             <p className="mt-2 text-sm text-brand-charcoal/50 font-light">
-              {isLogin ? "Log in to streamline your work processes." : "Join Flowbox today and supercharge your team."}
+              {isLogin ? "Log in to access your wishlist and shopping bag." : `Join the ${companyName} community today.`}
             </p>
 
             {/* Form */}

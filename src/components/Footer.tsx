@@ -1,9 +1,12 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useSettingsStore } from "@/store/useSettingsStore";
+import { shallow } from "zustand/shallow";
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
+  const companyName = useSettingsStore((state) => state.companyName);
   
   const socials = [
     {
@@ -16,12 +19,13 @@ export default function Footer() {
       )
     },
     {
-      name: "GitHub",
-      href: "https://github.com",
+      name: "Instagram",
+      href: "https://instagram.com",
       icon: (
         <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4" />
-          <path d="M9 18c-4.51 2-5-2-7-2" />
+          <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+          <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+          <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
         </svg>
       )
     },
@@ -37,13 +41,11 @@ export default function Footer() {
       )
     },
     {
-      name: "Instagram",
-      href: "https://instagram.com",
+      name: "TikTok",
+      href: "https://tiktok.com",
       icon: (
         <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
-          <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
-          <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+          <path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5" />
         </svg>
       )
     }
@@ -55,11 +57,11 @@ export default function Footer() {
         
         {/* Left Side: Copyright & Brand Statement */}
         <div className="text-center md:text-left space-y-1.5">
-          <p className="text-sm font-semibold text-brand-charcoal font-serif tracking-wide">
-            Flowbox
+          <p className="text-sm font-semibold text-brand-charcoal font-serif tracking-widest uppercase">
+            {companyName}
           </p>
           <p className="text-xs text-brand-charcoal/50 font-light tracking-wide">
-            © {currentYear} Flowbox Inc. Streamlining work processes for modern remote creative teams.
+            © {currentYear} {companyName}. Bold graphic tees for the culture. No cap.
           </p>
         </div>
 

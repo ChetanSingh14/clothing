@@ -7,7 +7,9 @@ import AuthModal from "@/components/AuthModal";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useAdminStore } from "@/store/useAdminStore";
 import { useProductStore } from "@/store/useProductStore";
-import { Plus, Trash2, Tag, Star, Package, Users, Layers, UploadCloud, Loader2, RefreshCw, BarChart2, UserCheck, Shield, ShoppingBag, DollarSign, Calendar } from "lucide-react";
+import { useSettingsStore } from "@/store/useSettingsStore";
+import { shallow } from "zustand/shallow";
+import { Plus, Trash2, Tag, Star, Package, Users, Layers, UploadCloud, Loader2, RefreshCw, BarChart2, UserCheck, Shield, ShoppingBag, DollarSign, Calendar, Edit, Settings } from "lucide-react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 
@@ -27,13 +29,30 @@ export default function AdminDashboardPage() {
     deleteReview, 
     createProduct, 
     deleteProduct, 
-    uploadProductImage 
+    uploadProductImage,
+    adminUpdateUser
   } = useAdminStore();
   
   const { products, fetchProducts } = useProductStore();
 
+  const companyName = useSettingsStore((state) => state.companyName);
+  const logoUrl = useSettingsStore((state) => state.logoUrl);
+  const fetchSettings = useSettingsStore((state) => state.fetchSettings);
+  const updateSettings = useSettingsStore((state) => state.updateSettings);
+
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("overview"); // overview, products, reviews, orders, users
+  const [activeTab, setActiveTab] = useState("overview"); // overview, products, reviews, orders, users, settings
+
+  // Brand customize states
+  const [tempCompanyName, setTempCompanyName] = useState("");
+  const [tempLogoUrl, setTempLogoUrl] = useState("");
+  const [updatingSettings, setUpdatingSettings] = useState(false);
+
+  // Edit user account states
+  const [editingUser, setEditingUser] = useState<any>(null);
+  const [editName, setEditName] = useState("");
+  const [editRole, setEditRole] = useState("USER");
+  const [editPassword, setEditPassword] = useState("");
 
   // Form states for Product Upload
   const [title, setTitle] = useState("");
@@ -48,6 +67,15 @@ export default function AdminDashboardPage() {
   const [formSuccess, setFormSuccess] = useState(false);
 
   const availableSizesList = ["S", "M", "L", "XL", "XXL", "7", "8", "9", "10", "11"];
+
+  useEffect(() => {
+    fetchSettings();
+  }, [fetchSettings]);
+
+  useEffect(() => {
+    if (companyName) setTempCompanyName(companyName);
+    if (logoUrl) setTempLogoUrl(logoUrl);
+  }, [companyName, logoUrl]);
 
   useEffect(() => {
     if (initialized) {
@@ -199,6 +227,7 @@ export default function AdminDashboardPage() {
                 { id: "reviews", label: "Reviews Manager", icon: Star },
                 { id: "orders", label: "Sales & Orders", icon: ShoppingBag },
                 { id: "users", label: "Customer Accounts", icon: Users },
+                { id: "settings", label: "Brand Settings", icon: Settings },
               ].map((tab) => {
                 const Icon = tab.icon;
                 const isSelected = activeTab === tab.id;
@@ -732,15 +761,21 @@ export default function AdminDashboardPage() {
                     <table className="w-full border-collapse text-left">
                       <thead>
                         <tr className="bg-brand-gray/50 border-b border-brand-charcoal/5 text-[10px] uppercase font-bold text-brand-charcoal/50 tracking-wider">
+                          <th className="py-4.5 px-6">ID</th>
                           <th className="py-4.5 px-6">Customer Profile</th>
                           <th className="py-4.5 px-6">Email Address</th>
                           <th className="py-4.5 px-6">Security Authorization Role</th>
+                          <th className="py-4.5 px-6">Password Hash</th>
                           <th className="py-4.5 px-6 text-right">Registration Date</th>
+                          <th className="py-4.5 px-6 text-center">Actions</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-brand-charcoal/5 text-xs">
                         {users.map((u) => (
                           <tr key={u.id} className="hover:bg-brand-gray/20 transition-colors">
+                            <td className="py-4.5 px-6 font-mono font-bold text-brand-charcoal/60">
+                              #{u.id}
+                            </td>
                             <td className="py-4.5 px-6 flex items-center gap-3">
                               <div className="h-8 w-8 rounded-full bg-brand-green/10 text-brand-green font-bold flex items-center justify-center text-xs uppercase">
                                 {u.name.charAt(0)}
@@ -760,11 +795,28 @@ export default function AdminDashboardPage() {
                                 <span>{u.role}</span>
                               </span>
                             </td>
+                            <td className="py-4.5 px-6 font-mono text-[10px] text-brand-charcoal/40 truncate max-w-[120px]" title={u.password}>
+                              {u.password || "********"}
+                            </td>
                             <td className="py-4.5 px-6 text-right text-brand-charcoal/50 font-light">
                               {new Date(u.createdAt).toLocaleString(undefined, {
                                 dateStyle: "medium",
                                 timeStyle: "short",
                               })}
+                            </td>
+                            <td className="py-4.5 px-6 text-center">
+                              <button
+                                onClick={() => {
+                                  setEditingUser(u);
+                                  setEditName(u.name);
+                                  setEditRole(u.role);
+                                  setEditPassword("");
+                                }}
+                                className="px-3 py-1.5 rounded-lg border border-brand-charcoal/10 bg-brand-bg hover:bg-brand-charcoal/5 font-semibold text-xs tracking-wide transition-all cursor-pointer inline-flex items-center gap-1 text-brand-charcoal/80"
+                              >
+                                <Edit className="h-3 w-3" />
+                                <span>Edit</span>
+                              </button>
                             </td>
                           </tr>
                         ))}
@@ -772,6 +824,187 @@ export default function AdminDashboardPage() {
                     </table>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* -------------------- TAB CONTENT: SETTINGS -------------------- */}
+            {activeTab === "settings" && (
+              <div className="max-w-2xl bg-brand-gray/30 p-8 rounded-3xl border border-brand-charcoal/5 space-y-6">
+                <div>
+                  <h2 className="text-xl font-semibold tracking-tight text-brand-charcoal font-serif">
+                    Brand Customization Settings
+                  </h2>
+                  <p className="text-xs text-brand-charcoal/50 mt-1 font-light">
+                    Update your brand logo image and set the company name dynamically across all components.
+                  </p>
+                </div>
+
+                <form onSubmit={async (e) => {
+                  e.preventDefault();
+                  setUpdatingSettings(true);
+                  const success = await updateSettings({
+                    companyName: tempCompanyName,
+                    logoUrl: tempLogoUrl
+                  });
+                  if (success) {
+                    alert("Brand settings updated successfully!");
+                  } else {
+                    alert("Failed to save settings.");
+                  }
+                  setUpdatingSettings(false);
+                }} className="space-y-6 text-xs">
+                  <div>
+                    <label className="font-semibold uppercase tracking-wider text-brand-charcoal/60" htmlFor="sName">
+                      Company Name
+                    </label>
+                    <input
+                      type="text"
+                      id="sName"
+                      required
+                      value={tempCompanyName}
+                      onChange={(e) => setTempCompanyName(e.target.value)}
+                      placeholder="e.g. MDFK CLOTHING CO."
+                      className="mt-1.5 w-full rounded-xl border border-brand-charcoal/10 bg-brand-bg px-3.5 py-3 text-xs focus:border-brand-green focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="font-semibold uppercase tracking-wider text-brand-charcoal/60">
+                      Company Logo Graphic
+                    </label>
+                    <div className="mt-2 flex items-center gap-6">
+                      <div className="relative h-16 w-16 overflow-hidden rounded-xl border border-brand-charcoal/10 bg-brand-charcoal flex items-center justify-center">
+                        {tempLogoUrl ? (
+                          <img src={tempLogoUrl} alt="Preview logo" className="object-cover h-full w-full invert" />
+                        ) : (
+                          <span className="text-[10px] text-brand-bg font-bold">NO LOGO</span>
+                        )}
+                      </div>
+                      <div className="relative flex-grow border border-dashed border-brand-charcoal/20 rounded-xl bg-brand-bg p-6 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-brand-charcoal/5 transition-colors">
+                        <UploadCloud className="h-6 w-6 text-brand-charcoal/40 mb-1.5" />
+                        <span className="text-[10px] font-semibold text-brand-charcoal/60">
+                          {uploadingImage ? "Uploading file..." : "Upload new brand logo"}
+                        </span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          disabled={uploadingImage}
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+
+                            setUploadingImage(true);
+                            const reader = new FileReader();
+                            reader.onloadend = async () => {
+                              const base64Data = reader.result as string;
+                              setTempLogoUrl(base64Data);
+                              setUploadingImage(false);
+                            };
+                            reader.readAsDataURL(file);
+                          }}
+                          className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={updatingSettings || uploadingImage}
+                    className="w-full bg-brand-charcoal text-brand-bg rounded-xl py-3.5 text-xs font-semibold tracking-wide hover:bg-brand-charcoal/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer mt-4"
+                  >
+                    {updatingSettings ? "Saving settings..." : "Save Settings"}
+                  </button>
+                </form>
+              </div>
+            )}
+
+            {/* Edit User Modal Dialog Overlay */}
+            {editingUser && (
+              <div className="fixed inset-0 z-[100] flex items-center justify-center bg-brand-charcoal/60 backdrop-blur-md p-4">
+                <motion.div 
+                  initial={{ scale: 0.95, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  className="w-full max-w-md bg-brand-bg rounded-3xl p-8 border border-brand-charcoal/10 shadow-2xl relative text-brand-charcoal"
+                >
+                  <h3 className="text-xl font-bold font-serif text-brand-charcoal mb-2">Edit User Account</h3>
+                  <p className="text-xs text-brand-charcoal/50 mb-6">Manage settings for user ID #{editingUser.id} ({editingUser.email})</p>
+                  
+                  <form onSubmit={async (e) => {
+                    e.preventDefault();
+                    const updateData: any = { name: editName, role: editRole };
+                    if (editPassword) {
+                      updateData.password = editPassword;
+                    }
+                    const success = await adminUpdateUser(editingUser.id, updateData);
+                    if (success) {
+                      setEditingUser(null);
+                      alert("User details updated successfully!");
+                    } else {
+                      alert("Failed to update user details.");
+                    }
+                  }} className="space-y-4 text-xs text-left">
+                    <div>
+                      <label className="font-semibold uppercase tracking-wider text-brand-charcoal/60" htmlFor="uName">
+                        Full Name
+                      </label>
+                      <input
+                        type="text"
+                        id="uName"
+                        required
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                        className="mt-1.5 w-full rounded-xl border border-brand-charcoal/10 bg-brand-bg px-3.5 py-3 text-xs focus:border-brand-green focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="font-semibold uppercase tracking-wider text-brand-charcoal/60" htmlFor="uRole">
+                        System Role
+                      </label>
+                      <select
+                        id="uRole"
+                        value={editRole}
+                        onChange={(e) => setEditRole(e.target.value)}
+                        className="mt-1.5 w-full rounded-xl border border-brand-charcoal/10 bg-brand-bg px-3.5 py-3 text-xs focus:border-brand-green focus:outline-none cursor-pointer"
+                      >
+                        <option value="USER">USER</option>
+                        <option value="ADMIN">ADMIN</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="font-semibold uppercase tracking-wider text-brand-charcoal/60" htmlFor="uPassword">
+                        New Password (leave empty to keep current)
+                      </label>
+                      <input
+                        type="password"
+                        id="uPassword"
+                        value={editPassword}
+                        onChange={(e) => setEditPassword(e.target.value)}
+                        placeholder="Enter new plain text password"
+                        className="mt-1.5 w-full rounded-xl border border-brand-charcoal/10 bg-brand-bg px-3.5 py-3 text-xs focus:border-brand-green focus:outline-none"
+                      />
+                    </div>
+
+                    <div className="flex gap-3 mt-6 pt-4">
+                      <button
+                        type="button"
+                        onClick={() => setEditingUser(null)}
+                        className="flex-1 rounded-xl border border-brand-charcoal/10 bg-brand-bg py-3 text-xs font-semibold hover:bg-brand-charcoal/5 transition-all"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={loading}
+                        className="flex-1 bg-brand-charcoal text-brand-bg rounded-xl py-3 text-xs font-semibold hover:bg-brand-charcoal/90 transition-all cursor-pointer"
+                      >
+                        {loading ? "Saving..." : "Save Changes"}
+                      </button>
+                    </div>
+                  </form>
+                </motion.div>
               </div>
             )}
 

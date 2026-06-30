@@ -15,7 +15,9 @@ interface HeaderProps {
 export default function Header({ onAuthClick }: HeaderProps) {
   const { user, logout, fetchMe } = useAuthStore();
   const { setIsOpen, getCartCount, loadCart } = useCartStore();
-  const { companyName, logoUrl, fetchSettings } = useSettingsStore();
+  const companyName = useSettingsStore((state) => state.companyName);
+  const logoUrl = useSettingsStore((state) => state.logoUrl);
+  const fetchSettings = useSettingsStore((state) => state.fetchSettings);
 
   // Load settings, cart and check user state on mount
   useEffect(() => {
@@ -36,11 +38,11 @@ export default function Header({ onAuthClick }: HeaderProps) {
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6 sm:px-8">
         {/* Left Side: Brand Logo */}
         <div className="flex items-center">
-          <Link href="/" className="flex items-center space-x-2.5">
-            <div className="relative h-6 w-6 overflow-hidden rounded bg-brand-charcoal flex items-center justify-center">
-              <img src={logoUrl} alt="Logo" className="object-cover h-full w-full invert" />
+          <Link href="/" className="flex items-center space-x-3.5">
+            <div className="relative h-11 w-11 overflow-hidden rounded-xl bg-brand-charcoal flex items-center justify-center shadow-md p-1">
+              <img src={logoUrl} alt="Logo" className="object-contain h-full w-full" />
             </div>
-            <span className="text-sm font-black tracking-widest text-brand-charcoal uppercase font-serif">
+            <span className="text-xs font-black tracking-widest text-brand-charcoal uppercase font-serif">
               {companyName}
             </span>
           </Link>
@@ -52,17 +54,17 @@ export default function Header({ onAuthClick }: HeaderProps) {
             <Link
               key={link}
               href={link === "Home" ? "/" : `/#${link.toLowerCase().replace(" ", "-")}`}
-              className="text-sm font-medium tracking-wide text-brand-charcoal/70 transition-colors hover:text-brand-charcoal"
+              className="text-xs font-bold tracking-widest text-brand-charcoal/70 transition-all hover:text-brand-charcoal uppercase"
             >
-              {link.toLowerCase()}
+              {link.toUpperCase()}
             </Link>
           ))}
           {user?.role === "ADMIN" && (
             <Link
               href="/admin"
-              className="text-sm font-semibold tracking-wide text-brand-green transition-colors hover:text-brand-green-dark border-b border-brand-green/20"
+              className="text-xs font-black tracking-widest text-brand-green transition-all hover:text-brand-green-dark border-b border-brand-green/20 uppercase"
             >
-              admin panel
+              ADMIN PANEL
             </Link>
           )}
         </nav>

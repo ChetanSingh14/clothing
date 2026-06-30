@@ -33,12 +33,12 @@ export const useCartStore = create<CartState>((set, get) => ({
 
   loadCart: () => {
     if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("flowbox_cart");
+      const stored = localStorage.getItem("mdfk_cart");
       if (stored) {
         try {
           set({ items: JSON.parse(stored) });
         } catch (_) {
-          localStorage.removeItem("flowbox_cart");
+          localStorage.removeItem("mdfk_cart");
         }
       }
     }
@@ -59,7 +59,7 @@ export const useCartStore = create<CartState>((set, get) => ({
 
     set({ items: updatedItems });
     if (typeof window !== "undefined") {
-      localStorage.setItem("flowbox_cart", JSON.stringify(updatedItems));
+      localStorage.setItem("mdfk_cart", JSON.stringify(updatedItems));
     }
   },
 
@@ -70,7 +70,7 @@ export const useCartStore = create<CartState>((set, get) => ({
     );
     set({ items: updatedItems });
     if (typeof window !== "undefined") {
-      localStorage.setItem("flowbox_cart", JSON.stringify(updatedItems));
+      localStorage.setItem("mdfk_cart", JSON.stringify(updatedItems));
     }
   },
 
@@ -85,14 +85,14 @@ export const useCartStore = create<CartState>((set, get) => ({
     );
     set({ items: updatedItems });
     if (typeof window !== "undefined") {
-      localStorage.setItem("flowbox_cart", JSON.stringify(updatedItems));
+      localStorage.setItem("mdfk_cart", JSON.stringify(updatedItems));
     }
   },
 
   clearCart: () => {
     set({ items: [] });
     if (typeof window !== "undefined") {
-      localStorage.removeItem("flowbox_cart");
+      localStorage.removeItem("mdfk_cart");
     }
   },
 

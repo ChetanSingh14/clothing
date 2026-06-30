@@ -15,8 +15,8 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Flowbox - Streamline Your Team, Supercharge Your Workflow",
-  description: "An all-in-one platform to plan, collaborate, and deliver — faster and smarter.",
+  title: "MDFK CLOTHING CO. - Printed Streetwear Tees",
+  description: "Discover bold graphic tees crafted for Gen Z, featuring exclusive prints and premium cotton blends.",
 };
 
 export default function RootLayout({

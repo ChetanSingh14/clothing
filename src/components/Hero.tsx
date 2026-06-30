@@ -1,8 +1,10 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import { ArrowRight } from "lucide-react";
 import { motion, useScroll, useTransform } from "framer-motion";
+import { useSettingsStore } from "@/store/useSettingsStore";
+import { shallow } from "zustand/shallow";
 import Image from "next/image";
 
 const PORTRAITS = [
@@ -21,6 +23,16 @@ interface HeroProps {
 }
 
 export default function Hero({ user, onStartClick }: HeroProps) {
+  const companyName = useSettingsStore((state) => state.companyName);
+  const fetchSettings = useSettingsStore((state) => state.fetchSettings);
+  const initialized = useSettingsStore((state) => state.initialized);
+
+  useEffect(() => {
+    if (!initialized) {
+      fetchSettings();
+    }
+  }, [initialized, fetchSettings]);
+
   const containerRef = useRef<HTMLDivElement>(null);
   
   // Track scroll progress of the hero section
@@ -53,10 +65,10 @@ export default function Hero({ user, onStartClick }: HeroProps) {
           className="text-4xl font-semibold tracking-tight text-brand-charcoal sm:text-6xl md:text-7xl leading-[1.1]"
         >
           <span className="font-serif italic font-normal text-brand-charcoal/80 block sm:inline sm:mr-3">
-            Flowbox Atelier,
+            {companyName},
           </span>
           <span className="block sm:inline">
-            Sartorial Collections
+            Printed Streetwear Tees
           </span>
         </motion.h1>
 
@@ -66,7 +78,7 @@ export default function Hero({ user, onStartClick }: HeroProps) {
           transition={{ duration: 1, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
           className="mt-6 max-w-2xl text-base text-brand-charcoal/60 sm:text-lg tracking-wide font-light"
         >
-          Experience pure virgin wool double-breasted trench coats and cashmere-knit pieces handcrafted with timeless structured designs.
+          Discover bold graphic tees crafted for Gen Z, featuring exclusive prints and premium cotton blends.
         </motion.p>
 
         {/* Pill-shaped Action Button */}
