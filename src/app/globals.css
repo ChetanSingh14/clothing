@@ -1,0 +1,58 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-bg: #F9F6EE;
+  --color-brand-charcoal: #111111;
+  --color-brand-green: #556B4E;
+  --color-brand-green-dark: #40523a;
+  --color-brand-tan: #C2B29B;
+  --color-brand-tan-dark: #b09f87;
+  --color-brand-gray: #EFECE4;
+  --color-brand-gray-dark: #dedad0;
+  
+  --font-serif: var(--font-playfair), Georgia, serif;
+  --font-sans: var(--font-sans), Inter, sans-serif;
+}
+
+:root {
+  --background: #F9F6EE;
+  --foreground: #111111;
+}
+
+/* Custom Scrollbar Styles for premium feel */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F9F6EE;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #C2B29B;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #556B4E;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  overflow-x: hidden;
+}
+
+/* Custom styles for Awwwards perspective effect */
+.perspective-container {
+  perspective: 1200px;
+}
+
+.perspective-card {
+  transform-style: preserve-3d;
+}
