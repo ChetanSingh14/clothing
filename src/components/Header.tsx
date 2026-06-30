@@ -5,6 +5,7 @@ import { Heart, User, ShoppingBag } from "lucide-react";
 import { motion } from "framer-motion";
 import { useCartStore } from "@/store/useCartStore";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useSettingsStore } from "@/store/useSettingsStore";
 import { useEffect } from "react";
 
 interface HeaderProps {
@@ -14,9 +15,11 @@ interface HeaderProps {
 export default function Header({ onAuthClick }: HeaderProps) {
   const { user, logout, fetchMe } = useAuthStore();
   const { setIsOpen, getCartCount, loadCart } = useCartStore();
+  const { companyName, logoUrl, fetchSettings } = useSettingsStore();
 
-  // Load cart and check user state on mount
+  // Load settings, cart and check user state on mount
   useEffect(() => {
+    fetchSettings();
     loadCart();
     fetchMe();
   }, []);
@@ -33,9 +36,12 @@ export default function Header({ onAuthClick }: HeaderProps) {
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6 sm:px-8">
         {/* Left Side: Brand Logo */}
         <div className="flex items-center">
-          <Link href="/" className="flex items-center space-x-2">
-            <span className="text-xl font-bold tracking-tight text-brand-charcoal font-serif">
-              Flowbox
+          <Link href="/" className="flex items-center space-x-2.5">
+            <div className="relative h-6 w-6 overflow-hidden rounded bg-brand-charcoal flex items-center justify-center">
+              <img src={logoUrl} alt="Logo" className="object-cover h-full w-full invert" />
+            </div>
+            <span className="text-sm font-black tracking-widest text-brand-charcoal uppercase font-serif">
+              {companyName}
             </span>
           </Link>
         </div>
