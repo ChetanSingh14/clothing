@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Playfair_Display, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
+import Chatbot from "@/components/Chatbot";
 
 const playfairDisplay = Playfair_Display({
   variable: "--font-playfair",
@@ -28,6 +29,7 @@ export default function RootLayout({
     <html lang="en" data-scroll-behavior="smooth" className={`${playfairDisplay.variable} ${plusJakartaSans.variable} h-full antialiased`}>
       <body className="min-h-full bg-brand-bg text-brand-charcoal font-sans antialiased overflow-x-hidden">
         {children}
+        <Chatbot />
       </body>
     </html>
   );
