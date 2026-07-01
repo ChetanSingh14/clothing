@@ -138,7 +138,7 @@ export default function ContactSection() {
 
           {/* Right Column: Contact Form Card */}
           <div className="lg:col-span-7 w-full">
-            <div className="bg-brand-gray border border-brand-charcoal/5 rounded-3xl p-8 sm:p-10 shadow-xs">
+            <div className="bg-brand-brown/5 border border-brand-brown/15 rounded-3xl p-8 sm:p-10 shadow-xs">
               <h3 className="text-xl font-semibold tracking-tight text-brand-charcoal font-serif mb-6">
                 Write us a message
               </h3>
@@ -225,7 +225,7 @@ export default function ContactSection() {
                 <button
                   type="submit"
                   disabled={status === "sending"}
-                  className="w-full bg-brand-charcoal text-brand-bg rounded-full py-4 text-xs font-semibold tracking-widest uppercase hover:bg-brand-charcoal/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer mt-4 flex items-center justify-center gap-2"
+                  className="w-full bg-brand-brown text-brand-bg rounded-full py-4 text-xs font-semibold tracking-widest uppercase hover:bg-brand-brown-dark transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer mt-4 flex items-center justify-center gap-2"
                 >
                   {status === "sending" ? (
                     <span>Sending...</span>

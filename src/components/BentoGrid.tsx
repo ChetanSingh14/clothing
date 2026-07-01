@@ -77,32 +77,32 @@ export default function BentoGrid() {
             viewport={{ once: true }}
             transition={{ duration: 0.8, delay: 0.1 }}
             whileHover={{ y: -6 }}
-            className="md:col-span-2 h-[380px] rounded-3xl bg-brand-gray p-8 flex flex-col justify-between shadow-sm border border-brand-charcoal/5 relative overflow-hidden group cursor-pointer"
+            className="md:col-span-2 h-[380px] rounded-3xl bg-brand-brown p-8 flex flex-col justify-between shadow-sm border border-brand-charcoal/5 relative overflow-hidden group cursor-pointer text-brand-bg"
           >
             <div>
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-charcoal/5 mb-6 border border-brand-charcoal/5">
-                <Palette className="h-5 w-5 text-brand-charcoal" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-bg/15 mb-6 border border-brand-bg/25">
+                <Palette className="h-5 w-5 text-brand-bg" />
               </div>
-              <h3 className="text-2xl font-semibold tracking-tight text-brand-charcoal font-serif">
+              <h3 className="text-2xl font-semibold tracking-tight font-serif text-brand-bg">
                 Every Print Is Original
               </h3>
-              <p className="mt-2 text-sm text-brand-charcoal/60 tracking-wide font-light leading-relaxed">
+              <p className="mt-2 text-sm text-brand-bg/80 tracking-wide font-light leading-relaxed">
                 No repeat prints. Every design drops once and never again — own your moment before it's gone.
               </p>
             </div>
 
             {/* Feature checklist */}
-            <div className="mt-4 space-y-2.5 bg-brand-bg/60 p-4.5 rounded-2xl border border-brand-charcoal/5 shadow-inner">
+            <div className="mt-4 space-y-2.5 bg-brand-bg/10 p-4.5 rounded-2xl border border-brand-bg/15 shadow-inner">
               {[
                 { label: "280GSM heavyweight cotton", checked: true },
                 { label: "Screen-printed, not heat-pressed", checked: true },
                 { label: "Washed & pre-shrunk", checked: false },
               ].map((task, idx) => (
                 <div key={idx} className="flex items-center gap-3">
-                  <div className={`h-4 w-4 rounded flex items-center justify-center border transition-all duration-300 ${task.checked ? 'bg-brand-green border-brand-green text-brand-bg' : 'border-brand-charcoal/20 bg-transparent'}`}>
+                  <div className={`h-4 w-4 rounded flex items-center justify-center border transition-all duration-300 ${task.checked ? 'bg-brand-green border-brand-green text-brand-bg' : 'border-brand-bg/25 bg-transparent'}`}>
                     {task.checked && <span className="text-[10px] font-bold">✓</span>}
                   </div>
-                  <span className={`text-xs tracking-wide ${task.checked ? 'line-through text-brand-charcoal/40 font-light' : 'text-brand-charcoal font-medium'}`}>
+                  <span className={`text-xs tracking-wide ${task.checked ? 'line-through text-brand-bg/40 font-light' : 'text-brand-bg/90 font-medium'}`}>
                     {task.label}
                   </span>
                 </div>

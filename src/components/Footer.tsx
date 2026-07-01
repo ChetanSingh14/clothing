@@ -52,15 +52,15 @@ export default function Footer() {
   ];
 
   return (
-    <footer className="w-full bg-brand-bg py-12 px-6 sm:px-8 border-t border-brand-charcoal/5">
+    <footer className="w-full bg-brand-brown py-12 px-6 sm:px-8 border-t border-brand-bg/5 text-brand-bg">
       <div className="mx-auto max-w-7xl flex flex-col md:flex-row items-center justify-between gap-6">
         
         {/* Left Side: Copyright & Brand Statement */}
         <div className="text-center md:text-left space-y-1.5">
-          <p className="text-sm font-semibold text-brand-charcoal font-serif tracking-widest uppercase">
+          <p className="text-sm font-semibold text-brand-tan font-serif tracking-widest uppercase">
             {companyName}
           </p>
-          <p className="text-xs text-brand-charcoal/50 font-light tracking-wide">
+          <p className="text-xs text-brand-bg/60 font-light tracking-wide">
             © {currentYear} {companyName}. Bold graphic tees for the culture. No cap.
           </p>
         </div>
@@ -76,7 +76,7 @@ export default function Footer() {
                 rel="noopener noreferrer"
                 aria-label={social.name}
                 whileHover={{ y: -3, scale: 1.05 }}
-                className="text-brand-charcoal/70 hover:text-brand-charcoal transition-colors duration-200 cursor-pointer"
+                className="text-brand-bg/70 hover:text-brand-tan transition-colors duration-200 cursor-pointer"
               >
                 {social.icon}
               </motion.a>

@@ -316,7 +316,7 @@ export default function ProductDetailPage() {
               </button>
               <button
                 onClick={handleBuyNow}
-                className="flex-1 bg-brand-charcoal text-brand-bg border border-brand-charcoal rounded-2xl py-4 text-sm font-semibold tracking-wide hover:bg-brand-charcoal/90 transition-all duration-300 cursor-pointer"
+                className="flex-1 bg-brand-brown text-brand-bg border border-brand-brown rounded-2xl py-4 text-sm font-semibold tracking-wide hover:bg-brand-brown-dark transition-all duration-300 cursor-pointer"
               >
                 Buy Now
               </button>
@@ -426,7 +426,7 @@ export default function ProductDetailPage() {
                 </div>
 
                 {/* Submit Review Form */}
-                <div className="lg:col-span-5 bg-brand-gray/30 p-6 rounded-2xl border border-brand-charcoal/5 h-fit">
+                <div className="lg:col-span-5 bg-brand-brown/5 p-6 rounded-2xl border border-brand-brown/15 h-fit">
                   <h3 className="text-base font-semibold font-serif text-brand-charcoal mb-4">
                     Write a Review
                   </h3>
@@ -494,7 +494,7 @@ export default function ProductDetailPage() {
 
                     <button
                       type="submit"
-                      className="w-full bg-brand-charcoal text-brand-bg rounded-xl py-3 text-xs font-semibold tracking-wide hover:bg-brand-charcoal/90 transition-all cursor-pointer"
+                      className="w-full bg-brand-brown text-brand-bg rounded-xl py-3 text-xs font-semibold tracking-wide hover:bg-brand-brown-dark transition-all cursor-pointer"
                     >
                       Submit Review
                     </button>

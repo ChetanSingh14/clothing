@@ -290,7 +290,7 @@ export default function AdminDashboardPage() {
                         label: "total active items",
                         value: stats.totalProducts,
                         icon: Package,
-                        color: "text-blue-600 bg-blue-50 border-blue-100",
+                        color: "text-brand-brown bg-brand-brown/10 border-brand-brown/20",
                       },
                       {
                         label: "gross revenue",
