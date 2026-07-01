@@ -126,7 +126,7 @@ export default function ProductDetailPage() {
   };
 
   return (
-    <>
+    <div className="min-h-screen bg-brand-bg flex flex-col justify-between selection:bg-brand-green selection:text-brand-bg">
       <Header onAuthClick={() => setIsAuthModalOpen(true)} />
 
       <main className="flex-grow py-12 px-6 sm:px-8 max-w-7xl mx-auto w-full">
@@ -515,6 +515,6 @@ export default function ProductDetailPage() {
       />
 
       <CartDrawer />
-    </>
+    </div>
   );
 }

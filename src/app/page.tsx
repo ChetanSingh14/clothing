@@ -46,7 +46,7 @@ export default function Home() {
   const categoriesList = ["All", "T-Shirts", "Hoodies"];
 
   return (
-    <>
+    <div className="min-h-screen bg-brand-bg flex flex-col justify-between selection:bg-brand-green selection:text-brand-bg">
       <Header onAuthClick={() => setIsAuthModalOpen(true)} />
       
       <main className="flex-grow">
@@ -184,6 +184,6 @@ export default function Home() {
       />
 
       <CartDrawer />
-    </>
+    </div>
   );
 }

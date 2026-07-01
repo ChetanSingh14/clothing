@@ -87,7 +87,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   fetchMe: async () => {
-    const { token, initialized } = get();
+    const { token, initialized, loading } = get();
+    if (loading) return;
     if (!token && initialized) return;
 
     const storedToken = localStorage.getItem("authToken");
