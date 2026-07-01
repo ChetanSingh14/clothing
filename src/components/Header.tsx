@@ -49,7 +49,15 @@ export default function Header({ onAuthClick }: HeaderProps) {
           {["Home", "Product", "About Us", "Contact"].map((link) => (
             <Link
               key={link}
-              href={link === "Home" ? "/" : link === "Contact" ? "/contactpage" : `/#${link.toLowerCase().replace(" ", "-")}`}
+              href={
+                link === "Home"
+                  ? "/"
+                  : link === "Contact"
+                  ? "/contactpage"
+                  : link === "About Us"
+                  ? "/about"
+                  : `/#${link.toLowerCase().replace(" ", "-")}`
+              }
               className="text-xs font-bold tracking-widest text-brand-charcoal/70 transition-all hover:text-brand-charcoal uppercase"
             >
               {link.toUpperCase()}
