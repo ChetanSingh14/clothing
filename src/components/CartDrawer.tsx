@@ -5,11 +5,14 @@ import { X, Plus, Minus, Trash2, ShoppingBag } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 
+import { useState } from "react";
+
 export default function CartDrawer() {
   const { items, isOpen, setIsOpen, updateQuantity, removeItem, getCartTotal, clearCart, checkout } = useCartStore();
+  const [paymentMethod, setPaymentMethod] = useState("COD");
 
   const handleCheckout = async () => {
-    const success = await checkout();
+    const success = await checkout(paymentMethod);
     if (success) {
       alert("Thank you for your order! Your garments are recorded in the system and being prepared for dispatch.");
       setIsOpen(false);
@@ -146,8 +149,21 @@ export default function CartDrawer() {
                     <span className="text-sm font-medium tracking-wide">Subtotal</span>
                     <span className="text-lg font-bold font-serif">${getCartTotal().toFixed(2)}</span>
                   </div>
+                  <div className="flex flex-col gap-2 pt-2 border-t border-brand-charcoal/5">
+                    <label className="text-xs font-semibold text-brand-charcoal uppercase tracking-wider">Payment Method</label>
+                    <select
+                      value={paymentMethod}
+                      onChange={(e) => setPaymentMethod(e.target.value)}
+                      className="w-full rounded-xl border border-brand-charcoal/10 bg-brand-bg px-3.5 py-2.5 text-xs focus:border-brand-green focus:outline-none cursor-pointer"
+                    >
+                      <option value="COD">Cash on Delivery (COD)</option>
+                      <option value="CARD">Credit / Debit Card (Soon)</option>
+                    </select>
+                  </div>
+
                   <p className="text-[10px] text-brand-charcoal/40 font-light leading-relaxed">
-                    Shipping & taxes calculated at checkout. Custom garment adjustments are free of charge.
+                    Shipping & taxes calculated at checkout. Custom garment adjustments are free of charge. <br />
+                    <span className="font-semibold text-brand-green mt-1 block">✓ 7 Days easy return policy on all delivered orders.</span>
                   </p>
                   <button
                     onClick={handleCheckout}

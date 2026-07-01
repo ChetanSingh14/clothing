@@ -73,8 +73,8 @@ export default function Header({ onAuthClick }: HeaderProps) {
               if (!user) {
                 onAuthClick();
               } else {
-                // Redirect user to catalog view
-                window.location.hash = "catalog";
+                // Redirect user to wishlist view
+                window.location.href = "/wishlist";
               }
             }}
             aria-label="Wishlist"
@@ -109,9 +109,15 @@ export default function Header({ onAuthClick }: HeaderProps) {
           
           {user ? (
             <div className="flex items-center gap-3">
-              <span className="hidden sm:inline text-xs font-medium text-brand-charcoal/70 tracking-wide">
+              <Link href="/orders" className="hidden sm:inline text-xs font-medium text-brand-charcoal/70 tracking-wide hover:text-brand-charcoal transition-colors">
                 hi, <span className="font-bold text-brand-charcoal">{user.name.split(" ")[0]}</span>
-              </span>
+              </Link>
+              <Link
+                href="/orders"
+                className="hidden sm:flex items-center text-[10px] font-bold tracking-widest uppercase text-brand-charcoal/70 hover:text-brand-charcoal transition-all"
+              >
+                Orders
+              </Link>
               <button
                 onClick={logout}
                 className="rounded-full border border-brand-charcoal/15 bg-brand-bg px-3 py-1.5 text-[10px] font-bold tracking-wide uppercase text-brand-charcoal/70 hover:bg-brand-charcoal/5 hover:text-brand-charcoal transition-all duration-200 cursor-pointer"

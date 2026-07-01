@@ -43,7 +43,7 @@ export default function Home() {
     }
   };
 
-  const categoriesList = ["All", "Coats", "Hoodies", "Sneakers", "Sweaters"];
+  const categoriesList = ["All", "T-Shirts", "Hoodies"];
 
   return (
     <>

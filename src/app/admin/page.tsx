@@ -58,7 +58,7 @@ export default function AdminDashboardPage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
-  const [category, setCategory] = useState("Coats");
+  const [category, setCategory] = useState("T-Shirts");
   const [colorsInput, setColorsInput] = useState("#8B5A2B, #4A3B32, #A0522D");
   const [selectedSizes, setSelectedSizes] = useState<string[]>(["S", "M", "L"]);
   const [uploadedImageUrl, setUploadedImageUrl] = useState("");
@@ -483,10 +483,8 @@ export default function AdminDashboardPage() {
                           onChange={(e) => setCategory(e.target.value)}
                           className="mt-1.5 w-full rounded-xl border border-brand-charcoal/10 bg-brand-bg px-3.5 py-3 text-xs focus:border-brand-green focus:outline-none cursor-pointer"
                         >
-                          <option value="Coats">Coats</option>
+                          <option value="T-Shirts">T-Shirts</option>
                           <option value="Hoodies">Hoodies</option>
-                          <option value="Sneakers">Sneakers</option>
-                          <option value="Sweaters">Sweaters</option>
                         </select>
                       </div>
                     </div>

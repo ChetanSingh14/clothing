@@ -22,7 +22,7 @@ interface CartState {
   getCartTotal: () => number;
   getCartCount: () => number;
   loadCart: () => void;
-  checkout: () => Promise<boolean>;
+  checkout: (paymentMethod?: string) => Promise<boolean>;
 }
 
 export const useCartStore = create<CartState>((set, get) => ({
@@ -104,18 +104,21 @@ export const useCartStore = create<CartState>((set, get) => ({
     return get().items.reduce((sum, item) => sum + item.quantity, 0);
   },
 
-  checkout: async () => {
-    const totalAmount = get().getCartTotal();
-    const items = get().items;
+  checkout: async (paymentMethod = "COD") => {
+    const { items, getCartTotal, clearCart } = get();
     if (items.length === 0) return false;
 
     try {
       const res = await apiFetch("/orders", {
         method: "POST",
-        body: JSON.stringify({ totalAmount, items }),
+        body: JSON.stringify({
+          totalAmount: getCartTotal(),
+          items: items,
+          paymentMethod,
+        }),
       });
       if (res.success) {
-        get().clearCart();
+        clearCart();
         return true;
       }
       return false;
