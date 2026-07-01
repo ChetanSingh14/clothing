@@ -80,6 +80,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       // Clear shopping cart on logout
       useCartStore.getState().clearCart();
       set({ user: null, token: null, error: null });
+      if (typeof window !== "undefined") {
+        window.location.href = "/";
+      }
     }
   },
 

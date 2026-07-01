@@ -14,7 +14,7 @@ import { useCartStore } from "@/store/useCartStore";
 
 export default function WishlistPage() {
   const { user, fetchMe, initialized } = useAuthStore();
-  const { wishlist, fetchWishlist, toggleWishlist, loading } = useProductStore();
+  const { wishlist, fetchWishlist, toggleWishlist, wishlistLoading } = useProductStore();
   const { addItem, setIsOpen: setCartOpen } = useCartStore();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
@@ -66,7 +66,7 @@ export default function WishlistPage() {
             <div className="bg-brand-gray/30 rounded-3xl p-12 text-center border border-brand-charcoal/5">
               <h3 className="text-lg font-serif font-semibold text-brand-charcoal">Please log in to view your wishlist.</h3>
             </div>
-          ) : loading ? (
+          ) : wishlistLoading ? (
             <div className="flex justify-center py-20">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-green"></div>
             </div>

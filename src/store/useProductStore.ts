@@ -31,6 +31,7 @@ interface ProductState {
   selectedCategory: string;
   activeProduct: ProductItem | null;
   loading: boolean;
+  wishlistLoading: boolean;
   error: string | null;
   fetchProducts: (category?: string) => Promise<void>;
   fetchProductDetails: (id: number) => Promise<ProductItem | null>;
@@ -46,6 +47,7 @@ export const useProductStore = create<ProductState>((set, get) => ({
   selectedCategory: "All",
   activeProduct: null,
   loading: false,
+  wishlistLoading: false,
   error: null,
 
   setSelectedCategory: (cat) => {
@@ -101,6 +103,7 @@ export const useProductStore = create<ProductState>((set, get) => ({
   },
 
   fetchWishlist: async () => {
+    set({ wishlistLoading: true });
     try {
       const res = await apiFetch("/wishlist");
       if (res.success && res.data) {
@@ -108,21 +111,39 @@ export const useProductStore = create<ProductState>((set, get) => ({
       }
     } catch (err) {
       console.error("Failed to fetch wishlist:", err);
+    } finally {
+      set({ wishlistLoading: false });
     }
   },
 
   toggleWishlist: async (productId) => {
+    const { wishlist } = get();
+    const isWishlisted = wishlist.some(p => p.id === productId);
+    
+    // Optimistic removal to make UI feel instant on Wishlist page
+    if (isWishlisted) {
+      set({ wishlist: wishlist.filter(p => p.id !== productId) });
+    }
+
     try {
       const res = await apiFetch(`/wishlist/${productId}`, {
         method: "POST",
       });
       if (res.success) {
-        await get().fetchWishlist();
+        // Fetch in background to sync state (especially for additions)
+        get().fetchWishlist();
         return true;
+      }
+      // Revert if failed
+      if (isWishlisted) {
+        set({ wishlist });
       }
       return false;
     } catch (err) {
       console.error("Failed to toggle wishlist:", err);
+      if (isWishlisted) {
+        set({ wishlist });
+      }
       return false;
     }
   },
