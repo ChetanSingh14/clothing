@@ -10,7 +10,7 @@ import { shallow } from "zustand/shallow";
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: (user: any) => void;
+  onSuccess?: (user: any) => void;
 }
 
 export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
@@ -38,7 +38,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
     setLoading(false);
 
     if (success) {
-      onSuccess(useAuthStore.getState().user);
+      onSuccess?.(useAuthStore.getState().user);
       onClose();
       // Reset form
       setName("");

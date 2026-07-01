@@ -35,6 +35,7 @@ interface AdminState {
   }) => Promise<boolean>;
   deleteProduct: (id: number) => Promise<boolean>;
   updateProduct: (id: number, data: any) => Promise<boolean>;
+  adminUpdateUser: (id: number, data: any) => Promise<boolean>;
 }
 
 export const useAdminStore = create<AdminState>((set, get) => ({
@@ -180,6 +181,25 @@ export const useAdminStore = create<AdminState>((set, get) => ({
       return false;
     } catch (err: any) {
       set({ error: err.message || "Failed to update product", loading: false });
+      return false;
+    }
+  },
+
+  adminUpdateUser: async (id, data) => {
+    set({ loading: true, error: null });
+    try {
+      const res = await apiFetch(`/user/admin/users/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(data),
+      });
+      if (res.success) {
+        set({ loading: false });
+        await get().fetchUsers();
+        return true;
+      }
+      return false;
+    } catch (err: any) {
+      set({ error: err.message || "Failed to update user", loading: false });
       return false;
     }
   },
