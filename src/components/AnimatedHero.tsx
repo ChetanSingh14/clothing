@@ -349,7 +349,7 @@ export default function AnimatedHero({ onStartClick }: AnimatedHeroProps) {
         <div className="hero-inner-layout">
           <div className="leaves-container" ref={leavesBGRef}>
             <model-viewer
-              class="leaf l1"
+              className="leaf l1"
               src="https://api.getlayers.ai/storage/v1/object/public/public/assets/soda-14ff8a788d/leaves.glb"
               environment-image="neutral"
               exposure="1.0"
@@ -357,7 +357,7 @@ export default function AnimatedHero({ onStartClick }: AnimatedHeroProps) {
               camera-orbit="45deg 75deg 105%"
             ></model-viewer>
             <model-viewer
-              class="leaf l2"
+              className="leaf l2"
               src="https://api.getlayers.ai/storage/v1/object/public/public/assets/soda-14ff8a788d/leaves.glb"
               environment-image="neutral"
               exposure="1.0"
@@ -365,7 +365,7 @@ export default function AnimatedHero({ onStartClick }: AnimatedHeroProps) {
               camera-orbit="-30deg 60deg 105%"
             ></model-viewer>
             <model-viewer
-              class="leaf l3"
+              className="leaf l3"
               src="https://api.getlayers.ai/storage/v1/object/public/public/assets/soda-14ff8a788d/leaves.glb"
               environment-image="neutral"
               exposure="1.0"
@@ -373,7 +373,7 @@ export default function AnimatedHero({ onStartClick }: AnimatedHeroProps) {
               camera-orbit="120deg 85deg 105%"
             ></model-viewer>
             <model-viewer
-              class="leaf l4"
+              className="leaf l4"
               src="https://api.getlayers.ai/storage/v1/object/public/public/assets/soda-14ff8a788d/leaves.glb"
               environment-image="neutral"
               exposure="1.0"
@@ -432,9 +432,9 @@ export default function AnimatedHero({ onStartClick }: AnimatedHeroProps) {
           </div>
 
           <div className="berries-container-bg" ref={berriesBGRef}>
-            <img class="berry b7" src="/thread.svg" alt="thread" />
-            <img class="berry b8" src="/thread.svg" alt="thread" />
-            <img class="berry b9" src="/thread.svg" alt="thread" />
+            <img className="berry b7" src="/thread.svg" alt="thread" />
+            <img className="berry b8" src="/thread.svg" alt="thread" />
+            <img className="berry b9" src="/thread.svg" alt="thread" />
           </div>
 
           <div className="hero-center">
@@ -451,18 +451,18 @@ export default function AnimatedHero({ onStartClick }: AnimatedHeroProps) {
                 interaction-prompt="none"
                 camera-orbit="0deg 90deg 380%"
                 field-of-view="30deg"
-                class="main-product-3d"
+                className="main-product-3d"
               ></model-viewer>
             )}
           </div>
 
           <div className="berries-container" ref={berriesFGRef}>
-            <img class="berry b1" src="/thread.svg" alt="thread" />
-            <img class="berry b2" src="/thread.svg" alt="thread" />
-            <img class="berry b3" src="/thread.svg" alt="thread" />
-            <img class="berry b4" src="/thread.svg" alt="thread" />
-            <img class="berry b5" src="/thread.svg" alt="thread" />
-            <img class="berry b6" src="/thread.svg" alt="thread" />
+            <img className="berry b1" src="/thread.svg" alt="thread" />
+            <img className="berry b2" src="/thread.svg" alt="thread" />
+            <img className="berry b3" src="/thread.svg" alt="thread" />
+            <img className="berry b4" src="/thread.svg" alt="thread" />
+            <img className="berry b5" src="/thread.svg" alt="thread" />
+            <img className="berry b6" src="/thread.svg" alt="thread" />
           </div>
 
           <div className="hero-right">
@@ -494,10 +494,6 @@ export default function AnimatedHero({ onStartClick }: AnimatedHeroProps) {
                     <span>$29.99</span>
                   </div>
                 </div>
-              </div>
-              <div className="carousel-nav">
-                <button className="nav-arrow">←</button>
-                <button className="nav-arrow">→</button>
               </div>
             </div>
             <h2 className="side-title large-animation-1">

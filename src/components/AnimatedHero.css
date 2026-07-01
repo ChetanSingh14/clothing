@@ -397,7 +397,7 @@
     align-items: flex-end;
     text-align: right;
     height: 100%;
-    padding: 10rem 0 6rem 0; /* padding-top 10rem to prevent cards clipping */
+    padding: 12rem 0 6rem 0;
     z-index: 100;
     width: 450px;
     pointer-events: none;
