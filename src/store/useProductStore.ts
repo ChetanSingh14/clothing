@@ -39,6 +39,7 @@ interface ProductState {
   submitReview: (productId: number, userName: string, rating: number, comment: string) => Promise<boolean>;
   fetchWishlist: () => Promise<void>;
   toggleWishlist: (productId: number) => Promise<boolean>;
+  togglingWishlistId: number | null;
 }
 
 export const useProductStore = create<ProductState>((set, get) => ({
@@ -116,8 +117,13 @@ export const useProductStore = create<ProductState>((set, get) => ({
     }
   },
 
+  togglingWishlistId: null,
+
   toggleWishlist: async (productId) => {
-    const { wishlist } = get();
+    const { wishlist, togglingWishlistId } = get();
+    if (togglingWishlistId === productId) return false;
+    
+    set({ togglingWishlistId: productId });
     const isWishlisted = wishlist.some(p => p.id === productId);
     
     // Optimistic removal to make UI feel instant on Wishlist page
@@ -132,18 +138,25 @@ export const useProductStore = create<ProductState>((set, get) => ({
       if (res.success) {
         // Fetch in background to sync state (especially for additions)
         get().fetchWishlist();
+        set({ togglingWishlistId: null });
         return true;
       }
       // Revert if failed
       if (isWishlisted) {
         set({ wishlist });
       }
+      set({ togglingWishlistId: null });
       return false;
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to toggle wishlist:", err);
+      // Suppress UI crash but inform user
+      if (typeof window !== "undefined") {
+        alert("Action failed due to server error. Please try again later.");
+      }
       if (isWishlisted) {
         set({ wishlist });
       }
+      set({ togglingWishlistId: null });
       return false;
     }
   },

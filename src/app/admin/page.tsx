@@ -9,9 +9,11 @@ import { useAdminStore } from "@/store/useAdminStore";
 import { useProductStore } from "@/store/useProductStore";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { shallow } from "zustand/shallow";
-import { Plus, Trash2, Tag, Star, Package, Users, Layers, UploadCloud, Loader2, RefreshCw, BarChart2, UserCheck, Shield, ShoppingBag, DollarSign, Calendar, Edit, Settings } from "lucide-react";
+import { Plus, Trash2, Tag, Star, Package, Users, Layers, UploadCloud, Loader2, RefreshCw, BarChart2, UserCheck, Shield, ShoppingBag, DollarSign, Calendar, Edit, Settings, Eye } from "lucide-react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import Lightbox from "@/components/Lightbox";
 
 export default function AdminDashboardPage() {
   const router = useRouter();
@@ -60,6 +62,8 @@ export default function AdminDashboardPage() {
   const [price, setPrice] = useState("");
   const [category, setCategory] = useState("T-Shirts");
   const [colorsInput, setColorsInput] = useState("#8B5A2B, #4A3B32, #A0522D");
+  const [colorImages, setColorImages] = useState<Record<string, string[]>>({});
+  const [uploadingColor, setUploadingColor] = useState<string | null>(null);
   const [selectedSizes, setSelectedSizes] = useState<string[]>(["S", "M", "L"]);
   const [uploadedImageUrl, setUploadedImageUrl] = useState("");
   const [uploadedModelUrl, setUploadedModelUrl] = useState("");
@@ -67,6 +71,16 @@ export default function AdminDashboardPage() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadingModel, setUploadingModel] = useState(false);
   const [formSuccess, setFormSuccess] = useState(false);
+
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [lightboxImages, setLightboxImages] = useState<string[]>([]);
+
+  const openLightbox = (images: string[], index: number) => {
+    setLightboxImages(images);
+    setLightboxIndex(index);
+    setIsLightboxOpen(true);
+  };
 
   const availableSizesList = ["S", "M", "L", "XL", "XXL", "7", "8", "9", "10", "11"];
 
@@ -121,6 +135,28 @@ export default function AdminDashboardPage() {
     reader.readAsDataURL(file);
   };
 
+  const handleColorImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>, color: string) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingColor(color);
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const base64Data = reader.result as string;
+      const url = await uploadProductImage(base64Data);
+      if (url) {
+        setColorImages(prev => ({
+          ...prev,
+          [color]: [...(prev[color] || []), url]
+        }));
+      } else {
+        alert("Failed to upload image. Make sure server is running.");
+      }
+      setUploadingColor(null);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleModelFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -151,13 +187,20 @@ export default function AdminDashboardPage() {
   const handleProductSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title || !description || !price || !uploadedImageUrl) {
-      alert("Please fill all required fields and upload an image.");
+      alert("Please fill all required fields and upload a main image.");
       return;
     }
 
     const colors = colorsInput.split(",").map((c) => c.trim()).filter((c) => c !== "");
     
     const imagesToSubmit = [uploadedImageUrl];
+    
+    Object.entries(colorImages).forEach(([color, urls]) => {
+      urls.forEach(url => {
+        imagesToSubmit.push(`${url}#color=${encodeURIComponent(color)}`);
+      });
+    });
+
     if (uploadedModelUrl) {
       imagesToSubmit.push(uploadedModelUrl);
     }
@@ -178,6 +221,7 @@ export default function AdminDashboardPage() {
       setPrice("");
       setUploadedImageUrl("");
       setUploadedModelUrl("");
+      setColorImages({});
       setFormSuccess(true);
       await fetchProducts(); // reload products listing
       await fetchStats(); // reload stats
@@ -549,6 +593,58 @@ export default function AdminDashboardPage() {
 
                     <div>
                       <label className="font-semibold uppercase tracking-wider text-brand-charcoal/60">
+                        Color-Specific Images (Up to 4 per color)
+                      </label>
+                      <div className="space-y-3 mt-2 mb-6">
+                        {colorsInput.split(",").map(c => c.trim()).filter(c => c !== "").map((color, idx) => {
+                          const uploadedImages = colorImages[color] || [];
+                          const uploadedCount = uploadedImages.length;
+                          return (
+                            <div key={idx} className="flex flex-col gap-3 bg-brand-charcoal/5 p-3 rounded-xl border border-brand-charcoal/10">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <span className="h-6 w-6 rounded-full border border-brand-charcoal/20" style={{ backgroundColor: color }}></span>
+                                  <span className="text-xs font-semibold text-brand-charcoal">{color}</span>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  <span className="text-[10px] text-brand-charcoal/50 font-bold uppercase">{uploadedCount}/4 images</span>
+                                  {uploadedCount < 4 && (
+                                    <div className="relative">
+                                      <button type="button" className="text-[10px] bg-brand-charcoal text-brand-bg px-3 py-1.5 rounded-lg font-semibold hover:bg-brand-charcoal/80 cursor-pointer">
+                                        {uploadingColor === color ? "Uploading..." : "Upload"}
+                                      </button>
+                                      <input
+                                        type="file"
+                                        accept="image/*"
+                                        disabled={uploadingColor !== null}
+                                        onChange={(e) => handleColorImageFileChange(e, color)}
+                                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                                      />
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                              {uploadedImages.length > 0 && (
+                                <div className="flex gap-2">
+                                  {uploadedImages.map((url, imgIdx) => (
+                                    <div 
+                                      key={imgIdx} 
+                                      className="h-12 w-10 bg-brand-gray rounded-md overflow-hidden border border-brand-charcoal/10 cursor-pointer"
+                                      onClick={() => openLightbox(uploadedImages, imgIdx)}
+                                    >
+                                      <img src={url} alt={`Preview ${imgIdx}`} className="object-cover h-full w-full" />
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="font-semibold uppercase tracking-wider text-brand-charcoal/60">
                         3D Model (.glb) [Optional]
                       </label>
                       <div className="mt-1.5 relative border border-dashed border-brand-charcoal/20 rounded-xl bg-brand-bg p-4 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-brand-charcoal/5 transition-colors">
@@ -617,12 +713,20 @@ export default function AdminDashboardPage() {
                                 ${prod.price.toFixed(2)}
                               </td>
                               <td className="py-4 px-6 text-center">
-                                <button
-                                  onClick={() => handleDeleteProduct(prod.id)}
-                                  className="p-2 text-brand-charcoal/30 hover:text-rose-600 rounded-full hover:bg-rose-50 transition-all cursor-pointer inline-flex items-center justify-center"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </button>
+                                <div className="flex items-center justify-center gap-2">
+                                  <Link
+                                    href={`/admin/products/${prod.id}`}
+                                    className="p-2 text-brand-charcoal/40 hover:text-brand-green rounded-full hover:bg-brand-green/10 transition-all cursor-pointer inline-flex items-center justify-center"
+                                  >
+                                    <Eye className="h-4 w-4" />
+                                  </Link>
+                                  <button
+                                    onClick={() => handleDeleteProduct(prod.id)}
+                                    className="p-2 text-brand-charcoal/30 hover:text-rose-600 rounded-full hover:bg-rose-50 transition-all cursor-pointer inline-flex items-center justify-center"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </button>
+                                </div>
                               </td>
                             </tr>
                           ))}
@@ -1062,6 +1166,14 @@ export default function AdminDashboardPage() {
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
         onSuccess={() => {}}
+      />
+
+      <Lightbox 
+        images={lightboxImages} 
+        currentIndex={lightboxIndex} 
+        isOpen={isLightboxOpen} 
+        onClose={() => setIsLightboxOpen(false)} 
+        onNavigate={setLightboxIndex} 
       />
     </div>
   );

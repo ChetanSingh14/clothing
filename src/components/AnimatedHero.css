@@ -16,10 +16,15 @@
     color: var(--text-color);
     position: relative;
     width: 100%;
-    /* Keep it 100vh but allow the rest of the page to scroll */
-    height: 100vh;
+    height: calc(100vh - 4.5rem);
     overflow: hidden;
     transition: background 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (min-width: 768px) {
+    .animated-hero-wrapper {
+        height: calc(100vh - 5.5rem);
+    }
 }
 
 .animated-hero-wrapper.brown-theme {

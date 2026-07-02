@@ -35,7 +35,7 @@ export default function CartDrawer() {
           />
 
           {/* Drawer Panel */}
-          <div className="absolute inset-y-0 right-0 flex max-w-full pl-10">
+          <div className="absolute inset-y-0 right-0 flex max-w-full pl-4 sm:pl-10">
             <motion.div
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
