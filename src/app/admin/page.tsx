@@ -9,7 +9,7 @@ import { useAdminStore } from "@/store/useAdminStore";
 import { useProductStore } from "@/store/useProductStore";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { shallow } from "zustand/shallow";
-import { Plus, Trash2, Tag, Star, Package, Users, Layers, UploadCloud, Loader2, RefreshCw, BarChart2, UserCheck, Shield, ShoppingBag, DollarSign, Calendar, Edit, Settings, Eye } from "lucide-react";
+import { Plus, Trash2, Tag, Star, Package, Users, Layers, UploadCloud, Loader2, RefreshCw, BarChart2, UserCheck, Shield, ShoppingBag, DollarSign, Calendar, Edit, Settings, Eye, X } from "lucide-react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -576,19 +576,33 @@ export default function AdminDashboardPage() {
                       <label className="font-semibold uppercase tracking-wider text-brand-charcoal/60">
                         Product Image *
                       </label>
-                      <div className="mt-1.5 relative border border-dashed border-brand-charcoal/20 rounded-xl bg-brand-bg p-4 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-brand-charcoal/5 transition-colors">
-                        <UploadCloud className="h-6 w-6 text-brand-charcoal/40 mb-1.5" />
-                        <span className="text-[10px] font-semibold text-brand-charcoal/60">
-                          {uploadingImage ? "Uploading file..." : uploadedImageUrl ? "Image uploaded ✓" : "Attach high-res photo"}
-                        </span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          disabled={uploadingImage}
-                          onChange={handleImageFileChange}
-                          className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                        />
-                      </div>
+                      {uploadedImageUrl ? (
+                        <div className="mt-1.5 relative w-32 h-32 group rounded-xl border border-brand-charcoal/20 overflow-hidden bg-brand-gray">
+                          <img src={uploadedImageUrl} alt="Product" className="object-cover w-full h-full" />
+                          <button
+                            type="button"
+                            onClick={() => setUploadedImageUrl("")}
+                            className="absolute top-1.5 right-1.5 bg-red-500/90 text-white rounded-md p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 shadow-sm"
+                            title="Remove image"
+                          >
+                            <X size={14} />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="mt-1.5 relative border border-dashed border-brand-charcoal/20 rounded-xl bg-brand-bg p-4 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-brand-charcoal/5 transition-colors">
+                          <UploadCloud className="h-6 w-6 text-brand-charcoal/40 mb-1.5" />
+                          <span className="text-[10px] font-semibold text-brand-charcoal/60">
+                            {uploadingImage ? "Uploading file..." : "Attach high-res photo"}
+                          </span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            disabled={uploadingImage}
+                            onChange={handleImageFileChange}
+                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                          />
+                        </div>
+                      )}
                     </div>
 
                     <div>
@@ -629,10 +643,22 @@ export default function AdminDashboardPage() {
                                   {uploadedImages.map((url, imgIdx) => (
                                     <div 
                                       key={imgIdx} 
-                                      className="h-12 w-10 bg-brand-gray rounded-md overflow-hidden border border-brand-charcoal/10 cursor-pointer"
-                                      onClick={() => openLightbox(uploadedImages, imgIdx)}
+                                      className="relative h-12 w-10 bg-brand-gray rounded-md overflow-hidden border border-brand-charcoal/10 cursor-pointer group"
                                     >
-                                      <img src={url} alt={`Preview ${imgIdx}`} className="object-cover h-full w-full" />
+                                      <img src={url} alt={`Preview ${imgIdx}`} className="object-cover h-full w-full" onClick={() => openLightbox(uploadedImages, imgIdx)} />
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setColorImages(prev => ({
+                                            ...prev,
+                                            [color]: prev[color].filter((_, i) => i !== imgIdx)
+                                          }));
+                                        }}
+                                        className="absolute top-0 right-0 bg-red-500/90 text-white rounded-bl-md p-[2px] opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                                      >
+                                        <X size={10} />
+                                      </button>
                                     </div>
                                   ))}
                                 </div>

@@ -55,15 +55,7 @@ export default function Home() {
           <>
             {products.length > 0 && (
               <ProductSliderHero 
-                featuredProduct={{
-                  ...products[0],
-                  images: [
-                    "/345d2893c0315ea8fa346714ea638ddb.jpg",
-                    "/5018fd24996b760123483913bc9a2bd5.jpg",
-                    "/9ad15d968f3fd4c482acb2c48e7fa4ff.jpg",
-                    "/6da9ffba03eda7eede25ef935f8f8406.webp"
-                  ]
-                }} 
+                featuredProduct={products[0]} 
               />
             )}
             <section id="catalog" className="py-24 bg-brand-bg px-6 sm:px-8">
