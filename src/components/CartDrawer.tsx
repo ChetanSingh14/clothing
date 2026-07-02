@@ -135,7 +135,7 @@ export default function CartDrawer() {
 
                       {/* Price */}
                       <div className="text-sm font-bold text-brand-charcoal self-center font-serif">
-                        ${(item.price * item.quantity).toFixed(2)}
+                        ₹{(item.price * item.quantity).toFixed(2)}
                       </div>
                     </motion.div>
                   ))
@@ -147,7 +147,7 @@ export default function CartDrawer() {
                 <div className="px-6 py-6 border-t border-brand-charcoal/5 bg-brand-gray/30 space-y-4">
                   <div className="flex items-center justify-between text-brand-charcoal">
                     <span className="text-sm font-medium tracking-wide">Subtotal</span>
-                    <span className="text-lg font-bold font-serif">${getCartTotal().toFixed(2)}</span>
+                    <span className="text-lg font-bold font-serif">₹{getCartTotal().toFixed(2)}</span>
                   </div>
                   <div className="flex flex-col gap-2 pt-2 border-t border-brand-charcoal/5">
                     <label className="text-xs font-semibold text-brand-charcoal uppercase tracking-wider">Payment Method</label>

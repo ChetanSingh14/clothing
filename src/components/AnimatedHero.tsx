@@ -478,7 +478,7 @@ export default function AnimatedHero({ onStartClick }: AnimatedHeroProps) {
                   />
                   <div className="card-info">
                     <span>Brown Tee</span>
-                    <span>$29.99</span>
+                    <span>₹29.99</span>
                   </div>
                 </div>
                 <div
@@ -491,7 +491,7 @@ export default function AnimatedHero({ onStartClick }: AnimatedHeroProps) {
                   />
                   <div className="card-info">
                     <span>Cream Tee</span>
-                    <span>$29.99</span>
+                    <span>₹29.99</span>
                   </div>
                 </div>
               </div>

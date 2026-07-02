@@ -394,7 +394,7 @@ export default function ProductDetailPage() {
                         <div className="bg-brand-charcoal text-brand-bg rounded-full h-8 w-8 flex items-center justify-center shrink-0 text-sm">%</div>
                         <div>
                           <div className="text-[10px] text-brand-charcoal/60 font-semibold uppercase">Discount</div>
-                          <div className="text-xs font-semibold mt-0.5 text-brand-charcoal">Free Shipping &gt; $100</div>
+                          <div className="text-xs font-semibold mt-0.5 text-brand-charcoal">Free Shipping &gt; ₹100</div>
                         </div>
                       </div>
                       <div className="flex items-start gap-3 bg-brand-gray/30 p-3 rounded-2xl shadow-sm border border-brand-charcoal/5">
@@ -425,7 +425,7 @@ export default function ProductDetailPage() {
             {/* Sticky Action Box */}
             <div className="lg:sticky lg:top-28 bg-brand-charcoal text-brand-bg rounded-3xl p-6 shadow-xl flex items-center justify-between z-10">
                <div className="text-3xl font-bold font-serif tracking-tight">
-                 ${activeProduct.price.toFixed(2)}
+                 ₹{activeProduct.price.toFixed(2)}
                </div>
                <button
                  onClick={handleBuyNow}
@@ -576,8 +576,8 @@ export default function ProductDetailPage() {
                   </div>
                   <h3 className="text-sm font-semibold text-brand-charcoal line-clamp-1">{product.title}</h3>
                   <div className="flex items-center gap-2 mt-1">
-                     <span className="text-xs font-bold text-brand-charcoal">${product.price.toFixed(2)}</span>
-                     <span className="text-[10px] text-brand-charcoal/50 line-through">${(product.price * 1.2).toFixed(2)}</span>
+                     <span className="text-xs font-bold text-brand-charcoal">₹{product.price.toFixed(2)}</span>
+                     <span className="text-[10px] text-brand-charcoal/50 line-through">₹{(product.price * 1.2).toFixed(2)}</span>
                   </div>
                 </Link>
               ))}

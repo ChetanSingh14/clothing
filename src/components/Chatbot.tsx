@@ -17,7 +17,7 @@ export default function Chatbot() {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "bot",
-      text: "Hi! Welcome to Flowbox. How can I help you today? You can ask about our catalog, return policy, or log in to track your orders.",
+      text: "Hi! Welcome to MDFK CLOTHING . How can I help you today? You can ask about our catalog, return policy, or log in to track your orders.",
     },
   ]);
   const [inputValue, setInputValue] = useState("");

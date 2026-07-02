@@ -136,7 +136,7 @@ export default function OrdersPage() {
                           <p className="text-xs font-medium text-brand-charcoal mt-1">Qty: {item.quantity}</p>
                         </div>
                         <div className="text-sm font-bold font-serif text-brand-charcoal">
-                          ${(item.price * item.quantity).toFixed(2)}
+                          ₹{(item.price * item.quantity).toFixed(2)}
                         </div>
                       </div>
                     ))}
@@ -152,7 +152,7 @@ export default function OrdersPage() {
                     </div>
                     <div className="text-right">
                       <p className="text-xs text-brand-charcoal/60 uppercase tracking-wider font-semibold">Total Amount</p>
-                      <p className="text-2xl font-bold font-serif text-brand-charcoal mt-0.5">${order.totalAmount.toFixed(2)}</p>
+                      <p className="text-2xl font-bold font-serif text-brand-charcoal mt-0.5">₹{order.totalAmount.toFixed(2)}</p>
                     </div>
                   </div>
                 </motion.div>

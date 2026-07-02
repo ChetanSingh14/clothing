@@ -51,7 +51,7 @@ export default function CinematicIntro({
       type: "product",
       eyebrow: featuredProduct?.category || "Bestseller",
       headline: featuredProduct?.title || "The signature tee",
-      sub: featuredProduct ? `$${featuredProduct.price.toFixed(2)}` : undefined,
+      sub: featuredProduct ? `₹${featuredProduct.price.toFixed(2)}` : undefined,
     },
     { type: "cta", eyebrow: brandName, headline: "Shop the full collection" },
   ];

@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { shallow } from "zustand/shallow";
+import Link from "next/link";
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -65,25 +66,41 @@ export default function Footer() {
           </p>
         </div>
 
-        {/* Right Side: Social Media Icons */}
-        <div className="flex items-center space-x-6">
-          {socials.map((social, idx) => {
-            return (
-              <motion.a
-                key={idx}
-                href={social.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={social.name}
-                whileHover={{ y: -3, scale: 1.05 }}
-                className="text-brand-bg/70 hover:text-brand-tan transition-colors duration-200 cursor-pointer"
-              >
-                {social.icon}
-              </motion.a>
-            );
-          })}
+        {/* Right Side: Social Media Icons & Links */}
+        <div className="flex flex-col items-center md:items-end space-y-4">
+          <div className="flex items-center space-x-6">
+            {socials.map((social, idx) => {
+              return (
+                <motion.a
+                  key={idx}
+                  href={social.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={social.name}
+                  whileHover={{ y: -3, scale: 1.05 }}
+                  className="text-brand-bg/70 hover:text-brand-tan transition-colors duration-200 cursor-pointer"
+                >
+                  {social.icon}
+                </motion.a>
+              );
+            })}
+          </div>
+          <div className="flex items-center gap-4 text-[10px] text-brand-bg/50">
+            <Link href="/privacy" className="hover:text-brand-tan transition-colors">Privacy Policy</Link>
+            <Link href="/terms" className="hover:text-brand-tan transition-colors">Terms of Service</Link>
+            <Link href="/return-policy" className="hover:text-brand-tan transition-colors">Return Policy</Link>
+          </div>
         </div>
-
+      </div>
+      
+      {/* Legal Footer */}
+      <div className="mx-auto max-w-7xl mt-12 pt-6 border-t border-brand-bg/10 flex flex-col md:flex-row items-center justify-between gap-4 text-[9px] text-brand-bg/40 font-mono text-center md:text-left">
+        <div>
+          Your Main Domain: Build your store on <a href="https://mdfkclothing.com" className="text-brand-tan/80 hover:text-brand-tan transition-colors">mdfkclothing.com</a>.
+        </div>
+        <div>
+          mdfkclothing.com is legally owned and operated by MADE DIFFERENT FK.
+        </div>
       </div>
     </footer>
   );

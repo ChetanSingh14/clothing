@@ -15,6 +15,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Lightbox from "@/components/Lightbox";
 import PageLoader from "@/components/PageLoader";
+import ColorPickerModal from "@/components/ColorPickerModal";
 
 export default function AdminDashboardPage() {
   const router = useRouter();
@@ -56,6 +57,12 @@ export default function AdminDashboardPage() {
   const [editName, setEditName] = useState("");
   const [editRole, setEditRole] = useState("USER");
   const [editPassword, setEditPassword] = useState("");
+  const [editingProductId, setEditingProductId] = useState<number | null>(null);
+  const [images, setImages] = useState<string[]>([]);
+  const [modelUrl, setModelUrl] = useState<string>("");
+  const [modelThumbnailUrl, setModelThumbnailUrl] = useState<string>("");
+  
+  const [isColorPickerOpen, setIsColorPickerOpen] = useState(false);
 
   // Form states for Product Upload
   const [title, setTitle] = useState("");
@@ -203,7 +210,7 @@ export default function AdminDashboardPage() {
       imagesToSubmit.push(uploadedModelUrl);
     }
 
-    const success = await createProduct({
+    const payload = {
       title,
       description,
       price: Number(price),
@@ -211,9 +218,17 @@ export default function AdminDashboardPage() {
       images: imagesToSubmit,
       colors,
       sizes: selectedSizes,
-    });
+    };
+
+    let success = false;
+    if (editingProductId) {
+      success = await updateProduct(editingProductId, payload);
+    } else {
+      success = await createProduct(payload);
+    }
 
     if (success) {
+      setEditingProductId(null);
       setTitle("");
       setDescription("");
       setPrice("");
@@ -225,6 +240,45 @@ export default function AdminDashboardPage() {
       await fetchStats(); // reload stats
       setTimeout(() => setFormSuccess(false), 3000);
     }
+  };
+
+  const handleEditProductClick = (prod: any) => {
+    setEditingProductId(prod.id);
+    setTitle(prod.title);
+    setDescription(prod.description);
+    setPrice(prod.price.toString());
+    setCategory(prod.category);
+    setColorsInput(prod.colors?.join(", ") || "");
+    setSelectedSizes(prod.sizes || ["S", "M", "L"]);
+    
+    // Parse images array
+    if (prod.images && prod.images.length > 0) {
+      setUploadedImageUrl(prod.images[0]); // Primary image
+      
+      const parsedColorImages: Record<string, string[]> = {};
+      let modelFound = "";
+      
+      prod.images.slice(1).forEach((img: string) => {
+        if (img.endsWith(".glb") || img.endsWith(".gltf")) {
+          modelFound = img;
+        } else if (img.includes("#color=")) {
+          const [url, hash] = img.split("#color=");
+          const color = decodeURIComponent(hash);
+          if (!parsedColorImages[color]) parsedColorImages[color] = [];
+          parsedColorImages[color].push(url);
+        }
+      });
+      
+      setColorImages(parsedColorImages);
+      setUploadedModelUrl(modelFound);
+    } else {
+      setUploadedImageUrl("");
+      setUploadedModelUrl("");
+      setColorImages({});
+    }
+    
+    // Smooth scroll to top
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleDeleteProduct = async (id: number) => {
@@ -439,7 +493,7 @@ export default function AdminDashboardPage() {
                             <p className="text-[10px] text-brand-charcoal/40 mt-0.5">By {ord.user.name}</p>
                           </div>
                           <div className="text-right">
-                            <div className="font-bold text-brand-charcoal font-serif">${ord.totalAmount.toFixed(2)}</div>
+                            <div className="font-bold text-brand-charcoal font-serif">₹{ord.totalAmount.toFixed(2)}</div>
                             <span className="text-[9px] text-brand-charcoal/40 font-light">
                               {new Date(ord.createdAt).toLocaleDateString()}
                             </span>
@@ -462,12 +516,29 @@ export default function AdminDashboardPage() {
               <div className="grid grid-cols-1 xl:grid-cols-12 gap-10 items-start">
                 {/* Form */}
                 <div className="xl:col-span-5 bg-brand-gray/30 p-8 rounded-3xl border border-brand-charcoal/5">
-                  <h2 className="text-xl font-semibold tracking-tight text-brand-charcoal font-serif mb-6 flex items-center gap-2">
-                    <Plus className="h-5 w-5 text-brand-green" />
-                    <span>Upload New Product</span>
-                  </h2>
+                  <div className="flex items-center justify-between mb-8">
+                    <h3 className="text-xl font-serif font-bold text-brand-charcoal">
+                      {editingProductId ? "Edit Product" : "Upload New Product"}
+                    </h3>
+                    {editingProductId && (
+                      <button 
+                        onClick={() => {
+                          setEditingProductId(null);
+                          setTitle("");
+                          setDescription("");
+                          setPrice("");
+                          setUploadedImageUrl("");
+                          setUploadedModelUrl("");
+                          setColorImages({});
+                        }}
+                        className="text-xs font-bold text-red-500 hover:underline"
+                      >
+                        Cancel Edit
+                      </button>
+                    )}
+                  </div>
 
-                  <form onSubmit={handleProductSubmit} className="space-y-4 text-xs">
+                  <form onSubmit={editingProductId ? handleUpdateProduct : handleProductSubmit} className="space-y-4 text-xs">
                     <div>
                       <label className="font-semibold uppercase tracking-wider text-brand-charcoal/60" htmlFor="pTitle">
                         Product Title *
@@ -501,7 +572,7 @@ export default function AdminDashboardPage() {
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label className="font-semibold uppercase tracking-wider text-brand-charcoal/60" htmlFor="pPrice">
-                          Price ($) *
+                          Price (₹) *
                         </label>
                         <input
                           type="number"
@@ -532,15 +603,48 @@ export default function AdminDashboardPage() {
                     </div>
 
                     <div>
-                      <label className="font-semibold uppercase tracking-wider text-brand-charcoal/60" htmlFor="pColors">
-                        Colors Hex Codes (Comma separated)
-                      </label>
+                      <div className="flex items-center justify-between">
+                        <label className="font-semibold uppercase tracking-wider text-brand-charcoal/60" htmlFor="pColors">
+                          Colors Hex Codes (Comma separated)
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => setIsColorPickerOpen(true)}
+                          className="text-[10px] font-bold uppercase tracking-wider text-brand-green hover:text-brand-green/80 flex items-center gap-1 bg-brand-green/10 px-2 py-1 rounded-md"
+                        >
+                          <Plus className="h-3 w-3" />
+                          Pick Colors
+                        </button>
+                      </div>
+                      
+                      {colorsInput.trim() !== "" && (
+                        <div className="mt-2 mb-2 flex flex-wrap gap-2">
+                          {colorsInput.split(",").map(c => c.trim()).filter(Boolean).map((hex, i) => (
+                            <div key={i} className="flex items-center gap-1.5 bg-brand-bg px-2.5 py-1.5 rounded-full border border-brand-charcoal/10 shadow-sm">
+                              <div className="w-3.5 h-3.5 rounded-full shadow-sm border border-brand-charcoal/10" style={{ backgroundColor: hex }} />
+                              <span className="text-[10px] font-mono text-brand-charcoal uppercase">{hex}</span>
+                              <button 
+                                type="button" 
+                                onClick={() => {
+                                  const currentColors = colorsInput.split(",").map(c => c.trim()).filter(Boolean);
+                                  currentColors.splice(i, 1);
+                                  setColorsInput(currentColors.join(", "));
+                                }}
+                                className="ml-1 text-brand-charcoal/40 hover:text-red-500 transition-colors"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      
                       <input
                         type="text"
                         id="pColors"
                         value={colorsInput}
                         onChange={(e) => setColorsInput(e.target.value)}
-                        placeholder="#8B5A2B, #4A3B32"
+                        placeholder="#8B5A2B, #4A3B32 (Or use the picker)"
                         className="mt-1.5 w-full rounded-xl border border-brand-charcoal/10 bg-brand-bg px-3.5 py-3 text-xs focus:border-brand-green focus:outline-none"
                       />
                     </div>
@@ -697,7 +801,7 @@ export default function AdminDashboardPage() {
                       disabled={loading || uploadingImage || uploadingModel}
                       className="w-full bg-brand-charcoal text-brand-bg rounded-xl py-3.5 text-xs font-semibold tracking-wide hover:bg-brand-charcoal/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer mt-4"
                     >
-                      {loading ? "Publishing product..." : "Publish Product"}
+                      {loading ? "Publishing product..." : editingProductId ? "Update Product" : "Publish Product"}
                     </button>
                   </form>
                 </div>
@@ -734,7 +838,7 @@ export default function AdminDashboardPage() {
                                 {prod.category}
                               </td>
                               <td className="py-4 px-6 font-bold text-right font-serif text-brand-charcoal">
-                                ${prod.price.toFixed(2)}
+                                ₹{prod.price.toFixed(2)}
                               </td>
                               <td className="py-4 px-6 text-center">
                                 <div className="flex items-center justify-center gap-2">
@@ -744,6 +848,12 @@ export default function AdminDashboardPage() {
                                   >
                                     <Eye className="h-4 w-4" />
                                   </Link>
+                                  <button
+                                    onClick={() => handleEditProductClick(prod)}
+                                    className="px-3 py-1.5 border border-brand-charcoal text-brand-charcoal rounded-xl text-[10px] font-bold uppercase tracking-wider hover:bg-brand-charcoal hover:text-brand-bg transition-colors"
+                                  >
+                                    Edit
+                                  </button>
                                   <button
                                     onClick={() => handleDeleteProduct(prod.id)}
                                     className="p-2 text-brand-charcoal/30 hover:text-rose-600 rounded-full hover:bg-rose-50 transition-all cursor-pointer inline-flex items-center justify-center"
@@ -892,7 +1002,7 @@ export default function AdminDashboardPage() {
                               </div>
 
                               <div className="text-right">
-                                <div className="font-semibold text-brand-charcoal">${item.price.toFixed(2)}</div>
+                                <div className="font-semibold text-brand-charcoal">₹{item.price.toFixed(2)}</div>
                                 <div className="text-[10px] text-brand-charcoal/40 font-light">Qty: {item.quantity}</div>
                               </div>
                             </div>
@@ -903,7 +1013,7 @@ export default function AdminDashboardPage() {
                       {/* Footer total bar */}
                       <div className="mt-4 border-t border-brand-charcoal/5 pt-4 flex justify-between items-baseline">
                         <span className="text-xs font-bold text-brand-charcoal/40 uppercase tracking-wider">Gross Total</span>
-                        <div className="text-xl font-bold font-serif text-brand-charcoal">${ord.totalAmount.toFixed(2)}</div>
+                        <div className="text-xl font-bold font-serif text-brand-charcoal">₹{ord.totalAmount.toFixed(2)}</div>
                       </div>
                     </div>
                   ))}
@@ -1198,6 +1308,13 @@ export default function AdminDashboardPage() {
         isOpen={isLightboxOpen} 
         onClose={() => setIsLightboxOpen(false)} 
         onNavigate={setLightboxIndex} 
+      />
+
+      <ColorPickerModal 
+        isOpen={isColorPickerOpen}
+        onClose={() => setIsColorPickerOpen(false)}
+        selectedColors={colorsInput.split(",").map(c => c.trim()).filter(Boolean)}
+        onColorsChange={(colors) => setColorsInput(colors.join(", "))}
       />
     </div>
   );

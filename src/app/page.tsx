@@ -123,7 +123,7 @@ export default function Home() {
                         {/* Floating Price */}
                         <div className="absolute top-4 right-4 bg-brand-bg/95 backdrop-blur-md border border-brand-charcoal/5 px-3.5 py-1.5 rounded-full shadow-xs">
                           <span className="text-xs font-bold font-serif text-brand-charcoal">
-                            ${product.price.toFixed(2)}
+                            ₹{product.price.toFixed(2)}
                           </span>
                         </div>
                       </div>

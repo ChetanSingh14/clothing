@@ -90,7 +90,7 @@ export default function AdminProductDetailPage() {
               <h1 className="text-4xl md:text-5xl font-serif text-brand-charcoal tracking-tight mb-2">
                 {product.title}
               </h1>
-              <p className="text-xl text-brand-charcoal/60 font-serif mb-6">${product.price.toFixed(2)}</p>
+              <p className="text-xl text-brand-charcoal/60 font-serif mb-6">₹{product.price.toFixed(2)}</p>
               
               <div className="flex flex-wrap gap-2 mb-6">
                 <span className="px-3 py-1 bg-brand-charcoal/5 text-brand-charcoal rounded-full text-xs font-bold uppercase tracking-wide">

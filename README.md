@@ -1,6 +1,6 @@
-# Flowbox - Premium Next.js Landing Page
+# MDFK Clothing - Premium Next.js Landing Page
 
-Flowbox is an Awwwards-level, responsive, and modern landing page built using Next.js (App Router), TypeScript, and Tailwind CSS. It is engineered with premium aesthetics, smooth scroll animations, and interactive bento widgets.
+MDFK CLOTHING CO. is an Awwwards-level, responsive, and modern landing page built using Next.js (App Router), TypeScript, and Tailwind CSS. It is engineered with premium aesthetics, smooth scroll animations, and interactive bento widgets.
 
 ## ✨ Key Features
 
