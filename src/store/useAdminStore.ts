@@ -36,6 +36,7 @@ interface AdminState {
   deleteProduct: (id: number) => Promise<boolean>;
   updateProduct: (id: number, data: any) => Promise<boolean>;
   adminUpdateUser: (id: number, data: any) => Promise<boolean>;
+  updateOrderStatus: (id: number, status: string) => Promise<boolean>;
 }
 
 export const useAdminStore = create<AdminState>((set, get) => ({
@@ -200,6 +201,25 @@ export const useAdminStore = create<AdminState>((set, get) => ({
       return false;
     } catch (err: any) {
       set({ error: err.message || "Failed to update user", loading: false });
+      return false;
+    }
+  },
+
+  updateOrderStatus: async (id, status) => {
+    set({ loading: true, error: null });
+    try {
+      const res = await apiFetch(`/orders/admin/${id}/status`, {
+        method: "PUT",
+        body: JSON.stringify({ status }),
+      });
+      if (res.success) {
+        set({ loading: false });
+        await get().fetchOrders();
+        return true;
+      }
+      return false;
+    } catch (err: any) {
+      set({ error: err.message || "Failed to update order status", loading: false });
       return false;
     }
   },

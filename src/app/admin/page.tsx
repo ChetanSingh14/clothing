@@ -34,7 +34,8 @@ export default function AdminDashboardPage() {
     createProduct, 
     deleteProduct, 
     uploadProductImage,
-    adminUpdateUser
+    adminUpdateUser,
+    updateOrderStatus
   } = useAdminStore();
   
   const { products, fetchProducts } = useProductStore();
@@ -291,6 +292,15 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const handleOrderStatusUpdate = async (orderId: number, status: string) => {
+    const success = await updateOrderStatus(orderId, status);
+    if (success) {
+      alert(`Order #${orderId} status updated to ${status}`);
+    } else {
+      alert("Failed to update order status.");
+    }
+  };
+
   const handleDeleteReview = async (id: number) => {
     if (confirm("Are you sure you want to delete this review?")) {
       const success = await deleteReview(id);
@@ -538,7 +548,7 @@ export default function AdminDashboardPage() {
                     )}
                   </div>
 
-                  <form onSubmit={editingProductId ? handleUpdateProduct : handleProductSubmit} className="space-y-4 text-xs">
+                  <form onSubmit={handleProductSubmit} className="space-y-4 text-xs">
                     <div>
                       <label className="font-semibold uppercase tracking-wider text-brand-charcoal/60" htmlFor="pTitle">
                         Product Title *
@@ -959,9 +969,21 @@ export default function AdminDashboardPage() {
                         <div>
                           <div className="font-bold text-brand-charcoal text-sm flex items-center gap-2">
                             <span>Order #{ord.id}</span>
-                            <span className="text-[10px] font-bold bg-brand-green/10 text-brand-green px-2 py-0.5 rounded border border-brand-green/20 uppercase tracking-wide">
-                              processed
-                            </span>
+                            <select 
+                              value={ord.status || "BOOKED"}
+                              onChange={(e) => handleOrderStatusUpdate(ord.id, e.target.value)}
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded border uppercase tracking-wide outline-none cursor-pointer ${
+                                ord.status === 'DELIVERED' ? 'bg-brand-green/10 text-brand-green border-brand-green/20' : 
+                                ord.status === 'CANCELLED' ? 'bg-red-50 text-red-600 border-red-200' : 
+                                ord.status === 'SHIPPED' ? 'bg-blue-50 text-blue-600 border-blue-200' :
+                                'bg-yellow-50 text-yellow-700 border-yellow-200'
+                              }`}
+                            >
+                              <option value="BOOKED">Booked</option>
+                              <option value="SHIPPED">Shipped</option>
+                              <option value="DELIVERED">Delivered</option>
+                              <option value="CANCELLED">Cancelled</option>
+                            </select>
                           </div>
                           <div className="text-[10px] text-brand-charcoal/40 font-light mt-1 flex items-center gap-1">
                             <Calendar className="h-3 w-3" />

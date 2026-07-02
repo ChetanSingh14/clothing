@@ -1,6 +1,6 @@
 // const API_URL ="http://13.205.109.59:4000/api/v1";
-const API_URL ="https://clothing-backend-3qlh.onrender.com/api/v1";
-// const API_URL ="http://localhost:4000/api/v1";
+// const API_URL ="https://clothing-backend-3qlh.onrender.com/api/v1";
+const API_URL ="http://localhost:4000/api/v1";
 
 export const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
   const token = typeof window !== "undefined" ? localStorage.getItem("authToken") : null;
