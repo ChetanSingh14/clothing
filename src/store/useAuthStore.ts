@@ -25,7 +25,7 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
-  token: typeof window !== "undefined" ? localStorage.getItem("authToken") : null,
+  token: null, // Relying on httpOnly cookie now
   loading: false,
   error: null,
   initialized: false,
@@ -40,8 +40,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         body: JSON.stringify({ email, password }),
       });
       if (res.success && res.data) {
-        localStorage.setItem("authToken", res.data.token);
-        set({ user: res.data.user, token: res.data.token, loading: false });
+        set({ user: res.data.user, token: "cookie-active", loading: false });
         return true;
       }
       return false;
@@ -59,8 +58,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         body: JSON.stringify({ name, email, password }),
       });
       if (res.success && res.data) {
-        localStorage.setItem("authToken", res.data.token);
-        set({ user: res.data.user, token: res.data.token, loading: false });
+        set({ user: res.data.user, token: "cookie-active", loading: false });
         return true;
       }
       return false;
@@ -76,7 +74,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     } catch (err) {
       console.error("Logout backend request failed:", err);
     } finally {
-      localStorage.removeItem("authToken");
       // Clear shopping cart on logout
       useCartStore.getState().clearCart();
       set({ user: null, token: null, error: null });
@@ -87,27 +84,19 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   fetchMe: async () => {
-    const { token, initialized, loading } = get();
+    const { initialized, loading } = get();
     if (loading) return;
-    if (!token && initialized) return;
-
-    const storedToken = localStorage.getItem("authToken");
-    if (!storedToken) {
-      set({ user: null, token: null, initialized: true });
-      return;
-    }
+    if (initialized) return;
 
     set({ loading: true, error: null });
     try {
       const res = await apiFetch("/user/me");
       if (res.success && res.data) {
-        set({ user: res.data, token: storedToken, initialized: true, loading: false });
+        set({ user: res.data, token: "cookie-active", initialized: true, loading: false });
       } else {
-        localStorage.removeItem("authToken");
         set({ user: null, token: null, initialized: true, loading: false });
       }
     } catch (err) {
-      localStorage.removeItem("authToken");
       set({ user: null, token: null, initialized: true, loading: false });
     }
   },
