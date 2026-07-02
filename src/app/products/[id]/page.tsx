@@ -10,6 +10,7 @@ import { useProductStore, ProductItem } from "@/store/useProductStore";
 import { useCartStore } from "@/store/useCartStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { ArrowLeft, Star, Plus, Minus, Loader2, Check, Heart, ChevronDown, ChevronUp } from "lucide-react";
+import PageLoader from "@/components/PageLoader";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import ModelViewer from "@/components/ModelViewer";
@@ -129,9 +130,7 @@ export default function ProductDetailPage() {
     return (
       <div className="min-h-screen bg-brand-bg flex flex-col justify-between">
         <Header onAuthClick={() => setIsAuthModalOpen(true)} />
-        <div className="flex-grow flex items-center justify-center">
-          <Loader2 className="h-10 w-10 text-brand-green animate-spin" />
-        </div>
+        <PageLoader />
         <Footer />
       </div>
     );

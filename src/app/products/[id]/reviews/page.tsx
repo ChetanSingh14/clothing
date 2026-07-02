@@ -8,6 +8,7 @@ import AuthModal from "@/components/AuthModal";
 import { useProductStore } from "@/store/useProductStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { ArrowLeft, Star, Loader2, Check } from "lucide-react";
+import PageLoader from "@/components/PageLoader";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -41,9 +42,7 @@ export default function ProductReviewsPage() {
     return (
       <div className="min-h-screen bg-brand-bg flex flex-col justify-between">
         <Header onAuthClick={() => setIsAuthModalOpen(true)} />
-        <div className="flex-grow flex items-center justify-center">
-          <Loader2 className="h-10 w-10 text-brand-green animate-spin" />
-        </div>
+        <PageLoader />
         <Footer />
       </div>
     );

@@ -8,8 +8,9 @@ import { useEffect, useState } from "react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useOrderStore } from "@/store/useOrderStore";
 import { Package, Clock, CheckCircle2, XCircle, ArrowLeft } from "lucide-react";
-import Link from "next/link";
 import { motion } from "framer-motion";
+import PageLoader from "@/components/PageLoader";
+import Link from "next/link";
 
 export default function OrdersPage() {
   const { user, fetchMe, initialized } = useAuthStore();
@@ -61,14 +62,14 @@ export default function OrdersPage() {
             </div>
           </div>
 
-          {!user ? (
+          {!initialized ? (
+            <PageLoader />
+          ) : !user ? (
             <div className="bg-brand-gray/30 rounded-3xl p-12 text-center border border-brand-charcoal/5">
               <h3 className="text-lg font-serif font-semibold text-brand-charcoal">Please log in to view your orders.</h3>
             </div>
           ) : loading ? (
-            <div className="flex justify-center py-20">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-green"></div>
-            </div>
+            <PageLoader />
           ) : orders.length === 0 ? (
             <div className="bg-brand-gray/30 rounded-3xl p-12 text-center border border-brand-charcoal/5">
               <Package className="h-10 w-10 text-brand-charcoal/20 mx-auto mb-4" />

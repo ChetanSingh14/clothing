@@ -10,6 +10,7 @@ import Footer from "@/components/Footer";
 import AuthModal from "@/components/AuthModal";
 import CartDrawer from "@/components/CartDrawer";
 import ProductSliderHero from "@/components/ProductSliderHero";
+import PageLoader from "@/components/PageLoader";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useProductStore } from "@/store/useProductStore";
 import { Star, ArrowRight, Loader2 } from "lucide-react";
@@ -89,11 +90,8 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Loader */}
               {loading ? (
-                <div className="h-64 flex items-center justify-center">
-                  <Loader2 className="h-8 w-8 text-brand-green animate-spin" />
-                </div>
+                <PageLoader />
               ) : products.length === 0 ? (
                 <div className="h-64 flex flex-col items-center justify-center text-center">
                   <h3 className="text-lg font-semibold font-serif">No products found</h3>

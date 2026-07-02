@@ -11,6 +11,7 @@ import { Heart, ArrowLeft, Trash2, ShoppingBag } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useCartStore } from "@/store/useCartStore";
+import PageLoader from "@/components/PageLoader";
 
 export default function WishlistPage() {
   const { user, fetchMe, initialized } = useAuthStore();
@@ -62,14 +63,14 @@ export default function WishlistPage() {
             </div>
           </div>
 
-          {!user ? (
+          {!initialized ? (
+            <PageLoader />
+          ) : !user ? (
             <div className="bg-brand-gray/30 rounded-3xl p-12 text-center border border-brand-charcoal/5">
               <h3 className="text-lg font-serif font-semibold text-brand-charcoal">Please log in to view your wishlist.</h3>
             </div>
           ) : wishlistLoading ? (
-            <div className="flex justify-center py-20">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-green"></div>
-            </div>
+            <PageLoader />
           ) : wishlist.length === 0 ? (
             <div className="bg-brand-gray/30 rounded-3xl p-12 text-center border border-brand-charcoal/5">
               <Heart className="h-10 w-10 text-brand-charcoal/20 mx-auto mb-4" />

@@ -7,68 +7,6 @@
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
-/* ---------- Loader ---------- */
-.cine-loader {
-    position: fixed;
-    inset: 0;
-    z-index: 200;
-    background: var(--color-brand-brown-dark, #1E1610);
-    color: var(--color-brand-bg, #F5E1D0);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 1.75rem;
-}
-
-.cine-loader-ring {
-    position: relative;
-    width: 140px;
-    height: 140px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.cine-loader-ring::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: 50%;
-    border: 1px solid rgba(245, 225, 208, 0.15);
-    border-top-color: var(--color-brand-green, #556B4E);
-    animation: cine-spin 2.4s linear infinite;
-}
-
-.cine-loader-logo {
-    width: 110px;
-    height: auto;
-    object-fit: contain;
-}
-
-@keyframes cine-spin {
-    to { transform: rotate(360deg); }
-}
-
-.cine-loader-bar-track {
-    width: 220px;
-    height: 1px;
-    background: rgba(245, 225, 208, 0.2);
-}
-
-.cine-loader-bar {
-    height: 100%;
-    width: 0%;
-    background: var(--color-brand-green, #556B4E);
-}
-
-.cine-loader-count {
-    font-family: monospace;
-    font-size: 0.75rem;
-    letter-spacing: 0.1em;
-    color: rgba(245, 225, 208, 0.6);
-}
-
 /* ---------- Pinned wrapper ---------- */
 .cine-wrapper {
     position: relative;
@@ -92,10 +30,34 @@
     z-index: 26;
     pointer-events: none;
 }
-.cine-corner-tl { top: 1.5rem; left: 1.5rem; border-top: 1px solid; border-left: 1px solid; }
-.cine-corner-tr { top: 1.5rem; right: 1.5rem; border-top: 1px solid; border-right: 1px solid; }
-.cine-corner-bl { bottom: 1.5rem; left: 1.5rem; border-bottom: 1px solid; border-left: 1px solid; }
-.cine-corner-br { bottom: 1.5rem; right: 1.5rem; border-bottom: 1px solid; border-right: 1px solid; }
+
+.cine-corner-tl {
+    top: 1.5rem;
+    left: 1.5rem;
+    border-top: 1px solid;
+    border-left: 1px solid;
+}
+
+.cine-corner-tr {
+    top: 1.5rem;
+    right: 1.5rem;
+    border-top: 1px solid;
+    border-right: 1px solid;
+}
+
+.cine-corner-bl {
+    bottom: 1.5rem;
+    left: 1.5rem;
+    border-bottom: 1px solid;
+    border-left: 1px solid;
+}
+
+.cine-corner-br {
+    bottom: 1.5rem;
+    right: 1.5rem;
+    border-bottom: 1px solid;
+    border-right: 1px solid;
+}
 
 /* Persistent small top-left wordmark, reads correctly on any bg */
 .cine-watermark {
@@ -129,10 +91,23 @@
 }
 
 @keyframes cine-drift {
-    0% { transform: translateY(0) translateX(0); opacity: 0; }
-    10% { opacity: 0.6; }
-    90% { opacity: 0.4; }
-    100% { transform: translateY(-110vh) translateX(20px); opacity: 0; }
+    0% {
+        transform: translateY(0) translateX(0);
+        opacity: 0;
+    }
+
+    10% {
+        opacity: 0.6;
+    }
+
+    90% {
+        opacity: 0.4;
+    }
+
+    100% {
+        transform: translateY(-110vh) translateX(20px);
+        opacity: 0;
+    }
 }
 
 /* ---------- Scenes ---------- */
@@ -394,8 +369,13 @@
 }
 
 @keyframes cine-marquee {
-    from { transform: translateX(0); }
-    to { transform: translateX(-50%); }
+    from {
+        transform: translateX(0);
+    }
+
+    to {
+        transform: translateX(-50%);
+    }
 }
 
 /* ---------- Scene index dots ---------- */
@@ -418,12 +398,44 @@
 }
 
 @media (max-width: 768px) {
-    .cine-watermark { left: 1.5rem; top: 1.5rem; height: 14px; }
-    .cine-corner { width: 16px; height: 16px; }
-    .cine-corner-tl, .cine-corner-tr { top: 1rem; }
-    .cine-corner-bl, .cine-corner-br { bottom: 1rem; }
-    .cine-mark-card { width: 128px; height: 128px; top: 12%; }
-    .cine-tee-icon { width: 90px; height: 90px; right: 8%; }
-    .cine-flash-count { font-size: 1.75rem; }
-    .cine-ticker { bottom: 3.5rem; }
+    .cine-watermark {
+        left: 1.5rem;
+        top: 1.5rem;
+        height: 14px;
+    }
+
+    .cine-corner {
+        width: 16px;
+        height: 16px;
+    }
+
+    .cine-corner-tl,
+    .cine-corner-tr {
+        top: 1rem;
+    }
+
+    .cine-corner-bl,
+    .cine-corner-br {
+        bottom: 1rem;
+    }
+
+    .cine-mark-card {
+        width: 128px;
+        height: 128px;
+        top: 12%;
+    }
+
+    .cine-tee-icon {
+        width: 90px;
+        height: 90px;
+        right: 8%;
+    }
+
+    .cine-flash-count {
+        font-size: 1.75rem;
+    }
+
+    .cine-ticker {
+        bottom: 3.5rem;
+    }
 }

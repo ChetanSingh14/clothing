@@ -14,6 +14,7 @@ import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Lightbox from "@/components/Lightbox";
+import PageLoader from "@/components/PageLoader";
 
 export default function AdminDashboardPage() {
   const router = useRouter();
@@ -107,10 +108,7 @@ export default function AdminDashboardPage() {
     return (
       <div className="min-h-screen bg-brand-bg flex flex-col justify-between">
         <Header onAuthClick={() => setIsAuthModalOpen(true)} />
-        <div className="flex-grow flex flex-col items-center justify-center text-center">
-          <Loader2 className="h-10 w-10 text-brand-green animate-spin" />
-          <p className="text-xs text-brand-charcoal/50 mt-4 tracking-wide font-light">Checking admin credentials...</p>
-        </div>
+        <PageLoader />
         <Footer />
       </div>
     );

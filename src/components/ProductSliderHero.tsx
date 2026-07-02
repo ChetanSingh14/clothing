@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { ProductItem } from "@/store/useProductStore";
+import PageLoader from "./PageLoader";
 import "./CinematicIntro.css";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
@@ -38,8 +39,6 @@ export default function CinematicIntro({
   const counterRef = useRef<HTMLSpanElement>(null);
   const sceneRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [loading, setLoading] = useState(true);
-  const loaderCountRef = useRef<HTMLSpanElement>(null);
-  const loaderBarRef = useRef<HTMLDivElement>(null);
 
   const swatches = featuredProduct?.colors?.length
     ? featuredProduct.colors.slice(0, 4)
@@ -57,29 +56,12 @@ export default function CinematicIntro({
     { type: "cta", eyebrow: brandName, headline: "Shop the full collection" },
   ];
 
-  // Loader: counts up once on mount, then fades to reveal the page.
-  useGSAP(() => {
-    const counter = { val: 0 };
-    const tl = gsap.timeline({ onComplete: () => setLoading(false) });
-    tl.from(".cine-loader-logo", { opacity: 0, scale: 0.9, duration: 0.6, ease: "power2.out" });
-    tl.to(
-      counter,
-      {
-        val: 100,
-        duration: 1.6,
-        ease: "power2.inOut",
-        onUpdate: () => {
-          if (loaderCountRef.current) {
-            loaderCountRef.current.textContent = String(Math.round(counter.val)).padStart(3, "0");
-          }
-          if (loaderBarRef.current) {
-            loaderBarRef.current.style.width = `${counter.val}%`;
-          }
-        },
-      },
-      "-=0.2"
-    );
-    tl.to(".cine-loader", { opacity: 0, duration: 0.5, ease: "power1.out" }, "+=0.2");
+  // Loader: wait for initial animation
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 2000);
+    return () => clearTimeout(timer);
   }, []);
 
   // Scroll-scrubbed scene sequence, hard-cut through the flash overlay.
@@ -136,18 +118,7 @@ export default function CinematicIntro({
 
   return (
     <>
-      {loading && (
-        <div className="cine-loader">
-          <div className="cine-grain" />
-          <div className="cine-loader-ring">
-            <img src={logoLightSrc} alt={brandName} className="cine-loader-logo" />
-          </div>
-          <div className="cine-loader-bar-track">
-            <div ref={loaderBarRef} className="cine-loader-bar" />
-          </div>
-          <span ref={loaderCountRef} className="cine-loader-count">000</span>
-        </div>
-      )}
+      {loading && <PageLoader logoLightSrc={logoLightSrc} brandName={brandName} />}
 
       <div ref={wrapperRef} className="cine-wrapper">
         <div className="cine-viewport">

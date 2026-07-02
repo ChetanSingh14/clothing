@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useProductStore, ProductItem } from "@/store/useProductStore";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
+import PageLoader from "@/components/PageLoader";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Lightbox from "@/components/Lightbox";
@@ -40,7 +41,7 @@ export default function AdminProductDetailPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-brand-bg flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-brand-charcoal/50" />
+        <PageLoader />
       </div>
     );
   }
