@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Mail, Phone, MapPin, Send, Check } from "lucide-react";
 import { useSettingsStore } from "@/store/useSettingsStore";
+import { useAlertStore } from "@/store/useAlertStore";
 
 export default function ContactSection() {
   const companyName = useSettingsStore((state) => state.companyName);
@@ -18,7 +19,7 @@ export default function ContactSection() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!agreed) {
-      alert("Please agree to the privacy policy first.");
+      useAlertStore.getState().showAlert("Please agree to the privacy policy first.");
       return;
     }
 

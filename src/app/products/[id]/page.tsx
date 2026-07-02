@@ -10,6 +10,7 @@ import { useProductStore, ProductItem } from "@/store/useProductStore";
 import { useCartStore } from "@/store/useCartStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { ArrowLeft, Star, Plus, Minus, Loader2, Check, Heart, ChevronDown, ChevronUp } from "lucide-react";
+import MediaRenderer from "@/components/MediaRenderer";
 import PageLoader from "@/components/PageLoader";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -136,9 +137,9 @@ export default function ProductDetailPage() {
     );
   }
 
-  const productImages = activeProduct.images.filter(img => !img.toLowerCase().endsWith('.glb') && !img.toLowerCase().endsWith('.mp4'));
+  const productImages = activeProduct.images.filter(img => !img.toLowerCase().endsWith('.glb') && !img.toLowerCase().endsWith('.mp4') && !img.toLowerCase().endsWith('.webm'));
   const productModel = activeProduct.images.find(img => img.toLowerCase().endsWith('.glb'));
-  const productVideo = activeProduct.images.find(img => img.toLowerCase().endsWith('.mp4'));
+  const productVideo = activeProduct.images.find(img => img.toLowerCase().endsWith('.mp4') || img.toLowerCase().endsWith('.webm'));
   
   const displayImages = getColorImages(selectedColor, productImages);
 
@@ -222,41 +223,39 @@ export default function ProductDetailPage() {
                 autoPlay loop muted playsInline
               />
             ) : (
-              <img
-                src={displayImages[0]?.split('#color=')[0]}
-                alt={activeProduct.title}
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 absolute inset-0 z-0 cursor-pointer"
-                onClick={() => openLightbox(0)}
-              />
+              <div className="absolute inset-0 z-0 group cursor-pointer" onClick={() => openLightbox(0)}>
+                <MediaRenderer
+                  src={displayImages[0]?.split('#color=')[0]}
+                  alt={activeProduct.title}
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                />
+              </div>
             )}
           </div>
 
           {/* Right Image Grid */}
           <div className="md:col-span-5 grid grid-cols-3 md:flex md:flex-col gap-2 md:gap-4 h-24 md:h-[650px] pb-0 md:pb-0 scrollbar-hide">
             <div className="col-span-2 md:col-span-1 grid grid-cols-2 gap-2 md:gap-4 md:h-1/2 w-full shrink-0 md:shrink">
-              <div className="h-full rounded-2xl md:rounded-[2rem] overflow-hidden relative group bg-brand-gray/50 shrink-0 md:shrink">
-                <img
+              <div className="h-full rounded-2xl md:rounded-[2rem] overflow-hidden relative group bg-brand-gray/50 shrink-0 md:shrink" onClick={() => openLightbox(1)}>
+                <MediaRenderer
                   src={displayImages[1]?.split('#color=')[0]}
                   alt="Angle 2"
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 cursor-pointer"
-                  onClick={() => openLightbox(1)}
                 />
               </div>
-              <div className="h-full rounded-2xl md:rounded-[2rem] overflow-hidden relative group bg-brand-gray/50 shrink-0 md:shrink">
-                <img
+              <div className="h-full rounded-2xl md:rounded-[2rem] overflow-hidden relative group bg-brand-gray/50 shrink-0 md:shrink" onClick={() => openLightbox(2)}>
+                <MediaRenderer
                   src={displayImages[2]?.split('#color=')[0]}
                   alt="Angle 3"
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 cursor-pointer"
-                  onClick={() => openLightbox(2)}
                 />
               </div>
             </div>
-            <div className="col-span-1 md:col-span-1 md:w-full md:h-1/2 rounded-2xl md:rounded-[2rem] overflow-hidden relative group bg-brand-gray/50 shrink-0 md:shrink">
-              <img
+            <div className="col-span-1 md:col-span-1 md:w-full md:h-1/2 rounded-2xl md:rounded-[2rem] overflow-hidden relative group bg-brand-gray/50 shrink-0 md:shrink" onClick={() => openLightbox(3)}>
+              <MediaRenderer
                 src={displayImages[3]?.split('#color=')[0]}
                 alt="Angle 4"
                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 cursor-pointer"
-                onClick={() => openLightbox(3)}
               />
             </div>
           </div>
@@ -567,7 +566,7 @@ export default function ProductDetailPage() {
               {suggestedProducts.map((product) => (
                 <Link key={product.id} href={`/products/${product.id}`} className="group cursor-pointer">
                   <div className="aspect-[3/4] rounded-2xl overflow-hidden bg-brand-gray mb-4 relative">
-                    <img 
+                    <MediaRenderer 
                       src={product.images[0] || "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?q=80&w=800&auto=format&fit=crop"} 
                       alt={product.title} 
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"

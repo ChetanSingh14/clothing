@@ -9,7 +9,7 @@ import { useSettingsStore } from "@/store/useSettingsStore";
 import { useEffect, useState } from "react";
 
 interface HeaderProps {
-  onAuthClick: () => void;
+  onAuthClick?: () => void;
 }
 
 export default function Header({ onAuthClick }: HeaderProps) {
@@ -80,7 +80,7 @@ export default function Header({ onAuthClick }: HeaderProps) {
           <button
             onClick={() => {
               if (!user) {
-                onAuthClick();
+                onAuthClick?.();
               } else {
                 // Redirect user to wishlist view
                 window.location.href = "/wishlist";
@@ -96,7 +96,7 @@ export default function Header({ onAuthClick }: HeaderProps) {
           <button
             onClick={() => {
               if (!user) {
-                onAuthClick();
+                onAuthClick?.();
               } else {
                 setIsOpen(true);
               }

@@ -1,7 +1,9 @@
 "use client";
 
 import { useCartStore } from "@/store/useCartStore";
-import { X, Plus, Minus, Trash2, ShoppingBag } from "lucide-react";
+import { useAlertStore } from "@/store/useAlertStore";
+import { ShoppingBag, X, Plus, Minus, Trash2 } from "lucide-react";
+import MediaRenderer from "./MediaRenderer";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 
@@ -14,10 +16,11 @@ export default function CartDrawer() {
   const handleCheckout = async () => {
     const success = await checkout(paymentMethod);
     if (success) {
-      alert("Thank you for your order! Your garments are recorded in the system and being prepared for dispatch.");
+      useAlertStore.getState().showAlert("Thank you for your order! Your garments are recorded in the system and being prepared for dispatch.");
+      clearCart();
       setIsOpen(false);
     } else {
-      alert("Checkout failed. Please ensure you have items in your bag and are logged in.");
+      useAlertStore.getState().showAlert("Checkout failed. Please ensure you have items in your bag and are logged in.");
     }
   };
 
@@ -82,7 +85,7 @@ export default function CartDrawer() {
                     >
                       {/* Product Thumbnail */}
                       <div className="relative h-20 w-18 rounded-xl overflow-hidden bg-brand-gray border border-brand-charcoal/5 flex-shrink-0">
-                        <img
+                        <MediaRenderer
                           src={item.image}
                           alt={item.title}
                           className="object-cover h-full w-full"

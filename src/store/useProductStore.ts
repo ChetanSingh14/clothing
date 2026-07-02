@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { apiFetch } from "@/utils/api";
+import { useAlertStore } from "@/store/useAlertStore";
 
 export interface ProductReview {
   id: number;
@@ -151,7 +152,7 @@ export const useProductStore = create<ProductState>((set, get) => ({
       console.error("Failed to toggle wishlist:", err);
       // Suppress UI crash but inform user
       if (typeof window !== "undefined") {
-        alert("Action failed due to server error. Please try again later.");
+        useAlertStore.getState().showAlert("Action failed due to server error. Please try again later.");
       }
       if (isWishlisted) {
         set({ wishlist });

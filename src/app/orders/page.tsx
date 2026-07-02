@@ -10,7 +10,9 @@ import { useOrderStore } from "@/store/useOrderStore";
 import { Package, Clock, CheckCircle2, XCircle, ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
 import PageLoader from "@/components/PageLoader";
+import MediaRenderer from "@/components/MediaRenderer";
 import Link from "next/link";
+import { useAlertStore } from "@/store/useAlertStore";
 
 export default function OrdersPage() {
   const { user, fetchMe, initialized } = useAuthStore();
@@ -108,10 +110,10 @@ export default function OrdersPage() {
                       
                       {order.status === "BOOKED" && (
                         <button 
-                          onClick={async () => {
-                            if (confirm("Are you sure you want to cancel this order?")) {
+                          onClick={() => {
+                            useAlertStore.getState().showConfirm("Are you sure you want to cancel this order?", async () => {
                               await cancelOrder(order.id);
-                            }
+                            });
                           }}
                           className="text-xs font-semibold text-rose-500 hover:text-rose-600 underline cursor-pointer"
                         >
@@ -125,7 +127,7 @@ export default function OrdersPage() {
                     {order.items.map((item: any, idx: number) => (
                       <div key={idx} className="flex gap-4 items-center">
                         <div className="relative h-16 w-16 rounded-lg overflow-hidden bg-brand-gray border border-brand-charcoal/5 flex-shrink-0">
-                          {item.image && <img src={item.image} alt={item.title} className="object-cover h-full w-full" />}
+                          {item.image && <MediaRenderer src={item.image} alt={item.title} className="object-cover h-full w-full" />}
                         </div>
                         <div className="flex-grow">
                           <h4 className="text-sm font-semibold text-brand-charcoal">{item.title}</h4>

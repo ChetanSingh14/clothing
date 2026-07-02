@@ -8,6 +8,7 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { useAdminStore } from "@/store/useAdminStore";
 import { useProductStore } from "@/store/useProductStore";
 import { useSettingsStore } from "@/store/useSettingsStore";
+import { useAlertStore } from "@/store/useAlertStore";
 import { shallow } from "zustand/shallow";
 import { Plus, Trash2, Tag, Star, Package, Users, Layers, UploadCloud, Loader2, RefreshCw, BarChart2, UserCheck, Shield, ShoppingBag, DollarSign, Calendar, Edit, Settings, Eye, X } from "lucide-react";
 import { motion } from "framer-motion";
@@ -16,6 +17,7 @@ import Link from "next/link";
 import Lightbox from "@/components/Lightbox";
 import PageLoader from "@/components/PageLoader";
 import ColorPickerModal from "@/components/ColorPickerModal";
+import MediaRenderer from "@/components/MediaRenderer";
 
 export default function AdminDashboardPage() {
   const router = useRouter();
@@ -33,6 +35,7 @@ export default function AdminDashboardPage() {
     deleteReview, 
     createProduct, 
     deleteProduct, 
+    updateProduct,
     uploadProductImage,
     adminUpdateUser,
     updateOrderStatus
@@ -134,7 +137,7 @@ export default function AdminDashboardPage() {
       if (url) {
         setUploadedImageUrl(url);
       } else {
-        alert("Failed to upload image. Make sure server is running.");
+        useAlertStore.getState().showAlert("Failed to upload image. Make sure server is running.");
       }
       setUploadingImage(false);
     };
@@ -156,7 +159,7 @@ export default function AdminDashboardPage() {
           [color]: [...(prev[color] || []), url]
         }));
       } else {
-        alert("Failed to upload image. Make sure server is running.");
+        useAlertStore.getState().showAlert("Failed to upload image. Make sure server is running.");
       }
       setUploadingColor(null);
     };
@@ -175,7 +178,7 @@ export default function AdminDashboardPage() {
       if (url) {
         setUploadedModelUrl(url);
       } else {
-        alert("Failed to upload 3D model. Make sure server is running.");
+        useAlertStore.getState().showAlert("Failed to upload 3D model. Make sure server is running.");
       }
       setUploadingModel(false);
     };
@@ -193,7 +196,7 @@ export default function AdminDashboardPage() {
   const handleProductSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title || !description || !price || !uploadedImageUrl) {
-      alert("Please fill all required fields and upload a main image.");
+      useAlertStore.getState().showAlert("Please fill all required fields and upload a main image.");
       return;
     }
 
@@ -283,31 +286,31 @@ export default function AdminDashboardPage() {
   };
 
   const handleDeleteProduct = async (id: number) => {
-    if (confirm("Are you sure you want to delete this product?")) {
+    useAlertStore.getState().showConfirm("Are you sure you want to delete this product?", async () => {
       const success = await deleteProduct(id);
       if (success) {
         await fetchProducts();
         await fetchStats();
       }
-    }
+    });
   };
 
   const handleOrderStatusUpdate = async (orderId: number, status: string) => {
     const success = await updateOrderStatus(orderId, status);
     if (success) {
-      alert(`Order #${orderId} status updated to ${status}`);
+      useAlertStore.getState().showAlert(`Order #${orderId} status updated to ${status}`);
     } else {
-      alert("Failed to update order status.");
+      useAlertStore.getState().showAlert("Failed to update order status.");
     }
   };
 
   const handleDeleteReview = async (id: number) => {
-    if (confirm("Are you sure you want to delete this review?")) {
+    useAlertStore.getState().showConfirm("Are you sure you want to delete this review?", async () => {
       const success = await deleteReview(id);
       if (success) {
-        alert("Review deleted successfully.");
+        useAlertStore.getState().showAlert("Review deleted successfully.");
       }
-    }
+    });
   };
 
   const syncData = async () => {
@@ -690,7 +693,7 @@ export default function AdminDashboardPage() {
                       </label>
                       {uploadedImageUrl ? (
                         <div className="mt-1.5 relative w-32 h-32 group rounded-xl border border-brand-charcoal/20 overflow-hidden bg-brand-gray">
-                          <img src={uploadedImageUrl} alt="Product" className="object-cover w-full h-full" />
+                          <MediaRenderer src={uploadedImageUrl} alt="Product upload preview" className="object-cover w-full h-full" />
                           <button
                             type="button"
                             onClick={() => setUploadedImageUrl("")}
@@ -708,7 +711,7 @@ export default function AdminDashboardPage() {
                           </span>
                           <input
                             type="file"
-                            accept="image/*"
+                            accept="image/*,video/mp4,video/webm"
                             disabled={uploadingImage}
                             onChange={handleImageFileChange}
                             className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
@@ -741,7 +744,7 @@ export default function AdminDashboardPage() {
                                       </button>
                                       <input
                                         type="file"
-                                        accept="image/*"
+                                        accept="image/*,video/mp4,video/webm"
                                         disabled={uploadingColor !== null}
                                         onChange={(e) => handleColorImageFileChange(e, color)}
                                         className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
@@ -757,7 +760,7 @@ export default function AdminDashboardPage() {
                                       key={imgIdx} 
                                       className="relative h-12 w-10 bg-brand-gray rounded-md overflow-hidden border border-brand-charcoal/10 cursor-pointer group"
                                     >
-                                      <img src={url} alt={`Preview ${imgIdx}`} className="object-cover h-full w-full" onClick={() => openLightbox(uploadedImages, imgIdx)} />
+                                      <MediaRenderer src={url} alt={`Preview ${imgIdx}`} className="object-cover h-full w-full" onClick={() => openLightbox(uploadedImages, imgIdx)} />
                                       <button
                                         type="button"
                                         onClick={(e) => {
@@ -838,7 +841,7 @@ export default function AdminDashboardPage() {
                             <tr key={prod.id} className="hover:bg-brand-gray/20 transition-colors">
                               <td className="py-4 px-6 flex items-center gap-3">
                                 <div className="relative h-12 w-10 rounded-lg overflow-hidden bg-brand-gray flex-shrink-0">
-                                  <img src={prod.images[0]} alt={prod.title} className="object-cover h-full w-full" />
+                                  <MediaRenderer src={prod.images[0]} alt={prod.title} className="object-cover h-full w-full" />
                                 </div>
                                 <span className="font-semibold text-brand-charcoal leading-tight max-w-[160px] truncate">
                                   {prod.title}
@@ -1151,9 +1154,9 @@ export default function AdminDashboardPage() {
                     logoUrl: tempLogoUrl
                   });
                   if (success) {
-                    alert("Brand settings updated successfully!");
+                    useAlertStore.getState().showAlert("Brand settings updated successfully!");
                   } else {
-                    alert("Failed to save settings.");
+                    useAlertStore.getState().showAlert("Failed to save settings.");
                   }
                   setUpdatingSettings(false);
                 }} className="space-y-6 text-xs">
@@ -1191,7 +1194,7 @@ export default function AdminDashboardPage() {
                         </span>
                         <input
                           type="file"
-                          accept="image/*"
+                          accept="image/*,video/mp4,video/webm"
                           disabled={uploadingImage}
                           onChange={async (e) => {
                             const file = e.target.files?.[0];
@@ -1243,9 +1246,9 @@ export default function AdminDashboardPage() {
                     const success = await adminUpdateUser(editingUser.id, updateData);
                     if (success) {
                       setEditingUser(null);
-                      alert("User details updated successfully!");
+                      useAlertStore.getState().showAlert("User details updated successfully!");
                     } else {
-                      alert("Failed to update user details.");
+                      useAlertStore.getState().showAlert("Failed to update user details.");
                     }
                   }} className="space-y-4 text-xs text-left">
                     <div>
