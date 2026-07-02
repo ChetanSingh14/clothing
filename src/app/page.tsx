@@ -9,6 +9,7 @@ import ContactSection from "@/components/ContactSection";
 import Footer from "@/components/Footer";
 import AuthModal from "@/components/AuthModal";
 import CartDrawer from "@/components/CartDrawer";
+import ProductSliderHero from "@/components/ProductSliderHero";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useProductStore } from "@/store/useProductStore";
 import { Star, ArrowRight, Loader2 } from "lucide-react";
@@ -51,7 +52,21 @@ export default function Home() {
       
       <main className="flex-grow">
         {user ? (
-          <section id="catalog" className="py-24 bg-brand-bg px-6 sm:px-8">
+          <>
+            {products.length > 0 && (
+              <ProductSliderHero 
+                featuredProduct={{
+                  ...products[0],
+                  images: [
+                    "/345d2893c0315ea8fa346714ea638ddb.jpg",
+                    "/5018fd24996b760123483913bc9a2bd5.jpg",
+                    "/9ad15d968f3fd4c482acb2c48e7fa4ff.jpg",
+                    "/6da9ffba03eda7eede25ef935f8f8406.webp"
+                  ]
+                }} 
+              />
+            )}
+            <section id="catalog" className="py-24 bg-brand-bg px-6 sm:px-8">
             <div className="mx-auto max-w-7xl">
               {/* Headings */}
               <div className="flex flex-col md:flex-row md:items-end justify-between mb-12">
@@ -164,6 +179,7 @@ export default function Home() {
               )}
             </div>
           </section>
+          </>
         ) : (
           <>
             <AnimatedHero onStartClick={handleStartClick} />
