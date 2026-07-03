@@ -711,7 +711,7 @@ export default function AdminDashboardPage() {
                           </span>
                           <input
                             type="file"
-                            accept="image/*,video/mp4,video/webm"
+                            accept="image/*,video/mp4,video/webm,video/x-m4v,video/quicktime"
                             disabled={uploadingImage}
                             onChange={handleImageFileChange}
                             className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
@@ -744,7 +744,7 @@ export default function AdminDashboardPage() {
                                       </button>
                                       <input
                                         type="file"
-                                        accept="image/*,video/mp4,video/webm"
+                                        accept="image/*,video/mp4,video/webm,video/x-m4v,video/quicktime"
                                         disabled={uploadingColor !== null}
                                         onChange={(e) => handleColorImageFileChange(e, color)}
                                         className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
@@ -1194,7 +1194,7 @@ export default function AdminDashboardPage() {
                         </span>
                         <input
                           type="file"
-                          accept="image/*,video/mp4,video/webm"
+                          accept="image/*,video/mp4,video/webm,video/x-m4v,video/quicktime"
                           disabled={uploadingImage}
                           onChange={async (e) => {
                             const file = e.target.files?.[0];

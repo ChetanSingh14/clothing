@@ -11,6 +11,7 @@ import AuthModal from "@/components/AuthModal";
 import CartDrawer from "@/components/CartDrawer";
 import ProductSliderHero from "@/components/ProductSliderHero";
 import PageLoader from "@/components/PageLoader";
+import MediaRenderer from "@/components/MediaRenderer";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useProductStore } from "@/store/useProductStore";
 import { Star, ArrowRight, Loader2 } from "lucide-react";
@@ -112,7 +113,7 @@ export default function Home() {
                     >
                       {/* Image Frame */}
                       <div className="relative aspect-[4/5] w-full bg-brand-gray overflow-hidden">
-                        <img
+                        <MediaRenderer
                           src={product.images[0] || "https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=600&auto=format&fit=crop"}
                           alt={product.title}
                           className="object-cover h-full w-full transition-transform duration-700 ease-out group-hover:scale-105"

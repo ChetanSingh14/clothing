@@ -12,6 +12,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { useCartStore } from "@/store/useCartStore";
 import PageLoader from "@/components/PageLoader";
+import MediaRenderer from "@/components/MediaRenderer";
 
 export default function WishlistPage() {
   const { user, fetchMe, initialized } = useAuthStore();
@@ -97,7 +98,7 @@ export default function WishlistPage() {
                   </button>
 
                   <div className="relative h-32 w-full sm:w-28 rounded-xl overflow-hidden bg-brand-gray border border-brand-charcoal/5 flex-shrink-0">
-                    <img src={product.images[0]} alt={product.title} className="object-cover h-full w-full group-hover:scale-105 transition-transform duration-500" />
+                    <MediaRenderer src={product.images[0]} alt={product.title} className="object-cover h-full w-full group-hover:scale-105 transition-transform duration-500" />
                   </div>
                   
                   <div className="flex-grow flex flex-col justify-between">

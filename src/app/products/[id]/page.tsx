@@ -137,9 +137,22 @@ export default function ProductDetailPage() {
     );
   }
 
-  const productImages = activeProduct.images.filter(img => !img.toLowerCase().endsWith('.glb') && !img.toLowerCase().endsWith('.mp4') && !img.toLowerCase().endsWith('.webm'));
+  const productImages = activeProduct.images.filter(img => 
+    !img.toLowerCase().endsWith('.glb') && 
+    !img.toLowerCase().endsWith('.mp4') && 
+    !img.toLowerCase().endsWith('.webm') &&
+    !img.toLowerCase().endsWith('.m4v') &&
+    !img.toLowerCase().endsWith('.m4') &&
+    !img.toLowerCase().endsWith('.mov')
+  );
   const productModel = activeProduct.images.find(img => img.toLowerCase().endsWith('.glb'));
-  const productVideo = activeProduct.images.find(img => img.toLowerCase().endsWith('.mp4') || img.toLowerCase().endsWith('.webm'));
+  const productVideo = activeProduct.images.find(img => 
+    img.toLowerCase().endsWith('.mp4') || 
+    img.toLowerCase().endsWith('.webm') ||
+    img.toLowerCase().endsWith('.m4v') ||
+    img.toLowerCase().endsWith('.m4') ||
+    img.toLowerCase().endsWith('.mov')
+  );
   
   const displayImages = getColorImages(selectedColor, productImages);
 

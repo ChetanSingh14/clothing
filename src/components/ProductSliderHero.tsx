@@ -8,6 +8,7 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { ProductItem } from "@/store/useProductStore";
 import PageLoader from "./PageLoader";
+import MediaRenderer from "./MediaRenderer";
 import "./CinematicIntro.css";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
@@ -183,7 +184,7 @@ export default function CinematicIntro({
               {scene.type === "product" && (
                 <>
                   {featuredProduct?.images?.[0] && (
-                    <img className="cine-product-img" src={featuredProduct.images[0]} alt={scene.headline} />
+                    <MediaRenderer className="cine-product-img" src={featuredProduct.images[0]} alt={scene.headline} />
                   )}
                   <div className="cine-swatches">
                     {swatches.map((c, idx) => (

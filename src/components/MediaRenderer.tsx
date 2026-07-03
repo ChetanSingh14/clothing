@@ -26,7 +26,12 @@ export default function MediaRenderer({
 }: MediaRendererProps) {
   if (!src) return null;
 
-  const isVideo = src.toLowerCase().endsWith('.mp4') || src.toLowerCase().endsWith('.webm');
+  const isVideo =
+    src.toLowerCase().endsWith('.mp4') ||
+    src.toLowerCase().endsWith('.webm') ||
+    src.toLowerCase().endsWith('.m4v') ||
+    src.toLowerCase().endsWith('.m4') ||
+    src.toLowerCase().endsWith('.mov');
 
   if (isVideo) {
     return (
