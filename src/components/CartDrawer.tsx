@@ -12,7 +12,7 @@ import { useState, useEffect } from "react";
 
 export default function CartDrawer() {
   const { items, isOpen, setIsOpen, updateQuantity, removeItem, getCartTotal, clearCart, checkout } = useCartStore();
-  const { user } = useAuthStore();
+  const { user, fetchMe } = useAuthStore();
   const [paymentMethod, setPaymentMethod] = useState("COD");
   const [checkoutStep, setCheckoutStep] = useState<"cart" | "address">("cart");
   const [isEditingAddress, setIsEditingAddress] = useState(false);
@@ -59,6 +59,27 @@ export default function CartDrawer() {
     if (!addressDetails.fullName || !addressDetails.phone || !addressDetails.address || !addressDetails.pincode) {
        useAlertStore.getState().showAlert("Please fill in all required address fields.");
        return;
+    }
+
+    if (user) {
+      try {
+        const { apiFetch } = await import("@/utils/api");
+        await apiFetch("/user/profile", {
+          method: "PUT",
+          body: JSON.stringify({
+            name: addressDetails.fullName,
+            phone: addressDetails.phone,
+            address: addressDetails.address,
+            landmark: addressDetails.landmark,
+            pincode: addressDetails.pincode,
+            state: addressDetails.state,
+            city: addressDetails.city
+          })
+        });
+        await fetchMe();
+      } catch (error) {
+        console.error("Failed to save address to user profile:", error);
+      }
     }
 
     const success = await checkout(paymentMethod, addressDetails);

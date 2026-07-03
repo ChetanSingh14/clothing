@@ -28,7 +28,7 @@ interface AuthState {
   login: (email: string, password: string) => Promise<boolean>;
   signup: (name: string, email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
-  fetchMe: () => Promise<void>;
+  fetchMe: (force?: boolean) => Promise<void>;
   setError: (msg: string | null) => void;
 }
 
@@ -94,10 +94,10 @@ export const useAuthStore = create<AuthState>()(
     }
   },
 
-  fetchMe: async () => {
+  fetchMe: async (force = false) => {
     const { initialized, loading, token } = get();
     if (loading) return;
-    if (initialized) return;
+    if (initialized && !force) return;
 
     if (!token) {
       set({ initialized: true });
@@ -119,6 +119,7 @@ export const useAuthStore = create<AuthState>()(
 }),
     {
       name: "auth-storage",
+      partialize: (state) => ({ user: state.user, token: state.token }),
     }
   )
 );

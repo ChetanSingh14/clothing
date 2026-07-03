@@ -32,8 +32,14 @@ export default function MediaRenderer({
     cleanSrc.endsWith('.webm') ||
     cleanSrc.endsWith('.m4v') ||
     cleanSrc.endsWith('.m4') ||
+    cleanSrc.endsWith('.m4a') ||
     cleanSrc.endsWith('.mov') ||
-    cleanSrc.includes('/video/upload/');
+    cleanSrc.endsWith('.avi') ||
+    cleanSrc.endsWith('.wmv') ||
+    cleanSrc.endsWith('.flv') ||
+    cleanSrc.endsWith('.mkv') ||
+    cleanSrc.includes('/video/upload/') ||
+    cleanSrc.includes('video');
 
   if (isVideo) {
     return (

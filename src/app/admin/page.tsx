@@ -62,6 +62,7 @@ export default function AdminDashboardPage() {
   const [editRole, setEditRole] = useState("USER");
   const [editPassword, setEditPassword] = useState("");
   const [editingProductId, setEditingProductId] = useState<number | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [images, setImages] = useState<string[]>([]);
   const [modelUrl, setModelUrl] = useState<string>("");
   const [modelThumbnailUrl, setModelThumbnailUrl] = useState<string>("");
@@ -994,10 +995,17 @@ export default function AdminDashboardPage() {
                           </div>
                         </div>
 
-                        <div className="sm:text-right">
+                        <div className="sm:text-right flex flex-col items-end">
                           <span className="text-[10px] font-bold uppercase tracking-wider text-brand-charcoal/40">Buyer profile</span>
                           <div className="font-semibold text-brand-charcoal">{ord.user.name}</div>
-                          <div className="text-[10px] text-brand-charcoal/50">{ord.user.email}</div>
+                          <div className="text-[10px] text-brand-charcoal/50 mb-2">{ord.user.email}</div>
+                          <button
+                            onClick={() => setSelectedOrder(ord)}
+                            className="text-xs bg-brand-charcoal text-brand-bg px-3 py-1.5 rounded-lg font-semibold hover:bg-brand-charcoal/90 transition-all cursor-pointer inline-flex items-center gap-1 mt-auto"
+                          >
+                            <Eye className="h-3 w-3" />
+                            View Full Details
+                          </button>
                         </div>
                       </div>
 
@@ -1024,7 +1032,7 @@ export default function AdminDashboardPage() {
                               <div className="flex items-center gap-3">
                                 {item.image && (
                                   <div className="relative h-10 w-8 rounded bg-brand-gray overflow-hidden flex-shrink-0">
-                                    <img src={item.image} alt={item.title} className="object-cover h-full w-full" />
+                                    <MediaRenderer src={item.image} alt={item.title} className="object-cover h-full w-full" />
                                   </div>
                                 )}
                                 <div>
@@ -1329,6 +1337,150 @@ export default function AdminDashboardPage() {
               </div>
             )}
 
+            {/* View Full Order Details Modal Overlay */}
+            {selectedOrder && (
+              <div className="fixed inset-0 z-[100] flex items-center justify-center bg-brand-charcoal/60 backdrop-blur-md p-4">
+                <motion.div 
+                  initial={{ scale: 0.95, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  className="w-full max-w-3xl max-h-[90vh] overflow-y-auto bg-brand-bg rounded-3xl p-6 md:p-10 border border-brand-charcoal/10 shadow-2xl relative text-brand-charcoal custom-scrollbar"
+                >
+                  <button 
+                    onClick={() => setSelectedOrder(null)} 
+                    className="absolute top-6 right-6 p-2 rounded-full hover:bg-brand-charcoal/5 transition-colors cursor-pointer"
+                  >
+                    <X className="h-5 w-5 text-brand-charcoal/60 hover:text-brand-charcoal" />
+                  </button>
+
+                  <div className="flex items-center gap-3 mb-2">
+                    <h3 className="text-2xl md:text-3xl font-bold font-serif text-brand-charcoal">Order #{selectedOrder.id}</h3>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded border uppercase tracking-wide ${
+                      selectedOrder.status === 'DELIVERED' ? 'bg-brand-green/10 text-brand-green border-brand-green/20' : 
+                      selectedOrder.status === 'CANCELLED' ? 'bg-red-50 text-red-600 border-red-200' : 
+                      selectedOrder.status === 'SHIPPED' ? 'bg-blue-50 text-blue-600 border-blue-200' :
+                      'bg-yellow-50 text-yellow-700 border-yellow-200'
+                    }`}>
+                      {selectedOrder.status || "BOOKED"}
+                    </span>
+                  </div>
+                  <p className="text-xs text-brand-charcoal/50 mb-8 flex items-center gap-1.5">
+                    <Calendar className="h-3.5 w-3.5" />
+                    Placed on {new Date(selectedOrder.createdAt).toLocaleString(undefined, { dateStyle: "long", timeStyle: "short" })}
+                  </p>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                    {/* Customer Info */}
+                    <div className="p-5 rounded-2xl bg-brand-gray/30 border border-brand-charcoal/5 text-sm space-y-2">
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-brand-charcoal/40 mb-3 flex items-center gap-2">
+                        <UserCheck className="h-4 w-4" /> Customer Details
+                      </h4>
+                      <div><span className="text-brand-charcoal/50 inline-block w-20">Name:</span> <span className="font-semibold">{selectedOrder.user.name}</span></div>
+                      <div><span className="text-brand-charcoal/50 inline-block w-20">Email:</span> <span className="font-semibold">{selectedOrder.user.email}</span></div>
+                      {selectedOrder.phone && <div><span className="text-brand-charcoal/50 inline-block w-20">Phone:</span> <span className="font-semibold">{selectedOrder.phone}</span></div>}
+                    </div>
+
+                    {/* Shipping Info */}
+                    <div className="p-5 rounded-2xl bg-brand-gray/30 border border-brand-charcoal/5 text-sm space-y-2">
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-brand-charcoal/40 mb-3 flex items-center gap-2">
+                        <Package className="h-4 w-4" /> Shipping Address
+                      </h4>
+                      {selectedOrder.address ? (
+                        <>
+                          <div className="font-semibold">{selectedOrder.fullName || selectedOrder.user.name}</div>
+                          <div className="text-brand-charcoal/80 leading-relaxed">
+                            {selectedOrder.address}<br />
+                            {selectedOrder.landmark && <>{selectedOrder.landmark}<br /></>}
+                            {selectedOrder.city}, {selectedOrder.state} - {selectedOrder.pincode}
+                          </div>
+                        </>
+                      ) : (
+                        <div className="text-brand-charcoal/50 italic">No shipping details provided.</div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Order Items */}
+                  <div className="mb-8">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-brand-charcoal/40 mb-4 flex items-center gap-2">
+                      <ShoppingBag className="h-4 w-4" /> Purchased Garments
+                    </h4>
+                    <div className="border border-brand-charcoal/5 rounded-2xl overflow-hidden divide-y divide-brand-charcoal/5 bg-brand-bg">
+                      {selectedOrder.items.map((item: any, idx: number) => (
+                        <div key={idx} className="p-4 flex items-center gap-4">
+                          {item.image ? (
+                            <div className="h-16 w-14 rounded-lg bg-brand-gray overflow-hidden flex-shrink-0 border border-brand-charcoal/5">
+                              <MediaRenderer src={item.image} alt={item.title} className="object-cover h-full w-full" />
+                            </div>
+                          ) : (
+                            <div className="h-16 w-14 rounded-lg bg-brand-gray/50 border border-brand-charcoal/5 flex items-center justify-center flex-shrink-0">
+                              <Package className="h-5 w-5 text-brand-charcoal/20" />
+                            </div>
+                          )}
+                          <div className="flex-grow">
+                            <h5 className="font-semibold text-brand-charcoal text-sm">{item.title}</h5>
+                            <div className="flex items-center gap-3 text-[11px] text-brand-charcoal/60 mt-1">
+                              <span className="uppercase">Size: <span className="font-semibold">{item.size}</span></span>
+                              <span className="flex items-center gap-1.5">
+                                Color: 
+                                <span className="h-3 w-3 rounded-full border border-brand-charcoal/10 inline-block shadow-sm" style={{ backgroundColor: item.color }} title={item.color} />
+                              </span>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="font-bold text-brand-charcoal text-sm">₹{item.price.toFixed(2)}</div>
+                            <div className="text-[11px] text-brand-charcoal/50 mt-1">Qty: {item.quantity}</div>
+                            <div className="text-xs font-bold text-brand-charcoal mt-1">₹{(item.price * item.quantity).toFixed(2)}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Order Totals */}
+                  <div className="flex justify-end pt-6 border-t border-brand-charcoal/10">
+                    <div className="w-full max-w-xs space-y-3">
+                      <div className="flex justify-between items-center text-sm text-brand-charcoal/60">
+                        <span>Subtotal</span>
+                        <span>₹{selectedOrder.totalAmount.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-sm text-brand-charcoal/60">
+                        <span>Shipping</span>
+                        <span>Free</span>
+                      </div>
+                      <div className="flex justify-between items-center pt-3 border-t border-brand-charcoal/5">
+                        <span className="font-bold text-brand-charcoal uppercase text-xs tracking-wider">Gross Total</span>
+                        <span className="text-2xl font-bold font-serif text-brand-charcoal">₹{selectedOrder.totalAmount.toFixed(2)}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Status Actions */}
+                  <div className="mt-8 pt-6 border-t border-brand-charcoal/10 flex flex-col sm:flex-row justify-between items-center gap-4">
+                    <div className="text-xs font-bold text-brand-charcoal/40 uppercase tracking-wider">
+                      Update Order Status
+                    </div>
+                    <div className="flex gap-2">
+                      {['BOOKED', 'SHIPPED', 'DELIVERED', 'CANCELLED'].map((status) => (
+                        <button
+                          key={status}
+                          onClick={async () => {
+                            await handleOrderStatusUpdate(selectedOrder.id, status);
+                            setSelectedOrder({...selectedOrder, status}); // Optimistically update modal
+                          }}
+                          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                            selectedOrder.status === status 
+                              ? 'bg-brand-charcoal text-brand-bg shadow-md' 
+                              : 'bg-brand-gray/50 text-brand-charcoal/60 border border-brand-charcoal/10 hover:bg-brand-charcoal/5 hover:text-brand-charcoal'
+                          }`}
+                        >
+                          {status}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </motion.div>
+              </div>
+            )}
           </div>
         </div>
       </main>

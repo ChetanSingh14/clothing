@@ -4,14 +4,27 @@ import { useState, useEffect } from "react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useAlertStore } from "@/store/useAlertStore";
 import { apiFetch } from "@/utils/api";
-import { User, MapPin, Phone, Mail, Loader2, Camera } from "lucide-react";
+import { User, MapPin, Phone, Mail, Loader2, Camera, Package, ChevronRight, LogOut } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import Link from "next/link";
+import Cropper from "react-easy-crop";
+import { getCroppedImg } from "@/utils/cropImage";
 
 export default function ProfilePage() {
-  const { user, loading: authLoading, fetchMe } = useAuthStore();
+  const { user, loading: authLoading, fetchMe, logout } = useAuthStore();
   const [loading, setLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  
+  // Cropper state
+  const [isCropping, setIsCropping] = useState(false);
+  const [imageToCrop, setImageToCrop] = useState<string | null>(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
+  
+  // Logout state
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   
   const [formData, setFormData] = useState({
     name: "",
@@ -55,7 +68,7 @@ export default function ProfilePage() {
       });
       if (res.success) {
         useAlertStore.getState().showAlert("Profile updated successfully");
-        await fetchMe();
+        await fetchMe(true);
         setIsEditing(false);
       } else {
         useAlertStore.getState().showAlert(res.message || "Failed to update profile");
@@ -64,6 +77,63 @@ export default function ProfilePage() {
       useAlertStore.getState().showAlert(err.message || "Failed to update profile");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      useAlertStore.getState().showAlert("Image must be smaller than 5MB");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onloadend = () => {
+      setImageToCrop(reader.result as string);
+      setIsCropping(true);
+    };
+  };
+
+  const onCropComplete = (croppedArea: any, croppedAreaPixels: any) => {
+    setCroppedAreaPixels(croppedAreaPixels);
+  };
+
+  const handleCropSave = async () => {
+    if (!imageToCrop || !croppedAreaPixels) return;
+    
+    setLoading(true);
+    try {
+      const base64String = await getCroppedImg(imageToCrop, croppedAreaPixels);
+      
+      const uploadRes = await apiFetch("/user/upload", {
+        method: "POST",
+        body: JSON.stringify({ image: base64String }),
+      });
+
+      if (uploadRes.success && uploadRes.url) {
+        const updateRes = await apiFetch("/user/profile", {
+          method: "PUT",
+          body: JSON.stringify({ ...formData, profileImage: uploadRes.url }),
+        });
+        
+        if (updateRes.success) {
+          useAlertStore.getState().showAlert("Profile image updated successfully");
+          await fetchMe(true);
+        } else {
+          useAlertStore.getState().showAlert("Failed to update profile image");
+        }
+      } else {
+        useAlertStore.getState().showAlert(uploadRes.message || "Failed to upload image");
+      }
+    } catch (err: any) {
+      useAlertStore.getState().showAlert(err.message || "Failed to crop or upload image");
+    } finally {
+      setLoading(false);
+      setIsCropping(false);
+      setImageToCrop(null);
     }
   };
 
@@ -115,9 +185,10 @@ export default function ProfilePage() {
                   </div>
                 )}
                 {isEditing && (
-                  <div className="absolute inset-0 bg-brand-charcoal/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <label className="absolute inset-0 bg-brand-charcoal/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
                     <Camera className="w-6 h-6 text-brand-bg" />
-                  </div>
+                    <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                  </label>
                 )}
               </div>
               <h2 className="text-xl font-bold font-serif">{user?.name}</h2>
@@ -125,6 +196,32 @@ export default function ProfilePage() {
               <div className="mt-4 inline-block px-3 py-1 bg-brand-green/10 text-brand-green text-[10px] font-bold uppercase rounded-full border border-brand-green/20">
                 {user?.role}
               </div>
+            </div>
+            
+            <div className="bg-brand-gray/30 p-4 rounded-3xl border border-brand-charcoal/5">
+              <nav className="flex flex-col gap-2">
+                <Link href="/profile" className="flex items-center justify-between p-3 rounded-xl bg-white border border-brand-charcoal/10 text-brand-charcoal font-semibold text-sm shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <User className="w-4 h-4 text-brand-charcoal/70" />
+                    My Profile
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-brand-charcoal/40" />
+                </Link>
+                <Link href="/orders" className="flex items-center justify-between p-3 rounded-xl hover:bg-white hover:border hover:border-brand-charcoal/10 text-brand-charcoal/70 font-semibold text-sm transition-all">
+                  <div className="flex items-center gap-3">
+                    <Package className="w-4 h-4 text-brand-charcoal/70" />
+                    My Orders
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-brand-charcoal/40" />
+                </Link>
+                <button onClick={() => setShowLogoutConfirm(true)} className="flex items-center justify-between p-3 rounded-xl hover:bg-red-50 hover:border hover:border-red-100 text-red-600/80 font-semibold text-sm transition-all w-full text-left cursor-pointer">
+                  <div className="flex items-center gap-3">
+                    <LogOut className="w-4 h-4 text-red-600/70" />
+                    Logout
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-red-600/40" />
+                </button>
+              </nav>
             </div>
           </div>
 
@@ -269,6 +366,79 @@ export default function ProfilePage() {
           </div>
         </div>
       </main>
+
+      {/* Logout Confirmation Modal */}
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-charcoal/40 backdrop-blur-sm">
+          <div className="bg-brand-bg rounded-3xl p-8 max-w-sm w-full shadow-2xl border border-brand-charcoal/10 animate-in fade-in zoom-in duration-200">
+            <h3 className="text-xl font-bold font-serif text-brand-charcoal mb-3">Confirm Logout</h3>
+            <p className="text-sm text-brand-charcoal/70 mb-8">Are you sure you want to log out of your account?</p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowLogoutConfirm(false)}
+                className="px-5 py-2.5 rounded-xl text-sm font-semibold border border-brand-charcoal/10 hover:bg-brand-gray/50 transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={logout}
+                className="px-5 py-2.5 bg-red-600 text-white rounded-xl text-sm font-semibold hover:bg-red-700 transition-colors cursor-pointer"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Image Crop Modal */}
+      {isCropping && imageToCrop && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-charcoal/80 backdrop-blur-sm">
+          <div className="bg-brand-bg rounded-3xl overflow-hidden w-full max-w-lg shadow-2xl flex flex-col h-[80vh] max-h-[600px]">
+            <div className="p-4 border-b border-brand-charcoal/10 flex justify-between items-center bg-white">
+              <h3 className="font-bold font-serif text-lg">Crop Profile Picture</h3>
+              <button onClick={() => { setIsCropping(false); setImageToCrop(null); }} className="text-brand-charcoal/50 hover:text-brand-charcoal">
+                Cancel
+              </button>
+            </div>
+            
+            <div className="relative flex-grow bg-black/5">
+              <Cropper
+                image={imageToCrop}
+                crop={crop}
+                zoom={zoom}
+                aspect={1}
+                cropShape="round"
+                showGrid={true}
+                onCropChange={setCrop}
+                onZoomChange={setZoom}
+                onCropComplete={onCropComplete}
+              />
+            </div>
+            
+            <div className="p-4 bg-white border-t border-brand-charcoal/10 flex items-center justify-between gap-4">
+              <input
+                type="range"
+                value={zoom}
+                min={1}
+                max={3}
+                step={0.1}
+                aria-labelledby="Zoom"
+                onChange={(e) => setZoom(Number(e.target.value))}
+                className="w-1/2 accent-brand-green"
+              />
+              <button
+                onClick={handleCropSave}
+                disabled={loading}
+                className="px-6 py-2.5 bg-brand-green text-white rounded-xl text-sm font-semibold hover:bg-brand-green/90 transition-colors flex items-center gap-2 cursor-pointer"
+              >
+                {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+                Save Picture
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Footer />
     </div>
