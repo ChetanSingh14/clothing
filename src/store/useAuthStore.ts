@@ -7,6 +7,14 @@ interface UserProfile {
   name: string;
   email: string;
   role: string;
+  profileImage?: string;
+  fullName?: string;
+  phone?: string;
+  address?: string;
+  landmark?: string;
+  pincode?: string;
+  state?: string;
+  city?: string;
   createdAt: string;
 }
 
@@ -40,7 +48,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         body: JSON.stringify({ email, password }),
       });
       if (res.success && res.data) {
-        set({ user: res.data.user, token: "cookie-active", loading: false });
+        set({ user: res.data.user, token: res.data.token, loading: false });
         return true;
       }
       return false;
@@ -58,7 +66,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         body: JSON.stringify({ name, email, password }),
       });
       if (res.success && res.data) {
-        set({ user: res.data.user, token: "cookie-active", loading: false });
+        set({ user: res.data.user, token: res.data.token, loading: false });
         return true;
       }
       return false;
@@ -92,7 +100,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       const res = await apiFetch("/user/me");
       if (res.success && res.data) {
-        set({ user: res.data, token: "cookie-active", initialized: true, loading: false });
+        set({ user: res.data, initialized: true, loading: false });
       } else {
         set({ user: null, token: null, initialized: true, loading: false });
       }

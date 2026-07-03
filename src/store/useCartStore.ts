@@ -22,7 +22,7 @@ interface CartState {
   getCartTotal: () => number;
   getCartCount: () => number;
   loadCart: () => void;
-  checkout: (paymentMethod?: string) => Promise<boolean>;
+  checkout: (paymentMethod?: string, details?: any) => Promise<boolean>;
 }
 
 export const useCartStore = create<CartState>((set, get) => ({
@@ -104,7 +104,7 @@ export const useCartStore = create<CartState>((set, get) => ({
     return get().items.reduce((sum, item) => sum + item.quantity, 0);
   },
 
-  checkout: async (paymentMethod = "COD") => {
+  checkout: async (paymentMethod = "COD", details = {}) => {
     const { items, getCartTotal, clearCart } = get();
     if (items.length === 0) return false;
 
@@ -115,6 +115,7 @@ export const useCartStore = create<CartState>((set, get) => ({
           totalAmount: getCartTotal(),
           items: items,
           paymentMethod,
+          details,
         }),
       });
       if (res.success) {

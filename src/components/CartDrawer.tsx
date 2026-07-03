@@ -1,20 +1,61 @@
 "use client";
 
 import { useCartStore } from "@/store/useCartStore";
+import { useAuthStore } from "@/store/useAuthStore";
 import { useAlertStore } from "@/store/useAlertStore";
-import { ShoppingBag, X, Plus, Minus, Trash2 } from "lucide-react";
+import { ShoppingBag, X, Plus, Minus, Trash2, ArrowLeft } from "lucide-react";
 import MediaRenderer from "./MediaRenderer";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function CartDrawer() {
   const { items, isOpen, setIsOpen, updateQuantity, removeItem, getCartTotal, clearCart, checkout } = useCartStore();
+  const { user } = useAuthStore();
   const [paymentMethod, setPaymentMethod] = useState("COD");
+  const [checkoutStep, setCheckoutStep] = useState<"cart" | "address">("cart");
+  const [addressDetails, setAddressDetails] = useState({
+    fullName: "",
+    email: "",
+    phone: "",
+    address: "",
+    landmark: "",
+    pincode: "",
+    state: "",
+    city: "",
+  });
+
+  useEffect(() => {
+    if (user) {
+      setAddressDetails({
+        fullName: user.fullName || user.name || "",
+        email: user.email || "",
+        phone: user.phone || "",
+        address: user.address || "",
+        landmark: user.landmark || "",
+        pincode: user.pincode || "",
+        state: user.state || "",
+        city: user.city || "",
+      });
+    }
+  }, [user]);
+
+  // Reset to cart step when drawer closes
+  useEffect(() => {
+    if (!isOpen) {
+      setTimeout(() => setCheckoutStep("cart"), 300); // Wait for exit animation
+    }
+  }, [isOpen]);
 
   const handleCheckout = async () => {
-    const success = await checkout(paymentMethod);
+    // Basic validation
+    if (!addressDetails.fullName || !addressDetails.phone || !addressDetails.address || !addressDetails.pincode) {
+       useAlertStore.getState().showAlert("Please fill in all required address fields.");
+       return;
+    }
+
+    const success = await checkout(paymentMethod, addressDetails);
     if (success) {
       useAlertStore.getState().showAlert("Thank you for your order! Your garments are recorded in the system and being prepared for dispatch.");
       clearCart();
@@ -49,9 +90,18 @@ export default function CartDrawer() {
               {/* Header */}
               <div className="px-6 py-6 border-b border-brand-charcoal/5 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <ShoppingBag className="h-5 w-5 text-brand-charcoal" />
+                  {checkoutStep === "address" ? (
+                    <button 
+                      onClick={() => setCheckoutStep("cart")}
+                      className="p-1 -ml-1 mr-1 rounded-full hover:bg-brand-charcoal/5 transition-colors cursor-pointer"
+                    >
+                      <ArrowLeft className="h-5 w-5 text-brand-charcoal" />
+                    </button>
+                  ) : (
+                    <ShoppingBag className="h-5 w-5 text-brand-charcoal" />
+                  )}
                   <h2 className="text-xl font-semibold tracking-tight text-brand-charcoal font-serif">
-                    Shopping Bag
+                    {checkoutStep === "address" ? "Shipping Details" : "Shopping Bag"}
                   </h2>
                 </div>
                 <button
@@ -62,8 +112,10 @@ export default function CartDrawer() {
                 </button>
               </div>
 
-              {/* Items List */}
-              <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+              {checkoutStep === "cart" ? (
+                <>
+                  {/* Items List */}
+                  <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
                 {items.length === 0 ? (
                   <div className="h-full flex flex-col items-center justify-center text-center p-6">
                     <div className="h-16 w-16 bg-brand-charcoal/5 rounded-full flex items-center justify-center mb-4">
@@ -169,11 +221,70 @@ export default function CartDrawer() {
                     <span className="font-semibold text-brand-green mt-1 block">✓ 7 Days easy return policy on all delivered orders.</span>
                   </p>
                   <button
-                    onClick={handleCheckout}
+                    onClick={() => setCheckoutStep("address")}
                     className="w-full bg-brand-charcoal text-brand-bg rounded-2xl py-4 text-sm font-semibold tracking-wide hover:bg-brand-charcoal/90 transition-all duration-300 cursor-pointer"
                   >
                     Proceed to Checkout
                   </button>
+                </div>
+              )}
+              </>
+              ) : (
+                <div className="flex-1 overflow-y-auto flex flex-col">
+                  <div className="flex-1 p-6 space-y-4">
+                    <p className="text-xs text-brand-charcoal/60 mb-2">Please confirm your shipping details.</p>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-[10px] font-bold uppercase text-brand-charcoal/50 ml-1">Full Name *</label>
+                        <input type="text" value={addressDetails.fullName} onChange={e => setAddressDetails({...addressDetails, fullName: e.target.value})} className="w-full rounded-xl border border-brand-charcoal/10 bg-brand-bg px-3 py-2 text-sm focus:border-brand-green focus:outline-none" />
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-[10px] font-bold uppercase text-brand-charcoal/50 ml-1">Email</label>
+                          <input type="email" value={addressDetails.email} onChange={e => setAddressDetails({...addressDetails, email: e.target.value})} className="w-full rounded-xl border border-brand-charcoal/10 bg-brand-bg px-3 py-2 text-sm focus:border-brand-green focus:outline-none" />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-bold uppercase text-brand-charcoal/50 ml-1">Phone *</label>
+                          <input type="tel" value={addressDetails.phone} onChange={e => setAddressDetails({...addressDetails, phone: e.target.value})} className="w-full rounded-xl border border-brand-charcoal/10 bg-brand-bg px-3 py-2 text-sm focus:border-brand-green focus:outline-none" />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold uppercase text-brand-charcoal/50 ml-1">Address *</label>
+                        <textarea value={addressDetails.address} onChange={e => setAddressDetails({...addressDetails, address: e.target.value})} rows={2} className="w-full rounded-xl border border-brand-charcoal/10 bg-brand-bg px-3 py-2 text-sm focus:border-brand-green focus:outline-none resize-none" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold uppercase text-brand-charcoal/50 ml-1">Landmark</label>
+                        <input type="text" value={addressDetails.landmark} onChange={e => setAddressDetails({...addressDetails, landmark: e.target.value})} className="w-full rounded-xl border border-brand-charcoal/10 bg-brand-bg px-3 py-2 text-sm focus:border-brand-green focus:outline-none" />
+                      </div>
+                      <div className="grid grid-cols-3 gap-3">
+                        <div>
+                          <label className="text-[10px] font-bold uppercase text-brand-charcoal/50 ml-1">City</label>
+                          <input type="text" value={addressDetails.city} onChange={e => setAddressDetails({...addressDetails, city: e.target.value})} className="w-full rounded-xl border border-brand-charcoal/10 bg-brand-bg px-3 py-2 text-sm focus:border-brand-green focus:outline-none" />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-bold uppercase text-brand-charcoal/50 ml-1">State</label>
+                          <input type="text" value={addressDetails.state} onChange={e => setAddressDetails({...addressDetails, state: e.target.value})} className="w-full rounded-xl border border-brand-charcoal/10 bg-brand-bg px-3 py-2 text-sm focus:border-brand-green focus:outline-none" />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-bold uppercase text-brand-charcoal/50 ml-1">Pincode *</label>
+                          <input type="text" value={addressDetails.pincode} onChange={e => setAddressDetails({...addressDetails, pincode: e.target.value})} className="w-full rounded-xl border border-brand-charcoal/10 bg-brand-bg px-3 py-2 text-sm focus:border-brand-green focus:outline-none" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="px-6 py-6 border-t border-brand-charcoal/5 bg-brand-gray/30 space-y-4">
+                    <div className="flex items-center justify-between text-brand-charcoal">
+                      <span className="text-sm font-medium tracking-wide">Total to Pay</span>
+                      <span className="text-lg font-bold font-serif">₹{getCartTotal().toFixed(2)}</span>
+                    </div>
+                    <button
+                      onClick={handleCheckout}
+                      className="w-full bg-brand-charcoal text-brand-bg rounded-2xl py-4 text-sm font-semibold tracking-wide hover:bg-brand-charcoal/90 transition-all duration-300 cursor-pointer"
+                    >
+                      Confirm Booking ({paymentMethod})
+                    </button>
+                  </div>
                 </div>
               )}
             </motion.div>

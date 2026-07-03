@@ -1,15 +1,22 @@
+import { useAuthStore } from "@/store/useAuthStore";
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api/v1";
 
 export const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
-  const headers = {
+  const token = useAuthStore.getState().token;
+  
+  const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    ...options.headers,
+    ...((options.headers as Record<string, string>) || {}),
   };
+
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
 
   const response = await fetch(`${API_URL}${endpoint}`, {
     ...options,
     headers,
-    credentials: "include",
   });
 
   const data = await response.json();

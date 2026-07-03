@@ -1001,6 +1001,20 @@ export default function AdminDashboardPage() {
                         </div>
                       </div>
 
+                      {/* Shipping Details */}
+                      {ord.address && (
+                        <div className="mt-4 p-4 rounded-2xl bg-brand-gray/30 border border-brand-charcoal/5 text-xs text-brand-charcoal/70">
+                          <div className="font-semibold text-brand-charcoal mb-1 flex items-center justify-between">
+                            <span>Shipping Address</span>
+                            {ord.phone && <span className="text-[10px] font-mono">Ph: {ord.phone}</span>}
+                          </div>
+                          <div>{ord.fullName || ord.user.name}</div>
+                          <div>{ord.address}</div>
+                          {ord.landmark && <div>Landmark: {ord.landmark}</div>}
+                          <div>{ord.city}, {ord.state} - {ord.pincode}</div>
+                        </div>
+                      )}
+
                       {/* Items details list */}
                       <div className="space-y-3">
                         <span className="text-[9px] font-bold uppercase tracking-wider text-brand-charcoal/40 block">Purchased Garments ({ord.items.length})</span>
