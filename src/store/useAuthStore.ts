@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 import { apiFetch } from "@/utils/api";
 import { useCartStore } from "./useCartStore";
 
@@ -31,16 +32,18 @@ interface AuthState {
   setError: (msg: string | null) => void;
 }
 
-export const useAuthStore = create<AuthState>((set, get) => ({
-  user: null,
-  token: null, // Relying on httpOnly cookie now
-  loading: false,
-  error: null,
-  initialized: false,
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set, get) => ({
+      user: null,
+      token: null,
+      loading: false,
+      error: null,
+      initialized: false,
 
-  setError: (msg) => set({ error: msg }),
+      setError: (msg) => set({ error: msg }),
 
-  login: async (email, password) => {
+      login: async (email, password) => {
     set({ loading: true, error: null });
     try {
       const res = await apiFetch("/auth/login", {
@@ -92,9 +95,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   fetchMe: async () => {
-    const { initialized, loading } = get();
+    const { initialized, loading, token } = get();
     if (loading) return;
     if (initialized) return;
+
+    if (!token) {
+      set({ initialized: true });
+      return;
+    }
 
     set({ loading: true, error: null });
     try {
@@ -108,4 +116,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({ user: null, token: null, initialized: true, loading: false });
     }
   },
-}));
+}),
+    {
+      name: "auth-storage",
+    }
+  )
+);

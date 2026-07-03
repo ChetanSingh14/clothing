@@ -26,12 +26,14 @@ export default function MediaRenderer({
 }: MediaRendererProps) {
   if (!src) return null;
 
+  const cleanSrc = src.toLowerCase().split('?')[0].split('#')[0];
   const isVideo =
-    src.toLowerCase().endsWith('.mp4') ||
-    src.toLowerCase().endsWith('.webm') ||
-    src.toLowerCase().endsWith('.m4v') ||
-    src.toLowerCase().endsWith('.m4') ||
-    src.toLowerCase().endsWith('.mov');
+    cleanSrc.endsWith('.mp4') ||
+    cleanSrc.endsWith('.webm') ||
+    cleanSrc.endsWith('.m4v') ||
+    cleanSrc.endsWith('.m4') ||
+    cleanSrc.endsWith('.mov') ||
+    cleanSrc.includes('/video/upload/');
 
   if (isVideo) {
     return (

@@ -15,6 +15,7 @@ export default function CartDrawer() {
   const { user } = useAuthStore();
   const [paymentMethod, setPaymentMethod] = useState("COD");
   const [checkoutStep, setCheckoutStep] = useState<"cart" | "address">("cart");
+  const [isEditingAddress, setIsEditingAddress] = useState(false);
   const [addressDetails, setAddressDetails] = useState({
     fullName: "",
     email: "",
@@ -38,6 +39,11 @@ export default function CartDrawer() {
         state: user.state || "",
         city: user.city || "",
       });
+      if (user.address && user.phone && user.pincode) {
+        setIsEditingAddress(false);
+      } else {
+        setIsEditingAddress(true);
+      }
     }
   }, [user]);
 
@@ -233,6 +239,27 @@ export default function CartDrawer() {
                 <div className="flex-1 overflow-y-auto flex flex-col">
                   <div className="flex-1 p-6 space-y-4">
                     <p className="text-xs text-brand-charcoal/60 mb-2">Please confirm your shipping details.</p>
+                    
+                    {!isEditingAddress ? (
+                      <div className="bg-brand-gray/30 p-4 rounded-xl border border-brand-charcoal/10 relative">
+                        <button 
+                          onClick={() => setIsEditingAddress(true)}
+                          className="absolute top-4 right-4 text-[10px] font-bold uppercase text-brand-charcoal underline hover:text-brand-green"
+                        >
+                          Edit
+                        </button>
+                        <h3 className="text-[10px] font-bold uppercase text-brand-charcoal/50 mb-2">Delivering To:</h3>
+                        <div className="text-sm space-y-1">
+                          <p className="font-semibold">{addressDetails.fullName}</p>
+                          <p>{addressDetails.address}</p>
+                          {addressDetails.landmark && <p>Landmark: {addressDetails.landmark}</p>}
+                          <p>{addressDetails.city}, {addressDetails.state} - {addressDetails.pincode}</p>
+                          <p className="pt-2 text-xs text-brand-charcoal/60 flex items-center gap-1">
+                            <span className="font-semibold">Ph:</span> {addressDetails.phone}
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
                     <div className="space-y-3">
                       <div>
                         <label className="text-[10px] font-bold uppercase text-brand-charcoal/50 ml-1">Full Name *</label>
@@ -271,6 +298,7 @@ export default function CartDrawer() {
                         </div>
                       </div>
                     </div>
+                    )}
                   </div>
                   
                   <div className="px-6 py-6 border-t border-brand-charcoal/5 bg-brand-gray/30 space-y-4">
