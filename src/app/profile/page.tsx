@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useAlertStore } from "@/store/useAlertStore";
 import { apiFetch } from "@/utils/api";
-import { User, MapPin, Phone, Mail, Loader2, Camera, Package, ChevronRight, LogOut } from "lucide-react";
+import { User, MapPin, Phone, Mail, Loader2, Camera, Package, ChevronRight, LogOut, X, AlertCircle } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Link from "next/link";
@@ -12,10 +13,16 @@ import Cropper from "react-easy-crop";
 import { getCroppedImg } from "@/utils/cropImage";
 
 export default function ProfilePage() {
-  const { user, loading: authLoading, fetchMe, logout } = useAuthStore();
+  const { user, loading: authLoading, fetchMe, logout, sendPhoneOtp, verifyPhoneOtp } = useAuthStore();
   const [loading, setLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   
+  // Phone verification state
+  const [isPhoneModalOpen, setIsPhoneModalOpen] = useState(false);
+  const [phoneOtp, setPhoneOtp] = useState("");
+  const [phoneOtpToken, setPhoneOtpToken] = useState("");
+  const [phoneVerifyError, setPhoneVerifyError] = useState("");
+
   // Cropper state
   const [isCropping, setIsCropping] = useState(false);
   const [imageToCrop, setImageToCrop] = useState<string | null>(null);
@@ -58,13 +65,12 @@ export default function ProfilePage() {
     }
   }, [user]);
 
-  const handleUpdate = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const submitProfileUpdate = async (data: typeof formData) => {
     setLoading(true);
     try {
       const res = await apiFetch("/user/profile", {
         method: "PUT",
-        body: JSON.stringify(formData),
+        body: JSON.stringify(data),
       });
       if (res.success) {
         useAlertStore.getState().showAlert("Profile updated successfully");
@@ -75,6 +81,55 @@ export default function ProfilePage() {
       }
     } catch (err: any) {
       useAlertStore.getState().showAlert(err.message || "Failed to update profile");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const isPhoneChanged = formData.phone && formData.phone !== (user?.phone || "");
+    if (isPhoneChanged) {
+      setLoading(true);
+      try {
+        const res = await sendPhoneOtp();
+        if (res.success && res.otpToken) {
+          setPhoneOtpToken(res.otpToken);
+          setPhoneOtp("");
+          setPhoneVerifyError("");
+          setIsPhoneModalOpen(true);
+        } else {
+          useAlertStore.getState().showAlert(res.message || "Failed to send verification OTP");
+        }
+      } catch (err: any) {
+        useAlertStore.getState().showAlert(err.message || "Failed to send verification OTP");
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    await submitProfileUpdate(formData);
+  };
+
+  const handlePhoneVerifySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPhoneVerifyError("");
+    setLoading(true);
+    try {
+      const success = await verifyPhoneOtp(phoneOtp, phoneOtpToken, formData.phone);
+      if (success) {
+        setIsPhoneModalOpen(false);
+        await submitProfileUpdate({
+          ...formData,
+          phone: formData.phone
+        });
+      } else {
+        setPhoneVerifyError("Invalid or expired verification code.");
+      }
+    } catch (err: any) {
+      setPhoneVerifyError(err.message || "Verification failed");
     } finally {
       setLoading(false);
     }
@@ -439,6 +494,78 @@ export default function ProfilePage() {
           </div>
         </div>
       )}
+
+      {/* Phone OTP Verification Modal */}
+      <AnimatePresence>
+        {isPhoneModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsPhoneModalOpen(false)}
+              className="absolute inset-0 bg-brand-charcoal/40 backdrop-blur-sm"
+            />
+
+            {/* Modal Container */}
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 15 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 15 }}
+              transition={{ type: "spring", duration: 0.5 }}
+              className="relative w-full max-w-md overflow-hidden rounded-3xl bg-brand-bg p-8 shadow-2xl border border-brand-charcoal/5 z-10"
+            >
+              {/* Close Button */}
+              <button
+                onClick={() => setIsPhoneModalOpen(false)}
+                className="absolute top-6 right-6 text-brand-charcoal/40 hover:text-brand-charcoal p-1.5 rounded-full hover:bg-brand-charcoal/5 transition-all duration-200 cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+
+              <h2 className="text-2xl font-bold font-serif text-brand-charcoal tracking-tight">
+                Verify Phone Number
+              </h2>
+              <p className="mt-2 text-sm text-brand-charcoal/50 font-light">
+                An email containing a verification code has been sent to your email to verify phone number <strong>{formData.phone}</strong>.
+              </p>
+
+              <form onSubmit={handlePhoneVerifySubmit} className="mt-6 space-y-4">
+                <div>
+                  <label className="text-xs font-semibold uppercase tracking-wider text-brand-charcoal/60" htmlFor="phone-otp">
+                    Verification Code (OTP)
+                  </label>
+                  <input
+                    type="text"
+                    id="phone-otp"
+                    required
+                    value={phoneOtp}
+                    onChange={(e) => setPhoneOtp(e.target.value)}
+                    placeholder="Enter 6-digit OTP"
+                    className="mt-1.5 w-full rounded-2xl border border-brand-charcoal/10 bg-brand-bg px-4 py-3 text-sm focus:border-brand-green focus:outline-none transition-all duration-200"
+                  />
+                </div>
+
+                {phoneVerifyError && (
+                  <div className="flex gap-2.5 items-center bg-rose-50 border border-rose-200 text-rose-600 rounded-2xl p-3.5 text-xs font-medium">
+                    <AlertCircle className="h-4.5 w-4.5 flex-shrink-0" />
+                    <span>{phoneVerifyError}</span>
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-brand-charcoal text-brand-bg rounded-2xl py-3.5 text-sm font-semibold tracking-wide hover:bg-brand-charcoal/90 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  {loading ? "Verifying..." : "Verify & Save Phone Number"}
+                </button>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       <Footer />
     </div>
