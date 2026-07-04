@@ -37,6 +37,21 @@ export default function Lightbox({ images, currentIndex, isOpen, onClose, onNavi
 
   if (!isOpen || images.length === 0) return null;
 
+  const currentSrc = images[currentIndex]?.toLowerCase().split('?')[0].split('#')[0] || "";
+  const isVideo =
+    currentSrc.endsWith('.mp4') ||
+    currentSrc.endsWith('.webm') ||
+    currentSrc.endsWith('.m4v') ||
+    currentSrc.endsWith('.m4') ||
+    currentSrc.endsWith('.m4a') ||
+    currentSrc.endsWith('.mov') ||
+    currentSrc.endsWith('.avi') ||
+    currentSrc.endsWith('.wmv') ||
+    currentSrc.endsWith('.flv') ||
+    currentSrc.endsWith('.mkv') ||
+    currentSrc.includes('/video/upload/') ||
+    currentSrc.includes('video');
+
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-sm">
       {/* Close button */}
@@ -57,14 +72,25 @@ export default function Lightbox({ images, currentIndex, isOpen, onClose, onNavi
         </button>
       )}
 
-      {/* Main Image */}
+      {/* Main Image / Video */}
       <div className="relative w-full h-full max-w-6xl max-h-[90vh] flex items-center justify-center p-4 md:p-12" onClick={onClose}>
-        <img
-          src={images[currentIndex]}
-          alt={`View ${currentIndex + 1}`}
-          className="max-w-full max-h-full object-contain shadow-2xl rounded-sm select-none"
-          onClick={(e) => e.stopPropagation()} // Prevent closing when clicking the image itself
-        />
+        {isVideo ? (
+          <video
+            src={images[currentIndex]}
+            className="max-w-full max-h-full object-contain shadow-2xl rounded-sm select-none"
+            controls
+            autoPlay
+            playsInline
+            onClick={(e) => e.stopPropagation()}
+          />
+        ) : (
+          <img
+            src={images[currentIndex]}
+            alt={`View ${currentIndex + 1}`}
+            className="max-w-full max-h-full object-contain shadow-2xl rounded-sm select-none"
+            onClick={(e) => e.stopPropagation()} // Prevent closing when clicking the image itself
+          />
+        )}
       </div>
 
       {/* Next button */}

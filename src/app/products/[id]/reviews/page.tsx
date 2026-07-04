@@ -50,6 +50,10 @@ export default function ProductReviewsPage() {
 
   const handleReviewSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) {
+      setIsAuthModalOpen(true);
+      return;
+    }
     if (!reviewName || !reviewComment) return;
 
     const success = await submitReview(activeProduct.id, reviewName, reviewRating, reviewComment);

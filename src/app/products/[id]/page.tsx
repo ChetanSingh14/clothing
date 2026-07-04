@@ -66,11 +66,15 @@ const getColorImages = (color: string, defaultImages: string[]) => {
   }
   if (imagesToUse.length === 0 && defaultImages.length > 0) imagesToUse = defaultImages;
 
-  const result = [];
-  for (let i = 0; i < 4; i++) {
-    result.push(imagesToUse[i % imagesToUse.length] || imagesToUse[0]);
+  // Pad to at least 4 images if it's less than 4, but keep all images if it's more than 4!
+  if (imagesToUse.length < 4) {
+    const result = [];
+    for (let i = 0; i < 4; i++) {
+      result.push(imagesToUse[i % imagesToUse.length] || imagesToUse[0]);
+    }
+    return result;
   }
-  return result;
+  return imagesToUse;
 };
 
 export default function ProductDetailPage() {
@@ -137,24 +141,12 @@ export default function ProductDetailPage() {
     );
   }
 
-  const productImages = activeProduct.images.filter(img => 
-    !img.toLowerCase().endsWith('.glb') && 
-    !img.toLowerCase().endsWith('.mp4') && 
-    !img.toLowerCase().endsWith('.webm') &&
-    !img.toLowerCase().endsWith('.m4v') &&
-    !img.toLowerCase().endsWith('.m4') &&
-    !img.toLowerCase().endsWith('.mov')
+  const productMedia = activeProduct.images.filter(img => 
+    !img.toLowerCase().endsWith('.glb')
   );
   const productModel = activeProduct.images.find(img => img.toLowerCase().endsWith('.glb'));
-  const productVideo = activeProduct.images.find(img => 
-    img.toLowerCase().endsWith('.mp4') || 
-    img.toLowerCase().endsWith('.webm') ||
-    img.toLowerCase().endsWith('.m4v') ||
-    img.toLowerCase().endsWith('.m4') ||
-    img.toLowerCase().endsWith('.mov')
-  );
   
-  const displayImages = getColorImages(selectedColor, productImages);
+  const displayImages = getColorImages(selectedColor, productMedia);
 
   // Get suggested products
   const suggestedProducts = products.filter(p => p.id !== activeProduct.id).slice(0, 4);
@@ -187,6 +179,10 @@ export default function ProductDetailPage() {
 
   const handleReviewSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) {
+      setIsAuthModalOpen(true);
+      return;
+    }
     if (!reviewName || !reviewComment) return;
 
     const success = await submitReview(activeProduct.id, reviewName, reviewRating, reviewComment);
@@ -229,12 +225,6 @@ export default function ProductDetailPage() {
                   color={selectedColor || "#ffffff"} 
                 />
               </div>
-            ) : productVideo && selectedColor === activeProduct.colors?.[0] ? (
-              <video 
-                src={productVideo}
-                className="w-full h-full object-cover z-10 absolute inset-0"
-                autoPlay loop muted playsInline
-              />
             ) : (
               <div className="absolute inset-0 z-0 group cursor-pointer" onClick={() => openLightbox(0)}>
                 <MediaRenderer
@@ -270,6 +260,13 @@ export default function ProductDetailPage() {
                 alt="Angle 4"
                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 cursor-pointer"
               />
+              {displayImages.length > 4 && (
+                <div className="absolute inset-0 bg-black/60 flex items-center justify-center pointer-events-none transition-colors group-hover:bg-black/70">
+                  <span className="text-white text-lg font-bold tracking-wider">
+                    +{displayImages.length - 4} more
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         </div>

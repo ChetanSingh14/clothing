@@ -2,43 +2,26 @@
 
 import { useEffect, useState } from "react";
 import Header from "@/components/Header";
-import AnimatedHero from "@/components/AnimatedHero";
-import BentoGrid from "@/components/BentoGrid";
-import Testimonials from "@/components/Testimonials";
-import ContactSection from "@/components/ContactSection";
 import Footer from "@/components/Footer";
 import AuthModal from "@/components/AuthModal";
 import CartDrawer from "@/components/CartDrawer";
-import ProductSliderHero from "@/components/ProductSliderHero";
 import PageLoader from "@/components/PageLoader";
 import MediaRenderer from "@/components/MediaRenderer";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useProductStore } from "@/store/useProductStore";
-import { Star, ArrowRight, Loader2 } from "lucide-react";
+import { Star, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 
-export default function Home() {
+export default function ProductsPage() {
   const { user, fetchMe } = useAuthStore();
   const { products, loading, fetchProducts, selectedCategory, setSelectedCategory } = useProductStore();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
-  // Sync user and product listings on load
   useEffect(() => {
     fetchMe();
     fetchProducts();
   }, []);
-
-  useEffect(() => {
-    fetchProducts();
-  }, [user]);
-
-  const handleStartClick = () => {
-    const element = document.getElementById("catalog");
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth" });
-    }
-  };
 
   // Build dynamic categories list (always including T-Shirts and Hoodies)
   const defaultCategories = ["All", "T-Shirts", "Hoodies"];
@@ -51,22 +34,6 @@ export default function Home() {
       <Header onAuthClick={() => setIsAuthModalOpen(true)} />
       
       <main className="flex-grow">
-        {user ? (
-          <>
-            {products.length > 0 && (
-              <ProductSliderHero 
-                featuredProduct={products[0]} 
-              />
-            )}
-          </>
-        ) : (
-          <>
-            <AnimatedHero onStartClick={handleStartClick} />
-            <BentoGrid />
-            <Testimonials />
-          </>
-        )}
-
         <section id="catalog" className="py-24 bg-brand-bg px-6 sm:px-8">
           <div className="mx-auto max-w-7xl">
             {/* Headings */}

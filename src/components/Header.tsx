@@ -57,6 +57,8 @@ export default function Header({ onAuthClick }: HeaderProps) {
                   ? "/contactpage"
                   : link === "About Us"
                   ? "/about"
+                  : link === "Product"
+                  ? "/products"
                   : `/#${link.toLowerCase().replace(" ", "-")}`
               }
               className="text-xs font-bold tracking-widest text-brand-charcoal/70 transition-all hover:text-brand-charcoal uppercase"
@@ -169,6 +171,8 @@ export default function Header({ onAuthClick }: HeaderProps) {
                     ? "/contactpage"
                     : link === "About Us"
                     ? "/about"
+                    : link === "Product"
+                    ? "/products"
                     : `/#${link.toLowerCase().replace(" ", "-")}`
                 }
                 onClick={() => setIsMobileMenuOpen(false)}

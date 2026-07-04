@@ -43,6 +43,11 @@ export default function AdminDashboardPage() {
   
   const { products, fetchProducts } = useProductStore();
 
+  const defaultCategories = ["T-Shirts", "Hoodies"];
+  const uniqueProductCategories = Array.from(new Set(products.map((p) => p.category)))
+    .filter((cat) => cat && !["T-Shirts", "Hoodies"].includes(cat));
+  const adminCategoriesList = [...defaultCategories, ...uniqueProductCategories];
+
   const companyName = useSettingsStore((state) => state.companyName);
   const logoUrl = useSettingsStore((state) => state.logoUrl);
   const fetchSettings = useSettingsStore((state) => state.fetchSettings);
@@ -74,6 +79,7 @@ export default function AdminDashboardPage() {
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
   const [category, setCategory] = useState("T-Shirts");
+  const [isCustomCategory, setIsCustomCategory] = useState(false);
   const [colorsInput, setColorsInput] = useState("#8B5A2B, #4A3B32, #A0522D");
   const [colorImages, setColorImages] = useState<Record<string, string[]>>({});
   const [uploadingColor, setUploadingColor] = useState<string | null>(null);
@@ -237,6 +243,8 @@ export default function AdminDashboardPage() {
       setTitle("");
       setDescription("");
       setPrice("");
+      setCategory("T-Shirts");
+      setIsCustomCategory(false);
       setUploadedImageUrl("");
       setUploadedModelUrl("");
       setColorImages({});
@@ -253,6 +261,7 @@ export default function AdminDashboardPage() {
     setDescription(prod.description);
     setPrice(prod.price.toString());
     setCategory(prod.category);
+    setIsCustomCategory(false);
     setColorsInput(prod.colors?.join(", ") || "");
     setSelectedSizes(prod.sizes || ["S", "M", "L"]);
     
@@ -541,6 +550,8 @@ export default function AdminDashboardPage() {
                           setTitle("");
                           setDescription("");
                           setPrice("");
+                          setCategory("T-Shirts");
+                          setIsCustomCategory(false);
                           setUploadedImageUrl("");
                           setUploadedModelUrl("");
                           setColorImages({});
@@ -606,13 +617,34 @@ export default function AdminDashboardPage() {
                         </label>
                         <select
                           id="pCat"
-                          value={category}
-                          onChange={(e) => setCategory(e.target.value)}
+                          value={isCustomCategory ? "custom" : category}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val === "custom") {
+                              setIsCustomCategory(true);
+                              setCategory("");
+                            } else {
+                              setIsCustomCategory(false);
+                              setCategory(val);
+                            }
+                          }}
                           className="mt-1.5 w-full rounded-xl border border-brand-charcoal/10 bg-brand-bg px-3.5 py-3 text-xs focus:border-brand-green focus:outline-none cursor-pointer"
                         >
-                          <option value="T-Shirts">T-Shirts</option>
-                          <option value="Hoodies">Hoodies</option>
+                          {adminCategoriesList.map((cat) => (
+                            <option key={cat} value={cat}>{cat}</option>
+                          ))}
+                          <option value="custom">Custom...</option>
                         </select>
+                        {isCustomCategory && (
+                          <input
+                            type="text"
+                            placeholder="Enter custom category..."
+                            value={category}
+                            onChange={(e) => setCategory(e.target.value)}
+                            className="mt-2 w-full rounded-xl border border-brand-charcoal/10 bg-brand-bg px-3.5 py-3 text-xs focus:border-brand-green focus:outline-none"
+                            required
+                          />
+                        )}
                       </div>
                     </div>
 
@@ -723,7 +755,7 @@ export default function AdminDashboardPage() {
 
                     <div>
                       <label className="font-semibold uppercase tracking-wider text-brand-charcoal/60">
-                        Color-Specific Images (Up to 4 per color)
+                        Color-Specific Media (Up to 8 per color)
                       </label>
                       <div className="space-y-3 mt-2 mb-6">
                         {colorsInput.split(",").map(c => c.trim()).filter(c => c !== "").map((color, idx) => {
@@ -737,8 +769,8 @@ export default function AdminDashboardPage() {
                                   <span className="text-xs font-semibold text-brand-charcoal">{color}</span>
                                 </div>
                                 <div className="flex items-center gap-3">
-                                  <span className="text-[10px] text-brand-charcoal/50 font-bold uppercase">{uploadedCount}/4 images</span>
-                                  {uploadedCount < 4 && (
+                                  <span className="text-[10px] text-brand-charcoal/50 font-bold uppercase">{uploadedCount}/8 items</span>
+                                  {uploadedCount < 8 && (
                                     <div className="relative">
                                       <button type="button" className="text-[10px] bg-brand-charcoal text-brand-bg px-3 py-1.5 rounded-lg font-semibold hover:bg-brand-charcoal/80 cursor-pointer">
                                         {uploadingColor === color ? "Uploading..." : "Upload"}
