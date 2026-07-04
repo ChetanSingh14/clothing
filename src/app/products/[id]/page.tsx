@@ -88,6 +88,8 @@ export default function ProductDetailPage() {
 
   const [selectedColor, setSelectedColor] = useState("");
   const [selectedSize, setSelectedSize] = useState("");
+  const [maleSize, setMaleSize] = useState("");
+  const [femaleSize, setFemaleSize] = useState("");
   
   // Accordion states
   const [isDescOpen, setIsDescOpen] = useState(true);
@@ -125,7 +127,13 @@ export default function ProductDetailPage() {
       fetchProductDetails(productId).then((prod) => {
         if (prod) {
           if (prod.colors && prod.colors.length > 0) setSelectedColor(prod.colors[0]);
-          if (prod.sizes && prod.sizes.length > 0) setSelectedSize(prod.sizes[0]);
+          if (prod.sizes && prod.sizes.length > 0) {
+            setSelectedSize(prod.sizes[0]);
+            if (prod.category?.toLowerCase().includes("couple")) {
+              setMaleSize(prod.sizes[0]);
+              setFemaleSize(prod.sizes[0]);
+            }
+          }
         }
       });
     }
@@ -156,13 +164,23 @@ export default function ProductDetailPage() {
       setIsAuthModalOpen(true);
       return;
     }
+    const isCoupleCategory = activeProduct.category?.toLowerCase().includes("couple");
+    const sizeToUse = isCoupleCategory
+      ? `M: ${maleSize}, F: ${femaleSize}`
+      : selectedSize;
+
+    if (isCoupleCategory && (!maleSize || !femaleSize)) {
+      alert("Please select both Male and Female sizes.");
+      return;
+    }
+
     addItem({
       productId: activeProduct.id,
       title: activeProduct.title,
       price: activeProduct.price,
       image: displayImages[0] || "",
       color: selectedColor,
-      size: selectedSize,
+      size: sizeToUse,
     });
     setIsOpen(true);
   };
@@ -331,27 +349,75 @@ export default function ProductDetailPage() {
 
               {/* Size Selector */}
               {activeProduct.sizes && activeProduct.sizes.length > 0 && (
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <label className="text-sm font-semibold text-brand-charcoal uppercase tracking-wider">
-                      Size
-                    </label>
-                  </div>
-                  <div className="flex flex-wrap gap-2.5">
-                    {activeProduct.sizes.map((size) => (
-                      <button
-                        key={size}
-                        onClick={() => setSelectedSize(size)}
-                        className={`min-w-[3rem] px-3 py-1.5 text-xs font-bold rounded-2xl transition-all cursor-pointer uppercase ${
-                          selectedSize === size
-                            ? "bg-brand-charcoal text-brand-bg shadow-md"
-                            : "bg-brand-bg text-brand-charcoal hover:bg-brand-charcoal/5 border border-brand-charcoal/10"
-                        }`}
-                      >
-                        {size}
-                      </button>
-                    ))}
-                  </div>
+                <div className="space-y-4">
+                  {activeProduct.category?.toLowerCase().includes("couple") ? (
+                    <>
+                      <div className="space-y-2">
+                        <label className="text-xs font-semibold text-brand-charcoal uppercase tracking-wider block">
+                          Male Shirt Size
+                        </label>
+                        <div className="flex flex-wrap gap-2">
+                          {activeProduct.sizes.map((size) => (
+                            <button
+                              key={size}
+                              type="button"
+                              onClick={() => setMaleSize(size)}
+                              className={`min-w-[2.5rem] px-2.5 py-1 text-xs font-bold rounded-xl transition-all cursor-pointer uppercase ${
+                                maleSize === size
+                                  ? "bg-brand-charcoal text-brand-bg shadow-md"
+                                  : "bg-brand-bg text-brand-charcoal hover:bg-brand-charcoal/5 border border-brand-charcoal/10"
+                              }`}
+                            >
+                              {size}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-semibold text-brand-charcoal uppercase tracking-wider block">
+                          Female Shirt Size
+                        </label>
+                        <div className="flex flex-wrap gap-2">
+                          {activeProduct.sizes.map((size) => (
+                            <button
+                              key={size}
+                              type="button"
+                              onClick={() => setFemaleSize(size)}
+                              className={`min-w-[2.5rem] px-2.5 py-1 text-xs font-bold rounded-xl transition-all cursor-pointer uppercase ${
+                                femaleSize === size
+                                  ? "bg-brand-charcoal text-brand-bg shadow-md"
+                                  : "bg-brand-bg text-brand-charcoal hover:bg-brand-charcoal/5 border border-brand-charcoal/10"
+                              }`}
+                            >
+                              {size}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <label className="text-sm font-semibold text-brand-charcoal uppercase tracking-wider block mb-2">
+                        Size
+                      </label>
+                      <div className="flex flex-wrap gap-2.5">
+                        {activeProduct.sizes.map((size) => (
+                          <button
+                            key={size}
+                            type="button"
+                            onClick={() => setSelectedSize(size)}
+                            className={`min-w-[3rem] px-3 py-1.5 text-xs font-bold rounded-2xl transition-all cursor-pointer uppercase ${
+                              selectedSize === size
+                                ? "bg-brand-charcoal text-brand-bg shadow-md"
+                                : "bg-brand-bg text-brand-charcoal hover:bg-brand-charcoal/5 border border-brand-charcoal/10"
+                            }`}
+                          >
+                            {size}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
             </div>
