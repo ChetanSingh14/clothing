@@ -43,9 +43,9 @@ export default function AdminDashboardPage() {
   
   const { products, fetchProducts } = useProductStore();
 
-  const defaultCategories = ["T-Shirts", "Hoodies"];
+  const defaultCategories = ["T-Shirts"];
   const uniqueProductCategories = Array.from(new Set(products.map((p) => p.category)))
-    .filter((cat) => cat && !["T-Shirts", "Hoodies"].includes(cat));
+    .filter((cat) => cat && !["T-Shirts"].includes(cat));
   const adminCategoriesList = [...defaultCategories, ...uniqueProductCategories];
 
   const companyName = useSettingsStore((state) => state.companyName);
