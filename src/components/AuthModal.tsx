@@ -55,7 +55,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
       if (!google) return;
 
       google.accounts.id.initialize({
-        client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "858230765560-1p3262kjpahnk5pjaqtofr1pk8tubjac.apps.googleusercontent.com",
+        client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "147294619217-kcdsm452kk3neta9bjqrfa35ik91r5r5.apps.googleusercontent.com",
         callback: handleGoogleCredentialResponse,
       });
 
