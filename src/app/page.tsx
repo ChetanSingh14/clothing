@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Header from "@/components/Header";
 import AnimatedHero from "@/components/AnimatedHero";
 import BentoGrid from "@/components/BentoGrid";
-import Testimonials from "@/components/Testimonials";
+// import Testimonials from "@/components/Testimonials";
 import ContactSection from "@/components/ContactSection";
 import Footer from "@/components/Footer";
 import AuthModal from "@/components/AuthModal";
@@ -59,7 +59,7 @@ export default function Home() {
           <>
             <AnimatedHero onStartClick={handleStartClick} />
             <BentoGrid />
-            <Testimonials />
+            {/* <Testimonials /> */}
           </>
         )}
 

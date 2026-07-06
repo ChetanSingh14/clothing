@@ -282,7 +282,7 @@ export default function AboutPage() {
               },
               {
                 title: "Easy Returns",
-                desc: "No stress. If your garment doesn't feel and fit exactly how you want it, return it easily within 30 days.",
+                desc: "No stress. If your garment doesn't feel and fit exactly how you want it, return it easily within 7 days.",
                 icon: Sparkles,
               },
             ].map((card, i) => (
