@@ -303,6 +303,11 @@ const InteractiveBentoGallery: React.FC<InteractiveBentoGalleryProps> = ({ media
     const [items, setItems] = useState(mediaItems);
     const [isDragging, setIsDragging] = useState(false);
 
+    useEffect(() => {
+        setItems(mediaItems);
+    }, [mediaItems]);
+
+
     return (
         <div className="container mx-auto px-4 py-8 max-w-7xl">
             <div className="mb-16 text-center max-w-3xl mx-auto">

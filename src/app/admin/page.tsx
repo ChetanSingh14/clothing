@@ -10,8 +10,9 @@ import { useProductStore } from "@/store/useProductStore";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { useAlertStore } from "@/store/useAlertStore";
 import { shallow } from "zustand/shallow";
-import { Plus, Trash2, Tag, Star, Package, Users, Layers, UploadCloud, Loader2, RefreshCw, BarChart2, UserCheck, Shield, ShoppingBag, DollarSign, Calendar, Edit, Settings, Eye, X } from "lucide-react";
+import { Plus, Trash2, Tag, Star, Package, Users, Layers, UploadCloud, Loader2, RefreshCw, BarChart2, UserCheck, Shield, ShoppingBag, DollarSign, Calendar, Edit, Settings, Eye, X, Image as ImageIcon } from "lucide-react";
 import { motion } from "framer-motion";
+import { apiFetch } from "@/utils/api";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Lightbox from "@/components/Lightbox";
@@ -95,6 +96,108 @@ export default function AdminDashboardPage() {
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [lightboxImages, setLightboxImages] = useState<string[]>([]);
 
+  // Hero Gallery States
+  const [galleryImages, setGalleryImages] = useState<any[]>([]);
+  const [uploadingGalleryImage, setUploadingGalleryImage] = useState(false);
+
+  const fetchGalleryImages = async () => {
+    try {
+      const res = await apiFetch("/gallery");
+      if (res.success) setGalleryImages(res.data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const uploadGalleryImage = async (file: File) => {
+    try {
+      setUploadingGalleryImage(true);
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64Data = reader.result as string;
+        const res = await apiFetch("/gallery", {
+          method: "POST",
+          body: JSON.stringify({ url: base64Data }),
+        });
+        if (res.success) {
+          useAlertStore.getState().showAlert("Image uploaded to gallery!");
+          fetchGalleryImages();
+        }
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setUploadingGalleryImage(false);
+    }
+  };
+
+  const deleteGalleryImage = async (id: number) => {
+    try {
+      const res = await apiFetch(`/gallery/${id}`, { method: "DELETE" });
+      if (res.success) {
+        useAlertStore.getState().showAlert("Image deleted!");
+        fetchGalleryImages();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // Cinematic Hero States
+  const [cinematicImages, setCinematicImages] = useState<any[]>([]);
+  const [uploadingCinematicImage, setUploadingCinematicImage] = useState(false);
+  const [cinematicLabel, setCinematicLabel] = useState("");
+
+  const fetchCinematicImages = async () => {
+    try {
+      const res = await apiFetch("/cinematic-hero");
+      if (res.success) setCinematicImages(res.data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const uploadCinematicImage = async (file: File) => {
+    if (!cinematicLabel) {
+      useAlertStore.getState().showAlert("Please enter a label for the image!");
+      return;
+    }
+    try {
+      setUploadingCinematicImage(true);
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64Data = reader.result as string;
+        const res = await apiFetch("/cinematic-hero", {
+          method: "POST",
+          body: JSON.stringify({ url: base64Data, label: cinematicLabel }),
+        });
+        if (res.success) {
+          useAlertStore.getState().showAlert("Image uploaded to cinematic hero!");
+          setCinematicLabel("");
+          fetchCinematicImages();
+        }
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setUploadingCinematicImage(false);
+    }
+  };
+
+  const deleteCinematicImage = async (id: number) => {
+    try {
+      const res = await apiFetch(`/cinematic-hero/${id}`, { method: "DELETE" });
+      if (res.success) {
+        useAlertStore.getState().showAlert("Cinematic image deleted!");
+        fetchCinematicImages();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const openLightbox = (images: string[], index: number) => {
     setLightboxImages(images);
     setLightboxIndex(index);
@@ -111,6 +214,21 @@ export default function AdminDashboardPage() {
     if (companyName) setTempCompanyName(companyName);
     if (logoUrl) setTempLogoUrl(logoUrl);
   }, [companyName, logoUrl]);
+
+  useEffect(() => {
+    if (initialized && !user) {
+      setIsAuthModalOpen(true);
+    }
+  }, [user, initialized]);
+
+  useEffect(() => {
+    if (activeTab === "gallery") {
+      fetchGalleryImages();
+    }
+    if (activeTab === "cinematic") {
+      fetchCinematicImages();
+    }
+  }, [activeTab]);
 
   useEffect(() => {
     if (initialized) {
@@ -373,6 +491,8 @@ export default function AdminDashboardPage() {
                 { id: "reviews", label: "Reviews Manager", icon: Star },
                 { id: "orders", label: "Sales & Orders", icon: ShoppingBag },
                 { id: "users", label: "Customer Accounts", icon: Users },
+                { id: "gallery", label: "Hero Gallery", icon: ImageIcon },
+                { id: "cinematic", label: "Cinematic Hero", icon: Layers },
                 { id: "settings", label: "Brand Settings", icon: Settings },
               ].map((tab) => {
                 const Icon = tab.icon;
@@ -1184,6 +1304,125 @@ export default function AdminDashboardPage() {
                       </tbody>
                     </table>
                   </div>
+                </div>
+              </div>
+            )}
+
+            {/* -------------------- TAB CONTENT: SETTINGS -------------------- */}
+            {activeTab === "gallery" && (
+              <div className="max-w-5xl bg-brand-gray/30 p-8 rounded-3xl border border-brand-charcoal/5 space-y-8">
+                <div>
+                  <h2 className="text-xl font-semibold tracking-tight text-brand-charcoal font-serif">
+                    Hero Gallery Management
+                  </h2>
+                  <p className="text-xs text-brand-charcoal/50 mt-1 font-light">
+                    Upload and manage dynamic images that appear in the floating gallery hero section on the homepage. At least 8 images are recommended for the best visual experience.
+                  </p>
+                </div>
+
+                <div className="relative border border-dashed border-brand-charcoal/20 rounded-xl bg-brand-bg p-8 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-brand-charcoal/5 transition-colors">
+                  <UploadCloud className="h-8 w-8 text-brand-charcoal/40 mb-2" />
+                  <span className="text-sm font-semibold text-brand-charcoal">
+                    {uploadingGalleryImage ? "Uploading image..." : "Upload new gallery image"}
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    disabled={uploadingGalleryImage}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) uploadGalleryImage(file);
+                    }}
+                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full disabled:cursor-not-allowed"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {galleryImages.map((img) => (
+                    <div key={img.id} className="relative group rounded-xl overflow-hidden aspect-square border border-brand-charcoal/10 shadow-sm bg-brand-bg">
+                      <img src={img.url} alt="Gallery" className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-brand-charcoal/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <button
+                          onClick={() => deleteGalleryImage(img.id)}
+                          className="bg-brand-red text-white p-2 rounded-full hover:scale-110 transition-transform cursor-pointer shadow-lg"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  {galleryImages.length === 0 && (
+                    <div className="col-span-full py-12 text-center text-xs text-brand-charcoal/50">
+                      No images in the gallery yet. Start by uploading one!
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* -------------------- TAB CONTENT: CINEMATIC HERO -------------------- */}
+            {activeTab === "cinematic" && (
+              <div className="max-w-5xl bg-brand-gray/30 p-8 rounded-3xl border border-brand-charcoal/5 space-y-8">
+                <div>
+                  <h2 className="text-xl font-semibold tracking-tight text-brand-charcoal font-serif">
+                    Cinematic Hero Management
+                  </h2>
+                  <p className="text-xs text-brand-charcoal/50 mt-1 font-light">
+                    Upload images and set labels for the desktop Cinematic Video Hero slider.
+                  </p>
+                </div>
+
+                <div className="space-y-4 max-w-md">
+                  <div>
+                    <label className="block text-xs font-semibold text-brand-charcoal mb-2">Image Label</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Summer Drop"
+                      value={cinematicLabel}
+                      onChange={(e) => setCinematicLabel(e.target.value)}
+                      className="w-full bg-brand-bg rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-brand-charcoal/20 border border-brand-charcoal/10 shadow-sm transition-all"
+                    />
+                  </div>
+                  <div className="relative border border-dashed border-brand-charcoal/20 rounded-xl bg-brand-bg p-8 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-brand-charcoal/5 transition-colors">
+                    <UploadCloud className="h-8 w-8 text-brand-charcoal/40 mb-2" />
+                    <span className="text-sm font-semibold text-brand-charcoal">
+                      {uploadingCinematicImage ? "Uploading image..." : "Select image to upload (label required)"}
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      disabled={uploadingCinematicImage || !cinematicLabel}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) uploadCinematicImage(file);
+                      }}
+                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full disabled:cursor-not-allowed"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {cinematicImages.map((img) => (
+                    <div key={img.id} className="relative group rounded-xl overflow-hidden aspect-video border border-brand-charcoal/10 shadow-sm bg-brand-bg flex flex-col">
+                      <img src={img.url} alt={img.label} className="w-full h-full object-cover flex-1" />
+                      <div className="p-2 bg-brand-charcoal text-brand-bg text-center text-xs font-bold shrink-0 truncate">
+                        {img.label}
+                      </div>
+                      <div className="absolute inset-0 bg-brand-charcoal/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pb-8">
+                        <button
+                          onClick={() => deleteCinematicImage(img.id)}
+                          className="bg-brand-red text-white p-2 rounded-full hover:scale-110 transition-transform cursor-pointer shadow-lg"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  {cinematicImages.length === 0 && (
+                    <div className="col-span-full py-12 text-center text-xs text-brand-charcoal/50">
+                      No images in the cinematic hero yet.
+                    </div>
+                  )}
                 </div>
               </div>
             )}

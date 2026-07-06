@@ -1,9 +1,10 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { motion, stagger, useAnimate } from "framer-motion"
 import { useSettingsStore } from "@/store/useSettingsStore"
 import { ArrowRight } from "lucide-react"
+import { apiFetch } from "@/utils/api"
 
 import Floating, {
   FloatingElement,
@@ -27,10 +28,32 @@ interface FloatingGalleryHeroProps {
 export default function FloatingGalleryHero({ onStartClick }: FloatingGalleryHeroProps) {
   const [scope, animate] = useAnimate()
   const companyName = useSettingsStore((state) => state.companyName);
+  const [galleryImages, setGalleryImages] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchImages = async () => {
+      try {
+        const res = await apiFetch("/gallery");
+        if (res.success && res.data) {
+          setGalleryImages(res.data);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchImages();
+  }, []);
 
   useEffect(() => {
     animate("img", { opacity: [0, 1] }, { duration: 0.5, delay: stagger(0.15) })
-  }, [])
+  }, [galleryImages, animate])
+
+  const getImageUrl = (index: number) => {
+    if (galleryImages[index] && galleryImages[index].url) {
+      return galleryImages[index].url;
+    }
+    return exampleImages[index]?.url || exampleImages[0].url;
+  };
 
   return (
     <div
@@ -74,28 +97,28 @@ export default function FloatingGalleryHero({ onStartClick }: FloatingGalleryHer
         <FloatingElement depth={0.5} className="top-[8%] left-[11%]">
           <motion.img
             initial={{ opacity: 0 }}
-            src={exampleImages[0].url}
+            src={getImageUrl(0)}
             className="w-16 h-16 md:w-28 md:h-28 rounded-xl shadow-lg border border-brand-charcoal/10 object-cover hover:scale-105 duration-200 cursor-pointer transition-transform pointer-events-auto"
           />
         </FloatingElement>
         <FloatingElement depth={1} className="top-[10%] left-[72%] md:left-[82%]">
           <motion.img
             initial={{ opacity: 0 }}
-            src={exampleImages[1].url}
+            src={getImageUrl(1)}
             className="w-20 h-20 md:w-32 md:h-32 rounded-2xl shadow-lg border border-brand-charcoal/10 object-cover hover:scale-105 duration-200 cursor-pointer transition-transform pointer-events-auto"
           />
         </FloatingElement>
         <FloatingElement depth={2} className="top-[15%] left-[53%] md:left-[55%]">
           <motion.img
             initial={{ opacity: 0 }}
-            src={exampleImages[2].url}
+            src={getImageUrl(2)}
             className="w-24 h-32 md:w-40 md:h-52 rounded-xl shadow-md border border-brand-charcoal/5 object-cover hover:scale-105 duration-200 cursor-pointer transition-transform pointer-events-auto"
           />
         </FloatingElement>
         <FloatingElement depth={1} className="top-[70%] left-[83%]">
           <motion.img
             initial={{ opacity: 0 }}
-            src={exampleImages[3].url}
+            src={getImageUrl(3)}
             className="w-24 h-24 md:w-36 md:h-36 rounded-3xl shadow-lg border border-brand-charcoal/10 object-cover hover:scale-105 duration-200 cursor-pointer transition-transform pointer-events-auto"
           />
         </FloatingElement>
@@ -103,14 +126,14 @@ export default function FloatingGalleryHero({ onStartClick }: FloatingGalleryHer
         <FloatingElement depth={1} className="top-[40%] left-[2%] md:left-[8%]">
           <motion.img
             initial={{ opacity: 0 }}
-            src={exampleImages[4].url}
+            src={getImageUrl(4)}
             className="w-20 h-28 md:w-36 md:h-48 rounded-2xl shadow-md border border-brand-charcoal/10 object-cover hover:scale-105 duration-200 cursor-pointer transition-transform pointer-events-auto"
           />
         </FloatingElement>
         <FloatingElement depth={2} className="top-[60%] left-[70%] md:left-[67%]">
           <motion.img
             initial={{ opacity: 0 }}
-            src={exampleImages[7].url}
+            src={getImageUrl(7)}
             className="w-20 h-28 md:w-36 md:h-48 rounded-xl shadow-lg border border-brand-charcoal/5 object-cover hover:scale-105 duration-200 cursor-pointer transition-transform pointer-events-auto"
           />
         </FloatingElement>
@@ -118,14 +141,14 @@ export default function FloatingGalleryHero({ onStartClick }: FloatingGalleryHer
         <FloatingElement depth={4} className="top-[73%] left-[15%] md:left-[22%]">
           <motion.img
             initial={{ opacity: 0 }}
-            src={exampleImages[5].url}
+            src={getImageUrl(5)}
             className="w-32 md:w-44 h-40 md:h-56 rounded-2xl shadow-xl border border-brand-charcoal/10 object-cover hover:scale-105 duration-200 cursor-pointer transition-transform pointer-events-auto"
           />
         </FloatingElement>
         <FloatingElement depth={1} className="top-[80%] left-[45%] md:left-[48%]">
           <motion.img
             initial={{ opacity: 0 }}
-            src={exampleImages[6].url}
+            src={getImageUrl(6)}
             className="w-16 h-16 md:w-28 md:h-28 rounded-full shadow-md border border-brand-charcoal/5 object-cover hover:scale-105 duration-200 cursor-pointer transition-transform pointer-events-auto"
           />
         </FloatingElement>

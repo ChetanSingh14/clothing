@@ -1,10 +1,27 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import InteractiveBentoGallery from "./ui/interactive-bento-gallery";
+import { apiFetch } from "@/utils/api";
 
 export default function BentoGrid() {
   const companyName = useSettingsStore((state) => state.companyName);
+  const [galleryImages, setGalleryImages] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchImages = async () => {
+      try {
+        const res = await apiFetch("/gallery");
+        if (res.success && res.data) {
+          setGalleryImages(res.data);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchImages();
+  }, []);
 
   const mediaItems = [
     {
@@ -65,10 +82,17 @@ export default function BentoGrid() {
     },
   ];
 
+  const dynamicMediaItems = mediaItems.map((item, index) => {
+    if (galleryImages[index] && galleryImages[index].url) {
+      return { ...item, url: galleryImages[index].url };
+    }
+    return item;
+  });
+
   return (
     <section id="product" className="py-24 bg-brand-bg relative w-full">
       <InteractiveBentoGallery
-        mediaItems={mediaItems}
+        mediaItems={dynamicMediaItems}
         title="Prints That Hit Different"
         description={`Every tee from ${companyName} is a statement. Bold graphics, heavyweight cotton, drop-ready drops designed for Gen Z who refuse to blend in.`}
       />

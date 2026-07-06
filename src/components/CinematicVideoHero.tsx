@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react"
 import { ArrowRight } from "lucide-react"
+import { apiFetch } from "@/utils/api"
 
 const MEDIAS = [
   { url: "https://images.unsplash.com/photo-1529374255404-311a2a4f1fd9?q=80&w=1920&auto=format&fit=crop", label: "Summer Drop" },
@@ -13,6 +14,21 @@ const MEDIAS = [
 export default function CinematicVideoHero({ onStartClick }: { onStartClick?: () => void }) {
   const [activeMedia, setActiveMedia] = useState(0)
   const [isTransitioning, setIsTransitioning] = useState(false)
+  const [cinematicMedias, setCinematicMedias] = useState(MEDIAS);
+
+  useEffect(() => {
+    const fetchImages = async () => {
+      try {
+        const res = await apiFetch("/cinematic-hero");
+        if (res.success && res.data && res.data.length > 0) {
+          setCinematicMedias(res.data);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchImages();
+  }, []);
 
   const handleMediaSwitch = (index: number) => {
     if (activeMedia === index || isTransitioning) return
@@ -27,7 +43,7 @@ export default function CinematicVideoHero({ onStartClick }: { onStartClick?: ()
   useEffect(() => {
     const interval = setInterval(() => {
       if (!isTransitioning) {
-        setActiveMedia((prev) => (prev + 1) % MEDIAS.length);
+        setActiveMedia((prev) => (prev + 1) % cinematicMedias.length);
         setIsTransitioning(true);
         setTimeout(() => setIsTransitioning(false), 1000);
       }
@@ -36,7 +52,7 @@ export default function CinematicVideoHero({ onStartClick }: { onStartClick?: ()
   }, [isTransitioning]);
 
   return (
-    <section className="relative w-full h-screen overflow-hidden bg-brand-charcoal font-sans">
+    <section className="relative w-full h-[calc(100dvh-4.5rem)] sm:h-[calc(100dvh-5rem)] md:h-[calc(100dvh-5.5rem)] overflow-hidden bg-brand-charcoal font-sans">
       <style dangerouslySetInnerHTML={{ __html: `
         .liquid-glass {
           background: rgba(245, 225, 208, 0.05); /* brand-bg tinted */
@@ -80,7 +96,7 @@ export default function CinematicVideoHero({ onStartClick }: { onStartClick?: ()
       `}} />
 
       {/* Background Images with Ken Burns effect */}
-      {MEDIAS.map((media, index) => (
+      {cinematicMedias.map((media, index) => (
         <div 
           key={media.url}
           className={`absolute inset-0 w-full h-full transition-opacity duration-1000 ease-in-out ${
@@ -101,14 +117,11 @@ export default function CinematicVideoHero({ onStartClick }: { onStartClick?: ()
       {/* Removed train window overlay for cleaner streetwear aesthetic */}
 
       {/* Content Layer */}
-      <div className="relative z-[2] flex flex-col w-full h-full px-6 py-8 md:px-12 md:py-10 text-brand-bg">
+      <div className="relative z-[2] flex flex-col w-full h-full px-6 py-6 md:px-12 md:py-8 text-brand-bg">
         
-        {/* Spacer to push content down (replacing navbar space) */}
-        <div className="h-16 w-full" />
-
         {/* Hero Content */}
         <div className="flex flex-col items-center justify-center flex-1 text-center transition-colors duration-700 ease-in-out">
-          <div className="liquid-glass border border-brand-bg/20 rounded-full px-4 py-2 mb-8 inline-flex">
+          <div className="liquid-glass border border-brand-bg/20 rounded-full px-4 py-2 mb-6 inline-flex">
             <span className="text-xs md:text-sm tracking-wide font-medium text-brand-bg/90">
               Over 10,000 streetwear enthusiasts already finding their fit
             </span>
@@ -118,11 +131,11 @@ export default function CinematicVideoHero({ onStartClick }: { onStartClick?: ()
             Premium Essentials <br /> Built for the Streets
           </h1>
 
-          <p className="mt-6 text-sm md:text-lg max-w-xl leading-relaxed mx-auto font-light text-brand-bg/80 drop-shadow">
+          <p className="mt-4 text-sm md:text-lg max-w-xl leading-relaxed mx-auto font-light text-brand-bg/80 drop-shadow">
             Rise above the chaos of fast fashion and endless micro-trends. Discover premium heavyweight cottons crafted for longevity, fit, and unapologetic style.
           </p>
 
-          <div className="mt-10 liquid-glass border border-brand-bg/20 rounded-full p-2 flex items-center justify-between max-w-[320px] w-full sm:max-w-sm mx-auto shadow-xl">
+          <div className="mt-8 liquid-glass border border-brand-bg/20 rounded-full p-2 flex items-center justify-between max-w-[320px] w-full sm:max-w-sm mx-auto shadow-xl">
             <input
               type="text"
               placeholder="Search catalog..."
@@ -136,8 +149,8 @@ export default function CinematicVideoHero({ onStartClick }: { onStartClick?: ()
             </button>
           </div>
 
-          <div className="mt-12 mb-8 md:mb-12 flex flex-wrap justify-center gap-6 md:gap-10">
-            {MEDIAS.map((media, index) => (
+          <div className="mt-8 mb-4 md:mb-6 flex flex-wrap justify-center gap-6 md:gap-10">
+            {cinematicMedias.map((media, index) => (
               <button
                 key={media.label}
                 onClick={() => handleMediaSwitch(index)}
