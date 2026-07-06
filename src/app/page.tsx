@@ -9,7 +9,7 @@ import ContactSection from "@/components/ContactSection";
 import Footer from "@/components/Footer";
 import AuthModal from "@/components/AuthModal";
 import CartDrawer from "@/components/CartDrawer";
-import ProductSliderHero from "@/components/ProductSliderHero";
+import CinematicVideoHero from "@/components/CinematicVideoHero";
 import PageLoader from "@/components/PageLoader";
 import MediaRenderer from "@/components/MediaRenderer";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -53,11 +53,7 @@ export default function Home() {
       <main className="flex-grow">
         {user ? (
           <>
-            {products.length > 0 && (
-              <ProductSliderHero 
-                featuredProduct={products[0]} 
-              />
-            )}
+            <CinematicVideoHero onStartClick={handleStartClick} />
           </>
         ) : (
           <>
