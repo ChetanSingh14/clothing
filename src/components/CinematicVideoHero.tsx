@@ -123,17 +123,17 @@ export default function CinematicVideoHero({ onStartClick }: { onStartClick?: ()
         <div className="flex flex-col items-center justify-center flex-1 text-center transition-colors duration-700 ease-in-out">
           <div className="liquid-glass border border-brand-bg/20 rounded-full px-4 py-2 mb-6 inline-flex">
             <span className="text-xs md:text-sm tracking-wide font-medium text-brand-bg/90">
-              Over 10,000 streetwear enthusiasts already finding their fit
+              Made In India  🇮🇳 
             </span>
           </div>
 
           <h1 className="font-serif text-4xl sm:text-5xl md:text-7xl lg:text-[5.5rem] leading-[1.1] max-w-4xl tracking-tight drop-shadow-md">
-            Premium Essentials <br /> Built for the Streets
+            Not For Everyone. <br /> Just For The Ones Who Get It.
           </h1>
 
-          <p className="mt-4 text-sm md:text-lg max-w-xl leading-relaxed mx-auto font-light text-brand-bg/80 drop-shadow">
+          {/* <p className="mt-4 text-sm md:text-lg max-w-xl leading-relaxed mx-auto font-light text-brand-bg/80 drop-shadow">
             Rise above the chaos of fast fashion and endless micro-trends. Discover premium heavyweight cottons crafted for longevity, fit, and unapologetic style.
-          </p>
+          </p> */}
 
           <div className="mt-8 liquid-glass border border-brand-bg/20 rounded-full p-2 flex items-center justify-between max-w-[320px] w-full sm:max-w-sm mx-auto shadow-xl">
             <input
@@ -167,7 +167,7 @@ export default function CinematicVideoHero({ onStartClick }: { onStartClick?: ()
         </div>
 
         {/* Bottom Stats */}
-        <div className="flex flex-wrap justify-center gap-x-4 sm:gap-x-6 md:gap-x-8 gap-y-3 mt-auto pb-6 text-xs sm:text-sm text-brand-bg/70 font-sans tracking-wide drop-shadow">
+        {/* <div className="flex flex-wrap justify-center gap-x-4 sm:gap-x-6 md:gap-x-8 gap-y-3 mt-auto pb-6 text-xs sm:text-sm text-brand-bg/70 font-sans tracking-wide drop-shadow">
           <span>280GSM Heavyweight</span>
           <span className="hidden md:inline">|</span>
           <span>12,000+ Customers</span>
@@ -175,7 +175,7 @@ export default function CinematicVideoHero({ onStartClick }: { onStartClick?: ()
           <span>4.9/5 User Satisfaction</span>
           <span className="hidden md:inline">|</span>
           <span>Fit-First Design</span>
-        </div>
+        </div> */}
 
       </div>
     </section>

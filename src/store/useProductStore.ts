@@ -20,6 +20,10 @@ export interface ProductItem {
   images: string[];
   colors: string[];
   sizes: string[];
+  maleColors?: string[];
+  femaleColors?: string[];
+  maleSizes?: string[];
+  femaleSizes?: string[];
   rating: number;
   createdAt: string;
   reviews?: ProductReview[];

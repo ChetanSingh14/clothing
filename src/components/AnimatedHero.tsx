@@ -370,11 +370,11 @@ export default function AnimatedHero({ onStartClick }: AnimatedHeroProps) {
                   onClick={() => (window as any).triggerFlavorSwitch?.("cream")}
                 >
                   <img
-                    src="/brown_tee.png"
-                    alt="Brown Tee"
+                    src="/black_tee.png"
+                    alt="Black Tee"
                   />
                   <div className="card-info">
-                    <span>Brown Tee</span>
+                    <span>Black Tee</span>
                     {/* <span>₹29.99</span> */}
                   </div>
                 </div>

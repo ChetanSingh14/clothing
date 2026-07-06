@@ -32,12 +32,12 @@ function ShirtModel({ flavor }: { flavor: "cream" | "brown" }) {
   // Fallback to the first mesh if T_Shirt_male isn't found
   const meshNode = nodes.T_Shirt_male || Object.values(nodes).find((n: any) => n.isMesh);
 
-  // cream flavor -> brown shirt (#1c140f)
+  // cream flavor -> black shirt (#111111)
   // brown flavor -> cream shirt (#f5e0cf)
-  const targetColor = useRef(new THREE.Color(flavor === "brown" ? "#f5e0cf" : "#1c140f"));
+  const targetColor = useRef(new THREE.Color(flavor === "brown" ? "#f5e0cf" : "#111111"));
 
   useEffect(() => {
-    targetColor.current.set(flavor === "brown" ? "#f5e0cf" : "#1c140f");
+    targetColor.current.set(flavor === "brown" ? "#f5e0cf" : "#111111");
   }, [flavor]);
 
   useFrame(() => {
@@ -56,8 +56,8 @@ function ShirtModel({ flavor }: { flavor: "cream" | "brown" }) {
     <mesh geometry={meshNode.geometry} dispose={null}>
       <meshStandardMaterial
         ref={materialRef}
-        color={flavor === "brown" ? "#f5e0cf" : "#1c140f"}
-        roughness={0.8}
+        color={flavor === "brown" ? "#f5e0cf" : "#111111"}
+        roughness={0.85}
       />
       <DecalGraphic url={decalUrl} />
     </mesh>
