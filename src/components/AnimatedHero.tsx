@@ -289,38 +289,7 @@ export default function AnimatedHero({ onStartClick }: AnimatedHeroProps) {
       <div className="hero-main-content">
         <div className="hero-inner-layout">
           <div className="leaves-container" ref={leavesBGRef}>
-            <model-viewer
-              className="leaf l1"
-              src="https://api.getlayers.ai/storage/v1/object/public/public/assets/soda-14ff8a788d/leaves.glb"
-              environment-image="neutral"
-              exposure="1.0"
-              interaction-prompt="none"
-              camera-orbit="45deg 75deg 105%"
-            ></model-viewer>
-            <model-viewer
-              className="leaf l2"
-              src="https://api.getlayers.ai/storage/v1/object/public/public/assets/soda-14ff8a788d/leaves.glb"
-              environment-image="neutral"
-              exposure="1.0"
-              interaction-prompt="none"
-              camera-orbit="-30deg 60deg 105%"
-            ></model-viewer>
-            <model-viewer
-              className="leaf l3"
-              src="https://api.getlayers.ai/storage/v1/object/public/public/assets/soda-14ff8a788d/leaves.glb"
-              environment-image="neutral"
-              exposure="1.0"
-              interaction-prompt="none"
-              camera-orbit="120deg 85deg 105%"
-            ></model-viewer>
-            <model-viewer
-              className="leaf l4"
-              src="https://api.getlayers.ai/storage/v1/object/public/public/assets/soda-14ff8a788d/leaves.glb"
-              environment-image="neutral"
-              exposure="1.0"
-              interaction-prompt="none"
-              camera-orbit="10deg 45deg 105%"
-            ></model-viewer>
+            {/* Removed remote model-viewer leaves to massively improve load time */}
           </div>
 
           <div className="hero-left">

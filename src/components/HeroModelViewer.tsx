@@ -98,7 +98,10 @@ function RotatingGroup({ flavor, spinRef, children }: { flavor: "cream" | "brown
 
 function InnerViewer({ flavor, spinRef }: { flavor: "cream" | "brown"; spinRef: React.MutableRefObject<number> }) {
   return (
-    <Stage environment="city" intensity={0.6} adjustCamera={1.8}>
+    <Stage environment={null} intensity={0.8} adjustCamera={1.8}>
+      <ambientLight intensity={1.5} />
+      <directionalLight position={[5, 10, 5]} intensity={1.5} />
+      <directionalLight position={[-5, 5, -5]} intensity={0.5} />
       <RotatingGroup flavor={flavor} spinRef={spinRef}>
         <ShirtModel flavor={flavor} />
       </RotatingGroup>

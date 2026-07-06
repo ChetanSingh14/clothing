@@ -83,10 +83,10 @@ export default function ModelViewer({ url, decalUrl, color }: { url?: string; de
         </div>
       }>
         <Canvas dpr={[1, 2]} camera={{ position: [0, 0, 4], fov: 45 }} gl={{ preserveDrawingBuffer: true }}>
-          <ambientLight intensity={0.7} />
-          <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} intensity={1} />
-          <Environment preset="city" />
-          <Stage environment="city" intensity={0.6}>
+          <ambientLight intensity={1.5} />
+          <directionalLight position={[5, 10, 5]} intensity={1.5} />
+          <directionalLight position={[-5, 5, -5]} intensity={0.5} />
+          <Stage environment={null} intensity={0.8}>
             {isExternalModel && !isValidDecal ? (
               <Model url={url!} />
             ) : (
