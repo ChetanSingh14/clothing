@@ -78,7 +78,7 @@ export default function WishlistPage() {
               <h3 className="text-lg font-serif font-semibold text-brand-charcoal">Your wishlist is empty</h3>
               <p className="text-sm text-brand-charcoal/50 mt-2">Save items you love by clicking the heart icon.</p>
               <Link href="/#catalog" className="inline-block mt-6 px-6 py-3 bg-brand-charcoal text-brand-bg rounded-full text-xs font-semibold uppercase tracking-wider hover:bg-brand-charcoal/90 transition-colors">
-                Explore Catalog
+                Explore Product
               </Link>
             </div>
           ) : (

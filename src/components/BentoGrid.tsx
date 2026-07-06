@@ -90,12 +90,12 @@ export default function BentoGrid() {
   });
 
   return (
-    <section id="product" className="py-24 bg-brand-bg relative w-full">
-      <InteractiveBentoGallery
+    <section id="product" className=" bg-brand-bg relative w-full">
+      {/* <InteractiveBentoGallery
         mediaItems={dynamicMediaItems}
         title="Prints That Hit Different"
         description={`Every tee from ${companyName} is a statement. Bold graphics, heavyweight cotton, drop-ready drops designed for Gen Z who refuse to blend in.`}
-      />
+      /> */}
     </section>
   );
 }

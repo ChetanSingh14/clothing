@@ -93,7 +93,7 @@ export default function Hero({ user, onStartClick }: HeroProps) {
             onClick={onStartClick}
             className="group relative flex items-center gap-3 overflow-hidden rounded-full bg-brand-charcoal px-6.5 py-4 text-sm font-semibold tracking-wide text-brand-bg transition-all duration-300 hover:bg-brand-charcoal/90 hover:shadow-lg cursor-pointer"
           >
-            <span>{user ? "Explore Catalog" : "Explore Collections"}</span>
+            <span>{user ? "Explore Products" : "Explore Collections"}</span>
             <div className="flex h-5 w-5 items-center justify-center rounded-full bg-brand-bg text-brand-charcoal transition-transform duration-300 group-hover:rotate-45">
               <ArrowRight className="h-3.5 w-3.5" />
             </div>

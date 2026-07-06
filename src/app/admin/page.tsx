@@ -975,7 +975,7 @@ export default function AdminDashboardPage() {
                 {/* Inventory List */}
                 <div className="xl:col-span-7 space-y-6">
                   <h2 className="text-xl font-semibold tracking-tight text-brand-charcoal font-serif">
-                    Active Catalog Inventory ({products.length})
+                    Active  Products Inventory ({products.length})
                   </h2>
 
                   <div className="border border-brand-charcoal/5 rounded-3xl overflow-hidden bg-brand-bg shadow-xs">

@@ -63,7 +63,7 @@ export default function Home() {
           </>
         )}
 
-        <section id="catalog" className="py-24 bg-brand-bg px-6 sm:px-8">
+        <section id="catalog" className="py-10 bg-brand-bg px-6 sm:px-8">
           <div className="mx-auto max-w-7xl">
             {/* Headings */}
             <div className="flex flex-col md:flex-row md:items-end justify-between mb-12">
