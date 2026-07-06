@@ -44,10 +44,10 @@ export default function AdminDashboardPage() {
   
   const { products, fetchProducts } = useProductStore();
 
-  const defaultCategories = ["T-Shirts", "Couple"];
+  const categories = useSettingsStore((state) => state.categories) || ["T-Shirts", "Couple"];
   const uniqueProductCategories = Array.from(new Set(products.map((p) => p.category)))
-    .filter((cat) => cat && !["T-Shirts"].includes(cat));
-  const adminCategoriesList = [...defaultCategories, ...uniqueProductCategories];
+    .filter((cat) => cat && !categories.includes(cat));
+  const adminCategoriesList = [...categories, ...uniqueProductCategories];
 
   const companyName = useSettingsStore((state) => state.companyName);
   const logoUrl = useSettingsStore((state) => state.logoUrl);
@@ -74,6 +74,7 @@ export default function AdminDashboardPage() {
   const [modelThumbnailUrl, setModelThumbnailUrl] = useState<string>("");
   
   const [isColorPickerOpen, setIsColorPickerOpen] = useState(false);
+  const [colorPickerTarget, setColorPickerTarget] = useState<'default' | 'male' | 'female'>('default');
 
   // Form states for Product Upload
   const [title, setTitle] = useState("");
@@ -95,6 +96,7 @@ export default function AdminDashboardPage() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadingModel, setUploadingModel] = useState(false);
   const [formSuccess, setFormSuccess] = useState(false);
+  const [newCategoryInput, setNewCategoryInput] = useState("");
 
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
@@ -807,27 +809,100 @@ export default function AdminDashboardPage() {
                       <>
                         {/* Male Colors */}
                         <div>
-                          <label className="font-semibold uppercase tracking-wider text-brand-charcoal/60">
-                            Male Colors Hex Codes
-                          </label>
+                          <div className="flex items-center justify-between">
+                            <label className="font-semibold uppercase tracking-wider text-brand-charcoal/60">
+                              Male Colors Hex Codes (Comma separated)
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setColorPickerTarget('male');
+                                setIsColorPickerOpen(true);
+                              }}
+                              className="text-[10px] font-bold uppercase tracking-wider text-brand-green hover:text-brand-green/80 flex items-center gap-1 bg-brand-green/10 px-2 py-1 rounded-md"
+                            >
+                              <Plus className="h-3 w-3" />
+                              Pick Colors
+                            </button>
+                          </div>
+
+                          {maleColorsInput.trim() !== "" && (
+                            <div className="mt-2 mb-2 flex flex-wrap gap-2">
+                              {maleColorsInput.split(",").map(c => c.trim()).filter(Boolean).map((hex, i) => (
+                                <div key={i} className="flex items-center gap-1.5 bg-brand-bg px-2.5 py-1.5 rounded-full border border-brand-charcoal/10 shadow-sm">
+                                  <div className="w-3.5 h-3.5 rounded-full shadow-sm border border-brand-charcoal/10" style={{ backgroundColor: hex }} />
+                                  <span className="text-[10px] font-mono text-brand-charcoal uppercase">{hex}</span>
+                                  <button 
+                                    type="button" 
+                                    onClick={() => {
+                                      const currentColors = maleColorsInput.split(",").map(c => c.trim()).filter(Boolean);
+                                      currentColors.splice(i, 1);
+                                      setMaleColorsInput(currentColors.join(", "));
+                                    }}
+                                    className="ml-1 text-brand-charcoal/40 hover:text-red-500 transition-colors"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
                           <input
                             type="text"
                             value={maleColorsInput}
                             onChange={(e) => setMaleColorsInput(e.target.value)}
-                            placeholder="#000000, #333333"
+                            placeholder="#000000, #333333 (Or use the picker)"
                             className="mt-1.5 w-full rounded-xl border border-brand-charcoal/10 bg-brand-bg px-3.5 py-3 text-xs focus:border-brand-green focus:outline-none"
                           />
                         </div>
+
                         {/* Female Colors */}
                         <div>
-                          <label className="font-semibold uppercase tracking-wider text-brand-charcoal/60">
-                            Female Colors Hex Codes
-                          </label>
+                          <div className="flex items-center justify-between">
+                            <label className="font-semibold uppercase tracking-wider text-brand-charcoal/60">
+                              Female Colors Hex Codes (Comma separated)
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setColorPickerTarget('female');
+                                setIsColorPickerOpen(true);
+                              }}
+                              className="text-[10px] font-bold uppercase tracking-wider text-brand-green hover:text-brand-green/80 flex items-center gap-1 bg-brand-green/10 px-2 py-1 rounded-md"
+                            >
+                              <Plus className="h-3 w-3" />
+                              Pick Colors
+                            </button>
+                          </div>
+
+                          {femaleColorsInput.trim() !== "" && (
+                            <div className="mt-2 mb-2 flex flex-wrap gap-2">
+                              {femaleColorsInput.split(",").map(c => c.trim()).filter(Boolean).map((hex, i) => (
+                                <div key={i} className="flex items-center gap-1.5 bg-brand-bg px-2.5 py-1.5 rounded-full border border-brand-charcoal/10 shadow-sm">
+                                  <div className="w-3.5 h-3.5 rounded-full shadow-sm border border-brand-charcoal/10" style={{ backgroundColor: hex }} />
+                                  <span className="text-[10px] font-mono text-brand-charcoal uppercase">{hex}</span>
+                                  <button 
+                                    type="button" 
+                                    onClick={() => {
+                                      const currentColors = femaleColorsInput.split(",").map(c => c.trim()).filter(Boolean);
+                                      currentColors.splice(i, 1);
+                                      setFemaleColorsInput(currentColors.join(", "));
+                                    }}
+                                    className="ml-1 text-brand-charcoal/40 hover:text-red-500 transition-colors"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
                           <input
                             type="text"
                             value={femaleColorsInput}
                             onChange={(e) => setFemaleColorsInput(e.target.value)}
-                            placeholder="#FFC0CB, #FFFFFF"
+                            placeholder="#FFC0CB, #FFFFFF (Or use the picker)"
                             className="mt-1.5 w-full rounded-xl border border-brand-charcoal/10 bg-brand-bg px-3.5 py-3 text-xs focus:border-brand-green focus:outline-none"
                           />
                         </div>
@@ -892,7 +967,10 @@ export default function AdminDashboardPage() {
                             </label>
                             <button
                               type="button"
-                              onClick={() => setIsColorPickerOpen(true)}
+                              onClick={() => {
+                                setColorPickerTarget('default');
+                                setIsColorPickerOpen(true);
+                              }}
                               className="text-[10px] font-bold uppercase tracking-wider text-brand-green hover:text-brand-green/80 flex items-center gap-1 bg-brand-green/10 px-2 py-1 rounded-md"
                             >
                               <Plus className="h-3 w-3" />
@@ -1636,6 +1714,70 @@ export default function AdminDashboardPage() {
                     {updatingSettings ? "Saving settings..." : "Save Settings"}
                   </button>
                 </form>
+
+                {/* Manage Categories Section */}
+                <div className="mt-8 pt-8 border-t border-brand-charcoal/10">
+                  <h3 className="text-lg font-semibold tracking-tight text-brand-charcoal font-serif">
+                    Product Categories Management
+                  </h3>
+                  <p className="text-xs text-brand-charcoal/50 mt-1 font-light mb-4">
+                    Add or remove product categories displayed in the dropdown menu when uploading or editing items.
+                  </p>
+                  
+                  <div className="flex gap-2 mb-4">
+                    <input
+                      type="text"
+                      placeholder="e.g. Hoodies, Accessories"
+                      value={newCategoryInput}
+                      onChange={(e) => setNewCategoryInput(e.target.value)}
+                      className="flex-grow rounded-xl border border-brand-charcoal/10 bg-brand-bg px-3.5 py-3 text-xs focus:border-brand-green focus:outline-none text-brand-charcoal"
+                    />
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const trimmed = newCategoryInput.trim();
+                        if (!trimmed) return;
+                        if (categories.includes(trimmed)) {
+                          useAlertStore.getState().showAlert("Category already exists.");
+                          return;
+                        }
+                        const updated = [...categories, trimmed];
+                        const success = await updateSettings({ categories: updated });
+                        if (success) {
+                          setNewCategoryInput("");
+                          useAlertStore.getState().showAlert("Category added successfully!");
+                        }
+                      }}
+                      className="bg-brand-charcoal text-brand-bg px-4 py-2 rounded-xl text-xs font-semibold hover:bg-brand-charcoal/90 transition-all cursor-pointer flex items-center gap-1.5"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Add
+                    </button>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    {categories.map((cat) => (
+                      <div key={cat} className="flex items-center gap-1.5 bg-brand-bg px-3.5 py-2 rounded-full border border-brand-charcoal/10 shadow-sm">
+                        <span className="text-xs font-medium text-brand-charcoal">{cat}</span>
+                        {cat !== "T-Shirts" && cat !== "Couple" && (
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              const updated = categories.filter((c) => c !== cat);
+                              const success = await updateSettings({ categories: updated });
+                              if (success) {
+                                useAlertStore.getState().showAlert(`Category "${cat}" removed.`);
+                              }
+                            }}
+                            className="text-brand-charcoal/40 hover:text-red-500 transition-colors cursor-pointer"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
 
@@ -1895,8 +2037,22 @@ export default function AdminDashboardPage() {
       <ColorPickerModal 
         isOpen={isColorPickerOpen}
         onClose={() => setIsColorPickerOpen(false)}
-        selectedColors={colorsInput.split(",").map(c => c.trim()).filter(Boolean)}
-        onColorsChange={(colors) => setColorsInput(colors.join(", "))}
+        selectedColors={
+          colorPickerTarget === 'male'
+            ? maleColorsInput.split(",").map(c => c.trim()).filter(Boolean)
+            : colorPickerTarget === 'female'
+            ? femaleColorsInput.split(",").map(c => c.trim()).filter(Boolean)
+            : colorsInput.split(",").map(c => c.trim()).filter(Boolean)
+        }
+        onColorsChange={(colors) => {
+          if (colorPickerTarget === 'male') {
+            setMaleColorsInput(colors.join(", "));
+          } else if (colorPickerTarget === 'female') {
+            setFemaleColorsInput(colors.join(", "));
+          } else {
+            setColorsInput(colors.join(", "));
+          }
+        }}
       />
     </div>
   );

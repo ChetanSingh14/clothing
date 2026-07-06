@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { Mail, Phone, MapPin, Send, Check } from "lucide-react";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { useAlertStore } from "@/store/useAlertStore";
+import { apiFetch } from "@/utils/api";
 
 export default function ContactSection() {
   const companyName = useSettingsStore((state) => state.companyName);
@@ -25,17 +26,32 @@ export default function ContactSection() {
 
     setStatus("sending");
     try {
-      // Mock sending message
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      setStatus("success");
-      setFirstName("");
-      setLastName("");
-      setEmail("");
-      setMessage("");
-      setAgreed(false);
-      setTimeout(() => setStatus("idle"), 3000);
+      const res = await apiFetch("/contact", {
+        method: "POST",
+        body: JSON.stringify({
+          firstName,
+          lastName,
+          email,
+          message,
+        }),
+      });
+
+      if (res.success) {
+        setStatus("success");
+        setFirstName("");
+        setLastName("");
+        setEmail("");
+        setMessage("");
+        setAgreed(false);
+        useAlertStore.getState().showAlert("Your message has been sent successfully!");
+        setTimeout(() => setStatus("idle"), 3000);
+      } else {
+        setStatus("error");
+        useAlertStore.getState().showAlert(res.message || "Failed to send message. Please try again.");
+      }
     } catch (err) {
       setStatus("error");
+      useAlertStore.getState().showAlert("Failed to send message. Please try again.");
     }
   };
 
@@ -87,12 +103,12 @@ export default function ContactSection() {
                   Contact us by email, and we will respond shortly.
                 </p>
                 <p className="text-xs font-semibold text-brand-charcoal hover:text-brand-green transition-colors">
-                  support@{companyName.toLowerCase().replace(/[^a-z0-9]/g, "") || "mdfk"}.in
+clothing.mdfk@gmail.com
                 </p>
               </div>
 
               {/* Phone */}
-              <div className="space-y-2">
+              {/* <div className="space-y-2">
                 <div className="flex items-center gap-2 text-brand-charcoal/80">
                   <Phone className="h-4 w-4 text-brand-green" />
                   <h4 className="text-sm font-bold tracking-wide">Phone</h4>
@@ -103,7 +119,7 @@ export default function ContactSection() {
                 <p className="text-xs font-semibold text-brand-charcoal">
                   +91 (222) 333-4444
                 </p>
-              </div>
+              </div> */}
 
               {/* Mobile */}
               <div className="space-y-2">
@@ -115,12 +131,12 @@ export default function ContactSection() {
                   Support line available from 9 AM to 6 PM daily.
                 </p>
                 <p className="text-xs font-semibold text-brand-charcoal">
-                  +91 98765 43210
+                  +91 9625546426
                 </p>
               </div>
 
               {/* Office */}
-              <div className="space-y-2">
+              {/* <div className="space-y-2">
                 <div className="flex items-center gap-2 text-brand-charcoal/80">
                   <MapPin className="h-4 w-4 text-brand-green" />
                   <h4 className="text-sm font-bold tracking-wide">Office</h4>
@@ -133,7 +149,7 @@ export default function ContactSection() {
                   Mumbai, Maharashtra 400050,<br />
                   India
                 </p>
-              </div>
+              </div> */}
             </div>
           </div>
 
