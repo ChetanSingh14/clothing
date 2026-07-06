@@ -24,9 +24,9 @@ export default function ProductsPage() {
   }, []);
 
   // Build dynamic categories list (always including T-Shirts and Hoodies)
-  const defaultCategories = ["All", "T-Shirts", "Hoodies"];
+  const defaultCategories = ["All", "T-Shirts"];
   const uniqueProductCategories = Array.from(new Set(products.map((p) => p.category)))
-    .filter((cat) => cat && !["All", "T-Shirts", "Hoodies"].includes(cat));
+    .filter((cat) => cat && !["All", "T-Shirts"].includes(cat));
   const categoriesList = [...defaultCategories, ...uniqueProductCategories];
 
   return (
