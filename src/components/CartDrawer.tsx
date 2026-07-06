@@ -7,6 +7,8 @@ import { ShoppingBag, X, Plus, Minus, Trash2, ArrowLeft, AlertCircle, Tag, Check
 import MediaRenderer from "./MediaRenderer";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
+import { apiFetch } from "@/utils/api";
+import { CreditCard, Lock, Loader2 } from "lucide-react";
 
 import { useState, useEffect } from "react";
 
@@ -14,7 +16,7 @@ export default function CartDrawer() {
   const { items, isOpen, setIsOpen, updateQuantity, removeItem, getSubtotal, getCartTotal, clearCart, checkout, appliedOffer, offerLoading, offerError, checkOfferStatus } = useCartStore();
   const { user, fetchMe, sendPhoneOtp, verifyPhoneOtp } = useAuthStore();
   const [paymentMethod, setPaymentMethod] = useState("COD");
-  const [checkoutStep, setCheckoutStep] = useState<"cart" | "address">("cart");
+  const [checkoutStep, setCheckoutStep] = useState<"cart" | "address" | "payment">("cart");
   const [isEditingAddress, setIsEditingAddress] = useState(false);
   
   // Phone verification state
@@ -23,6 +25,14 @@ export default function CartDrawer() {
   const [phoneOtpToken, setPhoneOtpToken] = useState("");
   const [phoneVerifyError, setPhoneVerifyError] = useState("");
   const [isCheckingOut, setIsCheckingOut] = useState(false);
+
+  // Delhivery shipping states
+  const [isCodAllowed, setIsCodAllowed] = useState(true);
+  const [checkingServiceability, setCheckingServiceability] = useState(false);
+  const [serviceabilityError, setServiceabilityError] = useState("");
+  const [shippingFee, setShippingFee] = useState(0);
+  const [codHandlingCharge, setCodHandlingCharge] = useState(0);
+  const [fetchingRate, setFetchingRate] = useState(false);
 
   const [addressDetails, setAddressDetails] = useState({
     fullName: "",
@@ -54,6 +64,78 @@ export default function CartDrawer() {
       }
     }
   }, [user]);
+
+  const checkPincodeServiceability = async (pincode: string) => {
+    if (!pincode || pincode.length !== 6 || isNaN(Number(pincode))) {
+      setIsCodAllowed(true);
+      setServiceabilityError("");
+      setShippingFee(0);
+      setCodHandlingCharge(0);
+      return;
+    }
+
+    setCheckingServiceability(true);
+    setServiceabilityError("");
+    try {
+      const res = await apiFetch(`/shipping/serviceability?pincode=${pincode}`);
+      if (res.success && res.data) {
+        const { serviceable, cod } = res.data;
+        if (!serviceable) {
+          setIsCodAllowed(false);
+          setServiceabilityError("Delivery is not available for this pincode.");
+          setPaymentMethod("CARD");
+          setShippingFee(0);
+          setCodHandlingCharge(0);
+        } else {
+          const isCod = !(cod === "N" || cod === "n");
+          if (!isCod) {
+            setIsCodAllowed(false);
+            setServiceabilityError("Cash on Delivery (COD) is not available for this pincode. Please pay online.");
+            setPaymentMethod("CARD");
+          } else {
+            setIsCodAllowed(true);
+            setServiceabilityError("");
+          }
+
+          // Fetch real-time rate from backend
+          setFetchingRate(true);
+          try {
+            const quantity = items.reduce((acc, item) => acc + (item.quantity || 1), 0);
+            const weight = Math.max(280, quantity * 280);
+            const rateRes = await apiFetch(`/shipping/rate?pincode=${pincode}&weight=${weight}&subtotal=${getSubtotal()}`);
+            if (rateRes.success && rateRes.data) {
+              setShippingFee(rateRes.data.shippingFee);
+              setCodHandlingCharge(rateRes.data.codHandlingCharge);
+            }
+          } catch (rateErr) {
+            console.error("Failed to fetch shipping rate:", rateErr);
+            // Fallback estimation
+            setShippingFee(90);
+            setCodHandlingCharge(50);
+          } finally {
+            setFetchingRate(false);
+          }
+        }
+      }
+    } catch (err: any) {
+      console.error("Failed to verify pincode serviceability:", err);
+      setIsCodAllowed(true);
+      setServiceabilityError("");
+      setShippingFee(90);
+      setCodHandlingCharge(50);
+    } finally {
+      setCheckingServiceability(false);
+    }
+  };
+
+  useEffect(() => {
+    if (addressDetails.pincode && addressDetails.pincode.length === 6) {
+      checkPincodeServiceability(addressDetails.pincode);
+    } else {
+      setIsCodAllowed(true);
+      setServiceabilityError("");
+    }
+  }, [addressDetails.pincode]);
 
   // Reset to cart step when drawer closes
   useEffect(() => {
@@ -123,7 +205,11 @@ export default function CartDrawer() {
       return;
     }
 
-    await completeCheckout();
+    if (paymentMethod === "CARD") {
+      setCheckoutStep("payment");
+    } else {
+      await completeCheckout();
+    }
   };
 
   const handlePhoneVerifySubmit = async (e: React.FormEvent) => {
@@ -134,7 +220,11 @@ export default function CartDrawer() {
       const success = await verifyPhoneOtp(phoneOtp, phoneOtpToken, addressDetails.phone);
       if (success) {
         setIsPhoneModalOpen(false);
-        await completeCheckout();
+        if (paymentMethod === "CARD") {
+          setCheckoutStep("payment");
+        } else {
+          await completeCheckout();
+        }
       } else {
         setPhoneVerifyError("Invalid or expired verification code.");
       }
@@ -146,8 +236,10 @@ export default function CartDrawer() {
   };
 
   const subtotal = getSubtotal();
-  const total = getCartTotal();
+  const cartTotal = getCartTotal();
   const discount = appliedOffer ? appliedOffer.discountAmount : 0;
+  const deliveryFee = shippingFee + (paymentMethod === "COD" && isCodAllowed ? codHandlingCharge : 0);
+  const total = cartTotal + deliveryFee;
 
   return (
     <AnimatePresence>
@@ -174,9 +266,9 @@ export default function CartDrawer() {
               {/* Header */}
               <div className="px-6 py-6 border-b border-brand-charcoal/5 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  {checkoutStep === "address" ? (
+                  {checkoutStep !== "cart" ? (
                     <button 
-                      onClick={() => setCheckoutStep("cart")}
+                      onClick={() => setCheckoutStep(checkoutStep === "payment" ? "address" : "cart")}
                       className="p-1 -ml-1 mr-1 rounded-full hover:bg-brand-charcoal/5 transition-colors cursor-pointer"
                     >
                       <ArrowLeft className="h-5 w-5 text-brand-charcoal" />
@@ -185,7 +277,7 @@ export default function CartDrawer() {
                     <ShoppingBag className="h-5 w-5 text-brand-charcoal" />
                   )}
                   <h2 className="text-xl font-semibold tracking-tight text-brand-charcoal font-serif">
-                    {checkoutStep === "address" ? "Shipping Details" : "Shopping Bag"}
+                    {checkoutStep === "address" ? "Shipping Details" : checkoutStep === "payment" ? "Secure Payment" : "Shopping Bag"}
                   </h2>
                 </div>
                 <button
@@ -327,6 +419,20 @@ export default function CartDrawer() {
                       </motion.div>
                     )}
 
+                    {shippingFee > 0 && (
+                      <div className="flex items-center justify-between text-brand-charcoal">
+                        <span className="text-sm font-medium tracking-wide">Delivery Fee</span>
+                        <span className="text-sm font-semibold">₹{shippingFee.toFixed(2)}</span>
+                      </div>
+                    )}
+
+                    {paymentMethod === "COD" && isCodAllowed && codHandlingCharge > 0 && (
+                      <div className="flex items-center justify-between text-brand-charcoal">
+                        <span className="text-sm font-medium tracking-wide">COD Handling Fee</span>
+                        <span className="text-sm font-semibold">₹{codHandlingCharge.toFixed(2)}</span>
+                      </div>
+                    )}
+
                     <div className="flex items-center justify-between text-brand-charcoal pt-2 border-t border-brand-charcoal/5">
                       <span className="text-sm font-semibold tracking-wide">Total</span>
                       <span className="text-lg font-bold font-serif">₹{total.toFixed(2)}</span>
@@ -340,9 +446,18 @@ export default function CartDrawer() {
                       onChange={(e) => setPaymentMethod(e.target.value)}
                       className="w-full rounded-xl border border-brand-charcoal/10 bg-brand-bg px-3.5 py-2.5 text-xs focus:border-brand-green focus:outline-none cursor-pointer"
                     >
-                      <option value="COD">Cash on Delivery (COD)</option>
+                      {isCodAllowed && <option value="COD">Cash on Delivery (COD)</option>}
                       <option value="CARD">Credit / Debit Card (Soon)</option>
                     </select>
+                    {serviceabilityError && (
+                      <p className="text-[10px] font-semibold text-rose-500 mt-1 flex items-center gap-1">
+                        <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
+                        <span>{serviceabilityError}</span>
+                      </p>
+                    )}
+                    {checkingServiceability && (
+                      <p className="text-[10px] text-brand-charcoal/50 italic">Checking shipping serviceability...</p>
+                    )}
                   </div>
 
                   <p className="text-[10px] text-brand-charcoal/40 font-light leading-relaxed">
@@ -358,8 +473,8 @@ export default function CartDrawer() {
                 </div>
               )}
               </>
-              ) : (
-                <div className="flex-1 overflow-y-auto flex flex-col">
+              ) : checkoutStep === "address" ? (
+                <div className="flex-1 overflow-y-auto flex flex-col justify-between">
                   <div className="flex-1 p-6 space-y-4">
                     <p className="text-xs text-brand-charcoal/60 mb-2">Please confirm your shipping details.</p>
                     
@@ -420,6 +535,18 @@ export default function CartDrawer() {
                           <input type="text" value={addressDetails.pincode} onChange={e => setAddressDetails({...addressDetails, pincode: e.target.value})} className="w-full rounded-xl border border-brand-charcoal/10 bg-brand-bg px-3 py-2 text-sm focus:border-brand-green focus:outline-none" />
                         </div>
                       </div>
+                      {serviceabilityError && (
+                        <div className="mt-2 p-3 bg-rose-50 border border-rose-100 rounded-xl flex items-start gap-2 text-rose-600 text-xs">
+                          <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                          <div>
+                            <p className="font-semibold text-[10px] uppercase tracking-wider">Shipping Serviceability</p>
+                            <p className="mt-0.5 leading-normal">{serviceabilityError}</p>
+                          </div>
+                        </div>
+                      )}
+                      {checkingServiceability && (
+                        <p className="text-[10px] text-brand-charcoal/50 italic mt-1 ml-1">Checking serviceability with Delhivery...</p>
+                      )}
                     </div>
                     )}
                   </div>
@@ -440,6 +567,18 @@ export default function CartDrawer() {
                           <span className="text-xs font-semibold">-₹{discount.toFixed(2)}</span>
                         </div>
                       )}
+                      {shippingFee > 0 && (
+                        <div className="flex items-center justify-between text-brand-charcoal">
+                          <span className="text-xs font-medium tracking-wide">Delivery Fee</span>
+                          <span className="text-xs">₹{shippingFee.toFixed(2)}</span>
+                        </div>
+                      )}
+                      {paymentMethod === "COD" && isCodAllowed && codHandlingCharge > 0 && (
+                        <div className="flex items-center justify-between text-brand-charcoal">
+                          <span className="text-xs font-medium tracking-wide">COD Handling Fee</span>
+                          <span className="text-xs">₹{codHandlingCharge.toFixed(2)}</span>
+                        </div>
+                      )}
                       <div className="flex items-center justify-between text-brand-charcoal pt-1 border-t border-brand-charcoal/5">
                         <span className="text-sm font-semibold tracking-wide">Total to Pay</span>
                         <span className="text-lg font-bold font-serif">₹{total.toFixed(2)}</span>
@@ -450,6 +589,131 @@ export default function CartDrawer() {
                       className="w-full bg-brand-charcoal text-brand-bg rounded-2xl py-4 text-sm font-semibold tracking-wide hover:bg-brand-charcoal/90 transition-all duration-300 cursor-pointer"
                     >
                       Confirm Booking ({paymentMethod})
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex-1 overflow-y-auto flex flex-col justify-between">
+                  <div className="p-6 space-y-6">
+                    <div className="bg-brand-gray/30 p-4 rounded-xl border border-brand-charcoal/5 flex items-center justify-between">
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-brand-charcoal/40">Amount to Pay</span>
+                        <p className="text-xl font-bold font-serif text-brand-charcoal">₹{total.toFixed(2)}</p>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-xs text-brand-green font-bold bg-brand-green/10 border border-brand-green/20 px-3 py-1.5 rounded-full">
+                        <Lock className="h-3.5 w-3.5" /> SECURE
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-[10px] font-bold uppercase text-brand-charcoal/50 ml-1">Cardholder Name</label>
+                        <input
+                          type="text"
+                          required
+                          value={addressDetails.fullName}
+                          readOnly
+                          className="w-full rounded-xl border border-brand-charcoal/10 bg-brand-bg/50 px-3 py-2 text-sm text-brand-charcoal/60 focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-[10px] font-bold uppercase text-brand-charcoal/50 ml-1">Card Number *</label>
+                        <div className="relative">
+                          <input
+                            type="text"
+                            required
+                            placeholder="1234 5678 1234 5678"
+                            maxLength={19}
+                            className="w-full rounded-xl border border-brand-charcoal/10 bg-brand-bg px-3 py-2 pl-10 text-sm focus:border-brand-green focus:outline-none"
+                            onChange={(e) => {
+                              const value = e.target.value.replace(/\s+/g, "").replace(/[^0-9]/gi, "");
+                              const matches = value.match(/\d{4,16}/g);
+                              const match = (matches && matches[0]) || "";
+                              const parts = [];
+                              for (let i = 0, len = match.length; i < len; i += 4) {
+                                parts.push(match.substring(i, i + 4));
+                              }
+                              if (parts.length > 0) {
+                                e.target.value = parts.join(" ");
+                              } else {
+                                e.target.value = value;
+                              }
+                            }}
+                          />
+                          <CreditCard className="absolute left-3 top-2.5 h-4 w-4 text-brand-charcoal/30" />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-[10px] font-bold uppercase text-brand-charcoal/50 ml-1">Expiry Date *</label>
+                          <input
+                            type="text"
+                            required
+                            placeholder="MM/YY"
+                            maxLength={5}
+                            className="w-full rounded-xl border border-brand-charcoal/10 bg-brand-bg px-3 py-2 text-sm focus:border-brand-green focus:outline-none"
+                            onChange={(e) => {
+                              let value = e.target.value.replace(/[^0-9]/g, "");
+                              if (value.length > 2) {
+                                value = value.substring(0, 2) + "/" + value.substring(2, 4);
+                              }
+                              e.target.value = value;
+                            }}
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-bold uppercase text-brand-charcoal/50 ml-1">CVV *</label>
+                          <input
+                            type="password"
+                            required
+                            placeholder="•••"
+                            maxLength={3}
+                            className="w-full rounded-xl border border-brand-charcoal/10 bg-brand-bg px-3 py-2 text-sm focus:border-brand-green focus:outline-none"
+                            onChange={(e) => {
+                              e.target.value = e.target.value.replace(/[^0-9]/g, "");
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-4 bg-brand-gray/30 rounded-xl border border-brand-charcoal/5 text-xs text-brand-charcoal/50 space-y-1.5">
+                      <p className="flex items-center gap-1.5 font-semibold text-brand-charcoal">
+                        <Lock className="h-3.5 w-3.5 text-brand-green" /> Simulated Payment Sandbox
+                      </p>
+                      <p className="leading-relaxed">This is a secure checkout simulation. Fill in any mock credit card details to complete payment simulation.</p>
+                    </div>
+                  </div>
+
+                  <div className="px-6 py-6 border-t border-brand-charcoal/5 bg-brand-gray/30">
+                    <button
+                      onClick={async () => {
+                        setIsCheckingOut(true);
+                        setTimeout(async () => {
+                          const success = await checkout(paymentMethod, addressDetails);
+                          setIsCheckingOut(false);
+                          if (success) {
+                            useAlertStore.getState().showAlert("Payment successful! Your order has been placed successfully.");
+                            clearCart();
+                            setIsOpen(false);
+                          } else {
+                            useAlertStore.getState().showAlert("Checkout failed. Please try again.");
+                          }
+                        }, 2000);
+                      }}
+                      disabled={isCheckingOut}
+                      className="w-full bg-brand-charcoal text-brand-bg rounded-2xl py-4 text-sm font-semibold tracking-wide hover:bg-brand-charcoal/90 transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-75"
+                    >
+                      {isCheckingOut ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Processing Secure Payment...
+                        </>
+                      ) : (
+                        `Pay ₹${total.toFixed(2)}`
+                      )}
                     </button>
                   </div>
                 </div>

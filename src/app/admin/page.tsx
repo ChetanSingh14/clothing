@@ -10,7 +10,7 @@ import { useProductStore } from "@/store/useProductStore";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { useAlertStore } from "@/store/useAlertStore";
 import { shallow } from "zustand/shallow";
-import { Plus, Trash2, Tag, Star, Package, Users, Layers, UploadCloud, Loader2, RefreshCw, BarChart2, UserCheck, Shield, ShoppingBag, DollarSign, Calendar, Edit, Settings, Eye, X } from "lucide-react";
+import { Plus, Trash2, Tag, Star, Package, Users, Layers, UploadCloud, Loader2, RefreshCw, BarChart2, UserCheck, Shield, ShoppingBag, DollarSign, Calendar, Edit, Settings, Eye, X, Truck } from "lucide-react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -18,6 +18,7 @@ import Lightbox from "@/components/Lightbox";
 import PageLoader from "@/components/PageLoader";
 import ColorPickerModal from "@/components/ColorPickerModal";
 import MediaRenderer from "@/components/MediaRenderer";
+import { apiFetch } from "@/utils/api";
 
 export default function AdminDashboardPage() {
   const router = useRouter();
@@ -1429,6 +1430,70 @@ export default function AdminDashboardPage() {
                         <div className="text-brand-charcoal/50 italic">No shipping details provided.</div>
                       )}
                     </div>
+
+                    {/* Delhivery Shipping Details */}
+                    {selectedOrder.address && (
+                      <div className="p-5 rounded-2xl bg-brand-gray/30 border border-brand-charcoal/5 text-sm space-y-2 md:col-span-2">
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-brand-charcoal/40 mb-3 flex items-center gap-2">
+                          <Truck className="h-4 w-4 text-brand-charcoal/60" /> Delhivery Shipping Details
+                        </h4>
+                        {selectedOrder.delhivery_waybill ? (
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div>
+                              <span className="text-brand-charcoal/50 block text-xs uppercase font-bold tracking-wider">Waybill (AWB)</span>
+                              <span className="font-semibold text-brand-charcoal">{selectedOrder.delhivery_waybill}</span>
+                            </div>
+                            <div>
+                              <span className="text-brand-charcoal/50 block text-xs uppercase font-bold tracking-wider">Carrier Status</span>
+                              <span className="font-bold text-brand-green capitalize">{selectedOrder.shipment_status || "pending_pickup"}</span>
+                            </div>
+                            <div className="flex items-center sm:justify-end">
+                              <a
+                                href={`https://track.delhivery.com/tracking/${selectedOrder.delhivery_waybill}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-1.5 px-4 py-2 border border-brand-charcoal/10 hover:border-brand-charcoal/20 bg-brand-bg rounded-xl text-xs font-bold uppercase tracking-wider text-brand-charcoal hover:bg-brand-charcoal/5 transition-all"
+                              >
+                                Track Package
+                              </a>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div>
+                              <p className="text-xs text-brand-charcoal/50 italic">No Delhivery waybill generated yet for this order.</p>
+                              <p className="text-[10px] text-brand-charcoal/40 mt-1">Generating manifest will register the shipment with Delhivery and create a waybill.</p>
+                            </div>
+                            <div>
+                              <button
+                                onClick={async () => {
+                                  try {
+                                    const res = await apiFetch(`/shipping/manifest`, {
+                                      method: "POST",
+                                      body: JSON.stringify({ orderId: selectedOrder.id }),
+                                    });
+                                    if (res.success) {
+                                      useAlertStore.getState().showAlert(`Waybill generated: ${res.waybill}`);
+                                      setSelectedOrder({
+                                        ...selectedOrder,
+                                        delhivery_waybill: res.waybill,
+                                        shipment_status: "pending_pickup"
+                                      });
+                                      fetchOrders();
+                                    }
+                                  } catch (err: any) {
+                                    useAlertStore.getState().showAlert(err.message || "Failed to generate waybill.");
+                                  }
+                                }}
+                                className="px-4 py-2 bg-brand-charcoal text-brand-bg hover:bg-brand-charcoal/90 text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer"
+                              >
+                                Generate Waybill (Manifest)
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   {/* Order Items */}

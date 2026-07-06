@@ -7,17 +7,151 @@ import CartDrawer from "@/components/CartDrawer";
 import { useEffect, useState } from "react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useOrderStore } from "@/store/useOrderStore";
-import { Package, Clock, CheckCircle2, XCircle, ArrowLeft } from "lucide-react";
+import { Package, Clock, CheckCircle2, XCircle, ArrowLeft, Truck, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import PageLoader from "@/components/PageLoader";
 import MediaRenderer from "@/components/MediaRenderer";
 import Link from "next/link";
 import { useAlertStore } from "@/store/useAlertStore";
+import { apiFetch } from "@/utils/api";
 
 export default function OrdersPage() {
   const { user, fetchMe, initialized } = useAuthStore();
   const { orders, loading, fetchMyOrders, cancelOrder } = useOrderStore();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [trackingLoadingAWB, setTrackingLoadingAWB] = useState<string | null>(null);
+  const [trackingData, setTrackingData] = useState<Record<string, any>>({});
+  const [trackingError, setTrackingError] = useState<string | null>(null);
+
+  const handleTrackLiveStatus = async (waybill: string) => {
+    if (!waybill) return;
+    setTrackingLoadingAWB(waybill);
+    setTrackingError(null);
+    try {
+      const res = await apiFetch(`/shipping/track/${waybill}`);
+      if (res.success && res.data) {
+        setTrackingData(prev => ({
+          ...prev,
+          [waybill]: res.data
+        }));
+      } else {
+        setTrackingError("No tracking updates available yet. Please check back later.");
+      }
+    } catch (err: any) {
+      console.error("Failed to query live tracking:", err);
+      setTrackingError(err.message || "Failed to load tracking updates.");
+    } finally {
+      setTrackingLoadingAWB(null);
+    }
+  };
+
+  const getActiveStep = (status: string): number => {
+    const s = status?.toLowerCase() || "";
+    if (s.includes("delivered") || s.includes("dlvd")) return 4;
+    if (s.includes("out for delivery") || s.includes("outfordelivery") || s.includes("ud") || s.includes("undelivered")) return 3;
+    if (s.includes("in transit") || s.includes("intransit") || s.includes("dispatched") || s.includes("shipped")) return 2;
+    if (s.includes("manifested") || s.includes("booked") || s.includes("pending_pickup")) return 1;
+    return 1;
+  };
+
+  const getTrackingStatus = (waybill: string, orderShipmentStatus: string) => {
+    const data = trackingData[waybill];
+    if (data && data.ShipmentData && data.ShipmentData[0]?.Shipment?.Status) {
+      const statusObj = data.ShipmentData[0].Shipment.Status;
+      return {
+        status: statusObj.Status || orderShipmentStatus || "pending_pickup",
+        instructions: statusObj.Instructions || "",
+        dateTime: statusObj.StatusDateTime ? new Date(statusObj.StatusDateTime).toLocaleString() : ""
+      };
+    }
+    return {
+      status: orderShipmentStatus || "pending_pickup",
+      instructions: "",
+      dateTime: ""
+    };
+  };
+
+  const renderStepper = (waybill: string, orderShipmentStatus: string) => {
+    const trackingInfo = getTrackingStatus(waybill, orderShipmentStatus);
+    const activeStep = getActiveStep(trackingInfo.status);
+    
+    const steps = [
+      { label: "Booked & Manifested", desc: "AWB Generated & Pending Pickup" },
+      { label: "Dispatched", desc: "In Transit with Delhivery" },
+      { label: "Out for Delivery", desc: "Arrival at delivery hub" },
+      { label: "Delivered", desc: "Handed over to consignee" }
+    ];
+
+    return (
+      <div className="mt-6 pt-6 border-t border-brand-charcoal/5 space-y-6">
+        <h4 className="text-[10px] font-bold uppercase tracking-wider text-brand-charcoal/50">Milestone Stepper</h4>
+        
+        <div className="relative pl-6 space-y-6 border-l border-brand-charcoal/10 ml-3">
+          {steps.map((step, idx) => {
+            const stepNum = idx + 1;
+            const isCompleted = activeStep > stepNum;
+            const isActive = activeStep === stepNum;
+            
+            return (
+              <div key={idx} className="relative">
+                <div className={`absolute -left-[30px] top-0.5 w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
+                  isCompleted 
+                    ? "bg-brand-green border-brand-green text-white" 
+                    : isActive 
+                      ? "bg-brand-bg border-brand-charcoal animate-pulse text-brand-charcoal" 
+                      : "bg-brand-bg border-brand-charcoal/20 text-brand-charcoal/20"
+                }`}>
+                  {isCompleted && (
+                    <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </div>
+                
+                <div>
+                  <p className={`text-xs font-semibold tracking-wide transition-colors duration-300 ${
+                    isActive ? "text-brand-charcoal" : isCompleted ? "text-brand-charcoal/80" : "text-brand-charcoal/30"
+                  }`}>
+                    {step.label}
+                  </p>
+                  <p className="text-[10px] text-brand-charcoal/40 font-light mt-0.5">
+                    {isActive && trackingInfo.dateTime 
+                      ? `Updated: ${trackingInfo.dateTime}` 
+                      : isActive && trackingInfo.instructions 
+                        ? trackingInfo.instructions 
+                        : step.desc
+                    }
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        
+        {trackingData[waybill]?.ShipmentData?.[0]?.Shipment?.Scans && (
+          <div className="bg-brand-gray/30 p-4 rounded-2xl border border-brand-charcoal/5">
+            <h5 className="text-[9px] font-bold uppercase tracking-wider text-brand-charcoal/50 mb-2">Detailed Scan History</h5>
+            <div className="space-y-3 max-h-40 overflow-y-auto pr-2">
+              {trackingData[waybill].ShipmentData[0].Shipment.Scans.map((scanItem: any, scanIdx: number) => {
+                const scan = scanItem.Scan;
+                return (
+                  <div key={scanIdx} className="text-[11px] flex justify-between gap-4 border-b border-brand-charcoal/5 pb-2 last:border-b-0 last:pb-0">
+                    <div>
+                      <p className="font-semibold text-brand-charcoal">{scan.Instructions || scan.StatusDescription || "Scan update"}</p>
+                      <p className="text-[9px] text-brand-charcoal/40 mt-0.5">{scan.Location || "Hub Facility"}</p>
+                    </div>
+                    <div className="text-right text-[9px] text-brand-charcoal/50 whitespace-nowrap">
+                      {scan.Date ? new Date(scan.Date).toLocaleString() : ""}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   useEffect(() => {
     fetchMe();
@@ -143,6 +277,56 @@ export default function OrdersPage() {
                       </div>
                     ))}
                   </div>
+
+                  {order.delhivery_waybill && (
+                    <div className="mt-4 p-4 bg-brand-gray/30 border border-brand-charcoal/5 rounded-2xl flex flex-col justify-between gap-4">
+                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 w-full">
+                        <div className="flex items-center gap-2">
+                          <Truck className="h-4 w-4 text-brand-charcoal/60" />
+                          <div className="text-xs">
+                            <span className="font-semibold text-brand-charcoal/60 uppercase tracking-wider">Tracking (Delhivery)</span>
+                            <div className="mt-1 text-brand-charcoal">
+                              AWB: <span className="font-semibold">{order.delhivery_waybill}</span> • Status: <span className="font-bold text-brand-green capitalize">{order.shipment_status || "pending_pickup"}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={() => handleTrackLiveStatus(order.delhivery_waybill!)}
+                            disabled={trackingLoadingAWB === order.delhivery_waybill}
+                            className="text-xs font-bold uppercase text-brand-charcoal underline hover:text-brand-green transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                          >
+                            {trackingLoadingAWB === order.delhivery_waybill ? (
+                              <>
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                                Loading...
+                              </>
+                            ) : trackingData[order.delhivery_waybill] ? (
+                              "Refresh Tracking"
+                            ) : (
+                              "Track Live Status"
+                            )}
+                          </button>
+                          <a
+                            href={`https://track.delhivery.com/tracking/${order.delhivery_waybill}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-xs font-bold uppercase text-brand-charcoal/40 hover:text-brand-charcoal transition-colors cursor-pointer"
+                          >
+                            Carrier Link ↗
+                          </a>
+                        </div>
+                      </div>
+                      
+                      {trackingError && trackingLoadingAWB === order.delhivery_waybill && (
+                        <p className="text-[10px] text-rose-500 font-medium italic mt-1">{trackingError}</p>
+                      )}
+                      
+                      {(trackingData[order.delhivery_waybill] || trackingLoadingAWB === order.delhivery_waybill) && (
+                        renderStepper(order.delhivery_waybill, order.shipment_status || "pending_pickup")
+                      )}
+                    </div>
+                  )}
 
                   <div className="mt-6 pt-6 border-t border-brand-charcoal/5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>

@@ -20,6 +20,16 @@ export interface OrderData {
   paymentMethod: string;
   items: OrderItem[];
   createdAt: string;
+  delhivery_waybill?: string;
+  shipment_status?: string;
+  fullName?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  landmark?: string;
+  pincode?: string;
+  state?: string;
+  city?: string;
 }
 
 interface OrderState {
