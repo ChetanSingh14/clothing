@@ -4,15 +4,17 @@ import { apiFetch } from "@/utils/api";
 interface SettingsState {
   companyName: string;
   logoUrl: string;
+  categories: string[];
   loading: boolean;
   initialized: boolean;
   fetchSettings: () => Promise<void>;
-  updateSettings: (data: { companyName?: string; logoUrl?: string }) => Promise<boolean>;
+  updateSettings: (data: { companyName?: string; logoUrl?: string; categories?: string[] }) => Promise<boolean>;
 }
 
 export const useSettingsStore = create<SettingsState>((set, get) => ({
   companyName: "MDFK CLOTHING CO.",
   logoUrl: "/logo.jpg",
+  categories: ["T-Shirts", "Couple"],
   loading: false,
   initialized: false,
 
@@ -25,6 +27,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         set({
           companyName: res.data.companyName,
           logoUrl: res.data.logoUrl,
+          categories: res.data.categories || ["T-Shirts", "Couple"],
           initialized: true,
           loading: false,
         });
@@ -48,6 +51,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         set({
           companyName: res.data.companyName,
           logoUrl: res.data.logoUrl,
+          categories: res.data.categories || ["T-Shirts", "Couple"],
           loading: false,
         });
         return true;

@@ -27,7 +27,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" data-scroll-behavior="smooth" className={`${playfairDisplay.variable} ${plusJakartaSans.variable} h-full antialiased`}>
+    <html lang="en" data-scroll-behavior="smooth" className={`${playfairDisplay.variable} ${plusJakartaSans.variable} h-full antialiased overflow-x-hidden`}>
       <body className="min-h-full bg-brand-bg text-brand-charcoal font-sans antialiased overflow-x-hidden">
         {children}
         <Chatbot />

@@ -3,7 +3,17 @@
 import React, { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
+import dynamic from "next/dynamic";
 import "./AnimatedHero.css";
+
+const HeroModelViewer = dynamic(() => import("./HeroModelViewer"), {
+  ssr: false,
+  loading: () => (
+    <div className="absolute inset-0 flex items-center justify-center">
+      <div className="h-10 w-10 border-4 border-brand-green border-t-transparent rounded-full animate-spin"></div>
+    </div>
+  ),
+});
 
 gsap.registerPlugin(useGSAP);
 
@@ -17,19 +27,14 @@ export default function AnimatedHero({ onStartClick }: AnimatedHeroProps) {
   const berriesBGRef = useRef<HTMLDivElement>(null);
   const leavesBGRef = useRef<HTMLDivElement>(null);
   const [flavor, setFlavor] = useState<"cream" | "brown">("cream");
-  const [modelViewerLoaded, setModelViewerLoaded] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
-  // Load model viewer client side only
   useEffect(() => {
-    import("@google/model-viewer").then(() => {
-      setModelViewerLoaded(true);
-    }).catch((e) => console.error("Failed to load model-viewer", e));
+    setMounted(true);
   }, []);
 
   useGSAP(() => {
-    if (!modelViewerLoaded) return;
-    const modelViewer = document.querySelector("#product-model") as any;
-    if (!modelViewer) return;
+    if (!mounted) return;
 
     const berries = document.querySelectorAll(".berry") as NodeListOf<HTMLElement>;
     const cards = document.querySelectorAll(".flavor-card") as NodeListOf<HTMLElement>;
@@ -37,27 +42,6 @@ export default function AnimatedHero({ onStartClick }: AnimatedHeroProps) {
     if (!body) return;
 
     let isSwitching = false;
-    let switchSpin = 0;
-    let blueTexture: any = null;
-    let greenTexture: any = null;
-
-    const loadTextures = async () => {
-      try {
-        if (modelViewer.model) {
-          modelViewer.model.materials.forEach((material: any) => {
-            if (material.pbrMetallicRoughness.baseColorTexture) {
-                material.pbrMetallicRoughness.baseColorTexture.setTexture(null);
-            }
-            // Set initial color (Cream background -> Brown Tee)
-            material.pbrMetallicRoughness.setBaseColorFactor([0.11, 0.08, 0.06, 1]);
-          });
-        }
-      } catch (e) {
-        console.error("Texture preload failed", e);
-      }
-    };
-
-    modelViewer.addEventListener("load", loadTextures);
 
     // Initial Berry States
     berries.forEach((b) => {
@@ -90,12 +74,6 @@ export default function AnimatedHero({ onStartClick }: AnimatedHeroProps) {
       const time = Date.now() * 0.001;
       currentMouse.x += (mouse.x - currentMouse.x) * 0.05;
       currentMouse.y += (mouse.y - currentMouse.y) * 0.05;
-
-      if (modelViewer) {
-        modelViewer.cameraOrbit = `${currentMouse.x * 40 + switchSpin}deg ${
-          90 + currentMouse.y * 20
-        }deg 380%`;
-      }
 
       if (berriesFGRef.current) {
         berriesFGRef.current.style.transform = `translate(${
@@ -220,47 +198,11 @@ export default function AnimatedHero({ onStartClick }: AnimatedHeroProps) {
         ease: "power2.inOut",
       });
 
-      const spinObj = { val: 0, blur: 0 };
-      gsap.to(spinObj, {
-        val: 360,
-        blur: 15,
-        duration: 0.6,
-        ease: "power2.in",
-        onUpdate: () => {
-          switchSpin = spinObj.val;
-          modelViewer.style.filter = `blur(${spinObj.blur}px)`;
-        },
-        onComplete: async () => {
-          if (flavorTarget === "brown") {
-            body.classList.add("brown-theme");
-            if (modelViewer.model) {
-              modelViewer.model.materials.forEach((material: any) => {
-                  material.pbrMetallicRoughness.setBaseColorFactor([0.96, 0.88, 0.81, 1]);
-              });
-            }
-          } else {
-            body.classList.remove("brown-theme");
-            if (modelViewer.model) {
-              modelViewer.model.materials.forEach((material: any) => {
-                  material.pbrMetallicRoughness.setBaseColorFactor([0.11, 0.08, 0.06, 1]);
-              });
-            }
-          }
-
-          gsap.to(spinObj, {
-            val: 720,
-            blur: 0,
-            duration: 1.5,
-            ease: "back.out(0.7)",
-            onUpdate: () => {
-              switchSpin = spinObj.val;
-              modelViewer.style.filter = `blur(${spinObj.blur}px)`;
-            },
-            onComplete: () => {
-              switchSpin = 0;
-              modelViewer.style.filter = "none";
-            },
-          });
+      gsap.delayedCall(0.6, () => {
+        if (flavorTarget === "brown") {
+          body.classList.add("brown-theme");
+        } else {
+          body.classList.remove("brown-theme");
         }
       });
 
@@ -333,10 +275,9 @@ export default function AnimatedHero({ onStartClick }: AnimatedHeroProps) {
       window.removeEventListener("mousemove", handleMouseMove);
       cancelAnimationFrame(animationFrameId);
       if (bubbleInterval) clearInterval(bubbleInterval);
-      if (modelViewer) modelViewer.removeEventListener("load", loadTextures);
       delete (window as any).triggerFlavorSwitch;
     };
-  }, { dependencies: [modelViewerLoaded], scope: containerRef });
+  }, { dependencies: [mounted], scope: containerRef });
 
   return (
     <div
@@ -348,59 +289,28 @@ export default function AnimatedHero({ onStartClick }: AnimatedHeroProps) {
       <div className="hero-main-content">
         <div className="hero-inner-layout">
           <div className="leaves-container" ref={leavesBGRef}>
-            <model-viewer
-              className="leaf l1"
-              src="https://api.getlayers.ai/storage/v1/object/public/public/assets/soda-14ff8a788d/leaves.glb"
-              environment-image="neutral"
-              exposure="1.0"
-              interaction-prompt="none"
-              camera-orbit="45deg 75deg 105%"
-            ></model-viewer>
-            <model-viewer
-              className="leaf l2"
-              src="https://api.getlayers.ai/storage/v1/object/public/public/assets/soda-14ff8a788d/leaves.glb"
-              environment-image="neutral"
-              exposure="1.0"
-              interaction-prompt="none"
-              camera-orbit="-30deg 60deg 105%"
-            ></model-viewer>
-            <model-viewer
-              className="leaf l3"
-              src="https://api.getlayers.ai/storage/v1/object/public/public/assets/soda-14ff8a788d/leaves.glb"
-              environment-image="neutral"
-              exposure="1.0"
-              interaction-prompt="none"
-              camera-orbit="120deg 85deg 105%"
-            ></model-viewer>
-            <model-viewer
-              className="leaf l4"
-              src="https://api.getlayers.ai/storage/v1/object/public/public/assets/soda-14ff8a788d/leaves.glb"
-              environment-image="neutral"
-              exposure="1.0"
-              interaction-prompt="none"
-              camera-orbit="10deg 45deg 105%"
-            ></model-viewer>
+            {/* Removed remote model-viewer leaves to massively improve load time */}
           </div>
 
           <div className="hero-left">
             <h1 className="main-title large-animation-1">
-              <span className="outline-text">CLEAN</span>
+              <span className="outline-text">STREAT</span>
               <br />
-              AESTHETIC
+              WEAR
             </h1>
             <p className="hero-description">
-              Elevate your streetwear game. <br />
-              Premium heavyweight tees for the ultimate fit. <br />
-              No cap, just pure drip.
+              For The Generation. <br />
+              Who Refuses To Blend In. <br />
+      
             </p>
             <div className="cta-group">
               <button className="primary-btn" onClick={onStartClick}>
-                Explore Catalog
+                Explore  Products
                 <span className="plus-icon">+</span>
               </button>
             </div>
             <div className="award-badge">
-              <div className="award-icon">
+              {/* <div className="award-icon">
                 <svg
                   width="24"
                   height="24"
@@ -423,11 +333,8 @@ export default function AnimatedHero({ onStartClick }: AnimatedHeroProps) {
                     strokeLinejoin="round"
                   />
                 </svg>
-              </div>
-              <div className="award-text-col">
-                <span className="award-title">FASHION AWARDS</span>
-                <span className="award-subtitle">PREMIUM APPAREL 2025</span>
-              </div>
+              </div> */}
+           
             </div>
           </div>
 
@@ -438,21 +345,11 @@ export default function AnimatedHero({ onStartClick }: AnimatedHeroProps) {
           </div>
 
           <div className="hero-center">
-            {modelViewerLoaded && (
-              <model-viewer
-                id="product-model"
-                src="/shirt_baked.glb"
-                alt="Product 3D Model"
-                camera-controls
-                disable-zoom
-                shadow-intensity="0"
-                environment-image="neutral"
-                exposure="1.5"
-                interaction-prompt="none"
-                camera-orbit="0deg 90deg 380%"
-                field-of-view="30deg"
+            {mounted && (
+              <HeroModelViewer
+                flavor={flavor}
                 className="main-product-3d"
-              ></model-viewer>
+              />
             )}
           </div>
 
@@ -473,12 +370,12 @@ export default function AnimatedHero({ onStartClick }: AnimatedHeroProps) {
                   onClick={() => (window as any).triggerFlavorSwitch?.("cream")}
                 >
                   <img
-                    src="/brown_tee.png"
-                    alt="Brown Tee"
+                    src="/black_tee.png"
+                    alt="Black Tee"
                   />
                   <div className="card-info">
-                    <span>Brown Tee</span>
-                    <span>₹29.99</span>
+                    <span>Black Tee</span>
+                    {/* <span>₹29.99</span> */}
                   </div>
                 </div>
                 <div
@@ -491,21 +388,18 @@ export default function AnimatedHero({ onStartClick }: AnimatedHeroProps) {
                   />
                   <div className="card-info">
                     <span>Cream Tee</span>
-                    <span>₹29.99</span>
+                    {/* <span>₹29.99</span> */}
                   </div>
                 </div>
               </div>
             </div>
-            <h2 className="side-title large-animation-1">
+            {/* <h2 className="side-title large-animation-1">
               <span className="outline-text">STREET</span>
               <br />
               ESSENTIALS
-            </h2>
+            </h2> */}
           </div>
         </div>
-      </div>
-      <div style={{ display: "none" }}>
-        <model-viewer src="/shirt_baked.glb"></model-viewer>
       </div>
     </div>
   );

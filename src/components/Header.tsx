@@ -36,11 +36,11 @@ export default function Header({ onAuthClick }: HeaderProps) {
       transition={{ duration: 0.8, ease: "easeOut" }}
       className="sticky top-0 z-50 w-full border-b border-brand-charcoal/5 bg-brand-bg/85 backdrop-blur-md"
     >
-      <div className="mx-auto flex min-h-[4rem] sm:min-h-[4.5rem] md:min-h-[5.5rem] py-2 max-w-7xl items-center justify-between px-4 sm:px-8">
+      <div className="mx-auto flex min-h-[3.5rem] sm:min-h-[4rem] md:min-h-[4.5rem] py-2 max-w-7xl items-center justify-between px-4 sm:px-8">
         <div className="flex items-center">
           <Link href="/" className="flex items-center">
-            <div className="relative w-28 sm:w-36 md:w-52 lg:w-60 flex items-center justify-start">
-              <img src={logoUrl} alt={companyName} className="object-contain h-auto max-h-[35px] sm:max-h-[50px] md:max-h-[70px] lg:max-h-[92px] w-full" />
+            <div className="relative w-28 sm:w-36 md:w-44 lg:w-48 flex items-center justify-start">
+              <img src={logoUrl} alt={companyName} className="object-contain h-auto max-h-[32px] sm:max-h-[40px] md:max-h-[48px] lg:max-h-[55px] w-full" />
             </div>
           </Link>
         </div>

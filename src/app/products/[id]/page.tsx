@@ -87,6 +87,8 @@ export default function ProductDetailPage() {
   const { addItem, setIsOpen } = useCartStore();
 
   const [selectedColor, setSelectedColor] = useState("");
+  const [maleColor, setMaleColor] = useState("");
+  const [femaleColor, setFemaleColor] = useState("");
   const [selectedSize, setSelectedSize] = useState("");
   const [maleSize, setMaleSize] = useState("");
   const [femaleSize, setFemaleSize] = useState("");
@@ -126,13 +128,19 @@ export default function ProductDetailPage() {
     if (!isNaN(productId)) {
       fetchProductDetails(productId).then((prod) => {
         if (prod) {
-          if (prod.colors && prod.colors.length > 0) setSelectedColor(prod.colors[0]);
+          if (prod.colors && prod.colors.length > 0) {
+            setSelectedColor(prod.colors[0]);
+          }
+          if (prod.category?.toLowerCase().includes("couple")) {
+            setMaleColor(prod.maleColors && prod.maleColors.length > 0 ? prod.maleColors[0] : (prod.colors?.[0] || ""));
+            setFemaleColor(prod.femaleColors && prod.femaleColors.length > 0 ? prod.femaleColors[0] : (prod.colors?.[0] || ""));
+          }
           if (prod.sizes && prod.sizes.length > 0) {
             setSelectedSize(prod.sizes[0]);
-            if (prod.category?.toLowerCase().includes("couple")) {
-              setMaleSize(prod.sizes[0]);
-              setFemaleSize(prod.sizes[0]);
-            }
+          }
+          if (prod.category?.toLowerCase().includes("couple")) {
+            setMaleSize(prod.maleSizes && prod.maleSizes.length > 0 ? prod.maleSizes[0] : (prod.sizes?.[0] || ""));
+            setFemaleSize(prod.femaleSizes && prod.femaleSizes.length > 0 ? prod.femaleSizes[0] : (prod.sizes?.[0] || ""));
           }
         }
       });
@@ -168,9 +176,12 @@ export default function ProductDetailPage() {
     const sizeToUse = isCoupleCategory
       ? `M: ${maleSize}, F: ${femaleSize}`
       : selectedSize;
+    const colorToUse = isCoupleCategory
+      ? `M: ${maleColor}, F: ${femaleColor}`
+      : selectedColor;
 
-    if (isCoupleCategory && (!maleSize || !femaleSize)) {
-      alert("Please select both Male and Female sizes.");
+    if (isCoupleCategory && (!maleSize || !femaleSize || !maleColor || !femaleColor)) {
+      alert("Please select Male and Female sizes and colors.");
       return;
     }
 
@@ -179,7 +190,7 @@ export default function ProductDetailPage() {
       title: activeProduct.title,
       price: activeProduct.price,
       image: displayImages[0] || "",
-      color: selectedColor,
+      color: colorToUse,
       size: sizeToUse,
     });
     setIsOpen(true);
@@ -320,30 +331,81 @@ export default function ProductDetailPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
               {/* Color Selector */}
               {activeProduct.colors && activeProduct.colors.length > 0 && (
-                <div className="space-y-3">
-                  <label className="text-sm font-semibold text-brand-charcoal uppercase tracking-wider">
-                    Color
-                  </label>
-                  <div className="flex flex-wrap gap-3">
-                    {activeProduct.colors.map((color) => (
-                      <div key={color} className="flex flex-col items-center gap-1.5">
-                        <button
-                          onClick={() => setSelectedColor(color)}
-                          className={`h-9 w-9 rounded-full border-2 transition-all cursor-pointer relative flex items-center justify-center shadow-sm ${
-                            selectedColor === color ? "border-brand-charcoal scale-110" : "border-brand-bg hover:scale-105"
-                          }`}
-                          style={{ backgroundColor: color }}
-                        >
-                          {selectedColor === color && (
-                            <Check className="h-4 w-4 text-white mix-blend-difference" />
-                          )}
-                        </button>
-                        <span className="text-[10px] font-medium text-brand-charcoal/60 capitalize">
-                           {color}
-                        </span>
+                <div className="space-y-4">
+                  {activeProduct.category?.toLowerCase().includes("couple") ? (
+                    <>
+                      <div className="space-y-2">
+                        <label className="text-xs font-semibold text-brand-charcoal uppercase tracking-wider block">
+                          Male Shirt Color
+                        </label>
+                        <div className="flex flex-wrap gap-3">
+                          {(activeProduct.maleColors && activeProduct.maleColors.length > 0 ? activeProduct.maleColors : activeProduct.colors).map((color) => (
+                            <div key={`m-${color}`} className="flex flex-col items-center gap-1.5">
+                              <button
+                                onClick={() => setMaleColor(color)}
+                                className={`h-9 w-9 rounded-full border-2 transition-all cursor-pointer relative flex items-center justify-center shadow-sm ${
+                                  maleColor === color ? "border-brand-charcoal scale-110" : "border-brand-bg hover:scale-105"
+                                }`}
+                                style={{ backgroundColor: color }}
+                              >
+                                {maleColor === color && (
+                                  <Check className="h-4 w-4 text-white mix-blend-difference" />
+                                )}
+                              </button>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    ))}
-                  </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-semibold text-brand-charcoal uppercase tracking-wider block">
+                          Female Shirt Color
+                        </label>
+                        <div className="flex flex-wrap gap-3">
+                          {(activeProduct.femaleColors && activeProduct.femaleColors.length > 0 ? activeProduct.femaleColors : activeProduct.colors).map((color) => (
+                            <div key={`f-${color}`} className="flex flex-col items-center gap-1.5">
+                              <button
+                                onClick={() => setFemaleColor(color)}
+                                className={`h-9 w-9 rounded-full border-2 transition-all cursor-pointer relative flex items-center justify-center shadow-sm ${
+                                  femaleColor === color ? "border-brand-charcoal scale-110" : "border-brand-bg hover:scale-105"
+                                }`}
+                                style={{ backgroundColor: color }}
+                              >
+                                {femaleColor === color && (
+                                  <Check className="h-4 w-4 text-white mix-blend-difference" />
+                                )}
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <label className="text-sm font-semibold text-brand-charcoal uppercase tracking-wider block">
+                        Color
+                      </label>
+                      <div className="flex flex-wrap gap-3">
+                        {activeProduct.colors.map((color) => (
+                          <div key={color} className="flex flex-col items-center gap-1.5">
+                            <button
+                              onClick={() => setSelectedColor(color)}
+                              className={`h-9 w-9 rounded-full border-2 transition-all cursor-pointer relative flex items-center justify-center shadow-sm ${
+                                selectedColor === color ? "border-brand-charcoal scale-110" : "border-brand-bg hover:scale-105"
+                              }`}
+                              style={{ backgroundColor: color }}
+                            >
+                              {selectedColor === color && (
+                                <Check className="h-4 w-4 text-white mix-blend-difference" />
+                              )}
+                            </button>
+                            <span className="text-[10px] font-medium text-brand-charcoal/60 capitalize">
+                               {color}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
 
@@ -357,7 +419,7 @@ export default function ProductDetailPage() {
                           Male Shirt Size
                         </label>
                         <div className="flex flex-wrap gap-2">
-                          {activeProduct.sizes.map((size) => (
+                          {(activeProduct.maleSizes && activeProduct.maleSizes.length > 0 ? activeProduct.maleSizes : activeProduct.sizes).map((size) => (
                             <button
                               key={size}
                               type="button"
@@ -378,7 +440,7 @@ export default function ProductDetailPage() {
                           Female Shirt Size
                         </label>
                         <div className="flex flex-wrap gap-2">
-                          {activeProduct.sizes.map((size) => (
+                          {(activeProduct.femaleSizes && activeProduct.femaleSizes.length > 0 ? activeProduct.femaleSizes : activeProduct.sizes).map((size) => (
                             <button
                               key={size}
                               type="button"
@@ -442,7 +504,7 @@ export default function ProductDetailPage() {
                       className="overflow-hidden text-sm text-brand-charcoal/70 font-light leading-relaxed pt-2 pb-4"
                     >
                       <p>{activeProduct.description}</p>
-                      <p className="mt-2">This first iteration reduces the carbon footprint by an average of 75% when used instead of our traditional knit fleece materials. Experience unparalleled comfort without compromising on environmental sustainability.</p>
+
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -465,13 +527,13 @@ export default function ProductDetailPage() {
                       exit={{ height: 0, opacity: 0 }}
                       className="overflow-hidden pt-2 pb-4 grid grid-cols-1 sm:grid-cols-2 gap-4"
                     >
-                      <div className="flex items-start gap-3 bg-brand-gray/30 p-3 rounded-2xl shadow-sm border border-brand-charcoal/5">
+                      {/* <div className="flex items-start gap-3 bg-brand-gray/30 p-3 rounded-2xl shadow-sm border border-brand-charcoal/5">
                         <div className="bg-brand-charcoal text-brand-bg rounded-full h-8 w-8 flex items-center justify-center shrink-0 text-sm">%</div>
                         <div>
                           <div className="text-[10px] text-brand-charcoal/60 font-semibold uppercase">Discount</div>
-                          <div className="text-xs font-semibold mt-0.5 text-brand-charcoal">Free Shipping &gt; ₹100</div>
+                          <div className="text-xs font-semibold mt-0.5 text-brand-charcoal">Free Shipping &gt; ₹1199</div>
                         </div>
-                      </div>
+                      </div> */}
                       <div className="flex items-start gap-3 bg-brand-gray/30 p-3 rounded-2xl shadow-sm border border-brand-charcoal/5">
                         <div className="bg-brand-charcoal text-brand-bg rounded-full h-8 w-8 flex items-center justify-center shrink-0 text-sm">📦</div>
                         <div>

@@ -10,8 +10,9 @@ import { useProductStore } from "@/store/useProductStore";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { useAlertStore } from "@/store/useAlertStore";
 import { shallow } from "zustand/shallow";
-import { Plus, Trash2, Tag, Star, Package, Users, Layers, UploadCloud, Loader2, RefreshCw, BarChart2, UserCheck, Shield, ShoppingBag, DollarSign, Calendar, Edit, Settings, Eye, X } from "lucide-react";
+import { Plus, Trash2, Tag, Star, Package, Users, Layers, UploadCloud, Loader2, RefreshCw, BarChart2, UserCheck, Shield, ShoppingBag, DollarSign, Calendar, Edit, Settings, Eye, X, Image as ImageIcon } from "lucide-react";
 import { motion } from "framer-motion";
+import { apiFetch } from "@/utils/api";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Lightbox from "@/components/Lightbox";
@@ -43,10 +44,10 @@ export default function AdminDashboardPage() {
   
   const { products, fetchProducts } = useProductStore();
 
-  const defaultCategories = ["T-Shirts", "Hoodies"];
+  const categories = useSettingsStore((state) => state.categories) || ["T-Shirts", "Couple"];
   const uniqueProductCategories = Array.from(new Set(products.map((p) => p.category)))
-    .filter((cat) => cat && !["T-Shirts", "Hoodies"].includes(cat));
-  const adminCategoriesList = [...defaultCategories, ...uniqueProductCategories];
+    .filter((cat) => cat && !categories.includes(cat));
+  const adminCategoriesList = [...categories, ...uniqueProductCategories];
 
   const companyName = useSettingsStore((state) => state.companyName);
   const logoUrl = useSettingsStore((state) => state.logoUrl);
@@ -73,6 +74,7 @@ export default function AdminDashboardPage() {
   const [modelThumbnailUrl, setModelThumbnailUrl] = useState<string>("");
   
   const [isColorPickerOpen, setIsColorPickerOpen] = useState(false);
+  const [colorPickerTarget, setColorPickerTarget] = useState<'default' | 'male' | 'female'>('default');
 
   // Form states for Product Upload
   const [title, setTitle] = useState("");
@@ -81,19 +83,126 @@ export default function AdminDashboardPage() {
   const [category, setCategory] = useState("T-Shirts");
   const [isCustomCategory, setIsCustomCategory] = useState(false);
   const [colorsInput, setColorsInput] = useState("#8B5A2B, #4A3B32, #A0522D");
+  const [maleColorsInput, setMaleColorsInput] = useState("#000000, #FFFFFF");
+  const [femaleColorsInput, setFemaleColorsInput] = useState("#FFC0CB, #FFFFFF");
   const [colorImages, setColorImages] = useState<Record<string, string[]>>({});
   const [uploadingColor, setUploadingColor] = useState<string | null>(null);
   const [selectedSizes, setSelectedSizes] = useState<string[]>(["S", "M", "L"]);
+  const [selectedMaleSizes, setSelectedMaleSizes] = useState<string[]>(["M", "L", "XL"]);
+  const [selectedFemaleSizes, setSelectedFemaleSizes] = useState<string[]>(["S", "M", "L"]);
   const [uploadedImageUrl, setUploadedImageUrl] = useState("");
   const [uploadedModelUrl, setUploadedModelUrl] = useState("");
   
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadingModel, setUploadingModel] = useState(false);
   const [formSuccess, setFormSuccess] = useState(false);
+  const [newCategoryInput, setNewCategoryInput] = useState("");
 
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [lightboxImages, setLightboxImages] = useState<string[]>([]);
+
+  // Hero Gallery States
+  const [galleryImages, setGalleryImages] = useState<any[]>([]);
+  const [uploadingGalleryImage, setUploadingGalleryImage] = useState(false);
+
+  const fetchGalleryImages = async () => {
+    try {
+      const res = await apiFetch("/gallery");
+      if (res.success) setGalleryImages(res.data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const uploadGalleryImage = async (file: File) => {
+    try {
+      setUploadingGalleryImage(true);
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64Data = reader.result as string;
+        const res = await apiFetch("/gallery", {
+          method: "POST",
+          body: JSON.stringify({ url: base64Data }),
+        });
+        if (res.success) {
+          useAlertStore.getState().showAlert("Image uploaded to gallery!");
+          fetchGalleryImages();
+        }
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setUploadingGalleryImage(false);
+    }
+  };
+
+  const deleteGalleryImage = async (id: number) => {
+    try {
+      const res = await apiFetch(`/gallery/${id}`, { method: "DELETE" });
+      if (res.success) {
+        useAlertStore.getState().showAlert("Image deleted!");
+        fetchGalleryImages();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // Cinematic Hero States
+  const [cinematicImages, setCinematicImages] = useState<any[]>([]);
+  const [uploadingCinematicImage, setUploadingCinematicImage] = useState(false);
+  const [cinematicLabel, setCinematicLabel] = useState("");
+
+  const fetchCinematicImages = async () => {
+    try {
+      const res = await apiFetch("/cinematic-hero");
+      if (res.success) setCinematicImages(res.data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const uploadCinematicImage = async (file: File) => {
+    if (!cinematicLabel) {
+      useAlertStore.getState().showAlert("Please enter a label for the image!");
+      return;
+    }
+    try {
+      setUploadingCinematicImage(true);
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64Data = reader.result as string;
+        const res = await apiFetch("/cinematic-hero", {
+          method: "POST",
+          body: JSON.stringify({ url: base64Data, label: cinematicLabel }),
+        });
+        if (res.success) {
+          useAlertStore.getState().showAlert("Image uploaded to cinematic hero!");
+          setCinematicLabel("");
+          fetchCinematicImages();
+        }
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setUploadingCinematicImage(false);
+    }
+  };
+
+  const deleteCinematicImage = async (id: number) => {
+    try {
+      const res = await apiFetch(`/cinematic-hero/${id}`, { method: "DELETE" });
+      if (res.success) {
+        useAlertStore.getState().showAlert("Cinematic image deleted!");
+        fetchCinematicImages();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const openLightbox = (images: string[], index: number) => {
     setLightboxImages(images);
@@ -111,6 +220,21 @@ export default function AdminDashboardPage() {
     if (companyName) setTempCompanyName(companyName);
     if (logoUrl) setTempLogoUrl(logoUrl);
   }, [companyName, logoUrl]);
+
+  useEffect(() => {
+    if (initialized && !user) {
+      setIsAuthModalOpen(true);
+    }
+  }, [user, initialized]);
+
+  useEffect(() => {
+    if (activeTab === "gallery") {
+      fetchGalleryImages();
+    }
+    if (activeTab === "cinematic") {
+      fetchCinematicImages();
+    }
+  }, [activeTab]);
 
   useEffect(() => {
     if (initialized) {
@@ -200,6 +324,22 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const handleMaleSizeToggle = (size: string) => {
+    if (selectedMaleSizes.includes(size)) {
+      setSelectedMaleSizes(selectedMaleSizes.filter((s) => s !== size));
+    } else {
+      setSelectedMaleSizes([...selectedMaleSizes, size]);
+    }
+  };
+
+  const handleFemaleSizeToggle = (size: string) => {
+    if (selectedFemaleSizes.includes(size)) {
+      setSelectedFemaleSizes(selectedFemaleSizes.filter((s) => s !== size));
+    } else {
+      setSelectedFemaleSizes([...selectedFemaleSizes, size]);
+    }
+  };
+
   const handleProductSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title || !description || !price || !uploadedImageUrl) {
@@ -208,6 +348,8 @@ export default function AdminDashboardPage() {
     }
 
     const colors = colorsInput.split(",").map((c) => c.trim()).filter((c) => c !== "");
+    const maleColors = maleColorsInput.split(",").map((c) => c.trim()).filter((c) => c !== "");
+    const femaleColors = femaleColorsInput.split(",").map((c) => c.trim()).filter((c) => c !== "");
     
     const imagesToSubmit = [uploadedImageUrl];
     
@@ -229,6 +371,10 @@ export default function AdminDashboardPage() {
       images: imagesToSubmit,
       colors,
       sizes: selectedSizes,
+      maleColors: category.toLowerCase().includes("couple") ? maleColors : [],
+      femaleColors: category.toLowerCase().includes("couple") ? femaleColors : [],
+      maleSizes: category.toLowerCase().includes("couple") ? selectedMaleSizes : [],
+      femaleSizes: category.toLowerCase().includes("couple") ? selectedFemaleSizes : [],
     };
 
     let success = false;
@@ -263,7 +409,11 @@ export default function AdminDashboardPage() {
     setCategory(prod.category);
     setIsCustomCategory(false);
     setColorsInput(prod.colors?.join(", ") || "");
+    setMaleColorsInput(prod.maleColors?.join(", ") || "");
+    setFemaleColorsInput(prod.femaleColors?.join(", ") || "");
     setSelectedSizes(prod.sizes || ["S", "M", "L"]);
+    setSelectedMaleSizes(prod.maleSizes || ["M", "L", "XL"]);
+    setSelectedFemaleSizes(prod.femaleSizes || ["S", "M", "L"]);
     
     // Parse images array
     if (prod.images && prod.images.length > 0) {
@@ -373,6 +523,8 @@ export default function AdminDashboardPage() {
                 { id: "reviews", label: "Reviews Manager", icon: Star },
                 { id: "orders", label: "Sales & Orders", icon: ShoppingBag },
                 { id: "users", label: "Customer Accounts", icon: Users },
+                { id: "gallery", label: "Hero Gallery", icon: ImageIcon },
+                { id: "cinematic", label: "Cinematic Hero", icon: Layers },
                 { id: "settings", label: "Brand Settings", icon: Settings },
               ].map((tab) => {
                 const Icon = tab.icon;
@@ -645,80 +797,246 @@ export default function AdminDashboardPage() {
                             required
                           />
                         )}
+                        {(!isCustomCategory && category?.toLowerCase().includes("couple")) && (
+                          <p className="text-[10px] text-brand-charcoal/60 mt-1.5 italic">
+                            💡 "Couple" category items will automatically split sizes and colors into Male and Female selections on the product page!
+                          </p>
+                        )}
                       </div>
                     </div>
 
-                    <div>
-                      <div className="flex items-center justify-between">
-                        <label className="font-semibold uppercase tracking-wider text-brand-charcoal/60" htmlFor="pColors">
-                          Colors Hex Codes (Comma separated)
-                        </label>
-                        <button
-                          type="button"
-                          onClick={() => setIsColorPickerOpen(true)}
-                          className="text-[10px] font-bold uppercase tracking-wider text-brand-green hover:text-brand-green/80 flex items-center gap-1 bg-brand-green/10 px-2 py-1 rounded-md"
-                        >
-                          <Plus className="h-3 w-3" />
-                          Pick Colors
-                        </button>
-                      </div>
-                      
-                      {colorsInput.trim() !== "" && (
-                        <div className="mt-2 mb-2 flex flex-wrap gap-2">
-                          {colorsInput.split(",").map(c => c.trim()).filter(Boolean).map((hex, i) => (
-                            <div key={i} className="flex items-center gap-1.5 bg-brand-bg px-2.5 py-1.5 rounded-full border border-brand-charcoal/10 shadow-sm">
-                              <div className="w-3.5 h-3.5 rounded-full shadow-sm border border-brand-charcoal/10" style={{ backgroundColor: hex }} />
-                              <span className="text-[10px] font-mono text-brand-charcoal uppercase">{hex}</span>
-                              <button 
-                                type="button" 
-                                onClick={() => {
-                                  const currentColors = colorsInput.split(",").map(c => c.trim()).filter(Boolean);
-                                  currentColors.splice(i, 1);
-                                  setColorsInput(currentColors.join(", "));
-                                }}
-                                className="ml-1 text-brand-charcoal/40 hover:text-red-500 transition-colors"
-                              >
-                                <X className="h-3 w-3" />
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      
-                      <input
-                        type="text"
-                        id="pColors"
-                        value={colorsInput}
-                        onChange={(e) => setColorsInput(e.target.value)}
-                        placeholder="#8B5A2B, #4A3B32 (Or use the picker)"
-                        className="mt-1.5 w-full rounded-xl border border-brand-charcoal/10 bg-brand-bg px-3.5 py-3 text-xs focus:border-brand-green focus:outline-none"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="font-semibold uppercase tracking-wider text-brand-charcoal/60">
-                        Available Sizes
-                      </label>
-                      <div className="flex flex-wrap gap-1.5 mt-2">
-                        {availableSizesList.map((size) => {
-                          const isChecked = selectedSizes.includes(size);
-                          return (
+                    {category?.toLowerCase().includes("couple") ? (
+                      <>
+                        {/* Male Colors */}
+                        <div>
+                          <div className="flex items-center justify-between">
+                            <label className="font-semibold uppercase tracking-wider text-brand-charcoal/60">
+                              Male Colors Hex Codes (Comma separated)
+                            </label>
                             <button
                               type="button"
-                              key={size}
-                              onClick={() => handleSizeToggle(size)}
-                              className={`h-7 min-w-8 px-1.5 rounded-lg border text-[10px] font-bold uppercase transition-all cursor-pointer ${
-                                isChecked
-                                  ? "bg-brand-charcoal border-brand-charcoal text-brand-bg"
-                                  : "border-brand-charcoal/10 bg-brand-bg text-brand-charcoal/60 hover:border-brand-charcoal"
-                              }`}
+                              onClick={() => {
+                                setColorPickerTarget('male');
+                                setIsColorPickerOpen(true);
+                              }}
+                              className="text-[10px] font-bold uppercase tracking-wider text-brand-green hover:text-brand-green/80 flex items-center gap-1 bg-brand-green/10 px-2 py-1 rounded-md"
                             >
-                              {size}
+                              <Plus className="h-3 w-3" />
+                              Pick Colors
                             </button>
-                          );
-                        })}
-                      </div>
-                    </div>
+                          </div>
+
+                          {maleColorsInput.trim() !== "" && (
+                            <div className="mt-2 mb-2 flex flex-wrap gap-2">
+                              {maleColorsInput.split(",").map(c => c.trim()).filter(Boolean).map((hex, i) => (
+                                <div key={i} className="flex items-center gap-1.5 bg-brand-bg px-2.5 py-1.5 rounded-full border border-brand-charcoal/10 shadow-sm">
+                                  <div className="w-3.5 h-3.5 rounded-full shadow-sm border border-brand-charcoal/10" style={{ backgroundColor: hex }} />
+                                  <span className="text-[10px] font-mono text-brand-charcoal uppercase">{hex}</span>
+                                  <button 
+                                    type="button" 
+                                    onClick={() => {
+                                      const currentColors = maleColorsInput.split(",").map(c => c.trim()).filter(Boolean);
+                                      currentColors.splice(i, 1);
+                                      setMaleColorsInput(currentColors.join(", "));
+                                    }}
+                                    className="ml-1 text-brand-charcoal/40 hover:text-red-500 transition-colors"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          <input
+                            type="text"
+                            value={maleColorsInput}
+                            onChange={(e) => setMaleColorsInput(e.target.value)}
+                            placeholder="#000000, #333333 (Or use the picker)"
+                            className="mt-1.5 w-full rounded-xl border border-brand-charcoal/10 bg-brand-bg px-3.5 py-3 text-xs focus:border-brand-green focus:outline-none"
+                          />
+                        </div>
+
+                        {/* Female Colors */}
+                        <div>
+                          <div className="flex items-center justify-between">
+                            <label className="font-semibold uppercase tracking-wider text-brand-charcoal/60">
+                              Female Colors Hex Codes (Comma separated)
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setColorPickerTarget('female');
+                                setIsColorPickerOpen(true);
+                              }}
+                              className="text-[10px] font-bold uppercase tracking-wider text-brand-green hover:text-brand-green/80 flex items-center gap-1 bg-brand-green/10 px-2 py-1 rounded-md"
+                            >
+                              <Plus className="h-3 w-3" />
+                              Pick Colors
+                            </button>
+                          </div>
+
+                          {femaleColorsInput.trim() !== "" && (
+                            <div className="mt-2 mb-2 flex flex-wrap gap-2">
+                              {femaleColorsInput.split(",").map(c => c.trim()).filter(Boolean).map((hex, i) => (
+                                <div key={i} className="flex items-center gap-1.5 bg-brand-bg px-2.5 py-1.5 rounded-full border border-brand-charcoal/10 shadow-sm">
+                                  <div className="w-3.5 h-3.5 rounded-full shadow-sm border border-brand-charcoal/10" style={{ backgroundColor: hex }} />
+                                  <span className="text-[10px] font-mono text-brand-charcoal uppercase">{hex}</span>
+                                  <button 
+                                    type="button" 
+                                    onClick={() => {
+                                      const currentColors = femaleColorsInput.split(",").map(c => c.trim()).filter(Boolean);
+                                      currentColors.splice(i, 1);
+                                      setFemaleColorsInput(currentColors.join(", "));
+                                    }}
+                                    className="ml-1 text-brand-charcoal/40 hover:text-red-500 transition-colors"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          <input
+                            type="text"
+                            value={femaleColorsInput}
+                            onChange={(e) => setFemaleColorsInput(e.target.value)}
+                            placeholder="#FFC0CB, #FFFFFF (Or use the picker)"
+                            className="mt-1.5 w-full rounded-xl border border-brand-charcoal/10 bg-brand-bg px-3.5 py-3 text-xs focus:border-brand-green focus:outline-none"
+                          />
+                        </div>
+                        {/* Male Sizes */}
+                        <div>
+                          <label className="font-semibold uppercase tracking-wider text-brand-charcoal/60">
+                            Available Male Sizes
+                          </label>
+                          <div className="flex flex-wrap gap-1.5 mt-2">
+                            {availableSizesList.map((size) => {
+                              const isChecked = selectedMaleSizes.includes(size);
+                              return (
+                                <button
+                                  type="button"
+                                  key={size}
+                                  onClick={() => handleMaleSizeToggle(size)}
+                                  className={`h-7 min-w-8 px-1.5 rounded-lg border text-[10px] font-bold uppercase transition-all cursor-pointer ${
+                                    isChecked
+                                      ? "bg-brand-charcoal border-brand-charcoal text-brand-bg"
+                                      : "border-brand-charcoal/10 bg-brand-bg text-brand-charcoal/60 hover:border-brand-charcoal"
+                                  }`}
+                                >
+                                  {size}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                        {/* Female Sizes */}
+                        <div>
+                          <label className="font-semibold uppercase tracking-wider text-brand-charcoal/60">
+                            Available Female Sizes
+                          </label>
+                          <div className="flex flex-wrap gap-1.5 mt-2">
+                            {availableSizesList.map((size) => {
+                              const isChecked = selectedFemaleSizes.includes(size);
+                              return (
+                                <button
+                                  type="button"
+                                  key={size}
+                                  onClick={() => handleFemaleSizeToggle(size)}
+                                  className={`h-7 min-w-8 px-1.5 rounded-lg border text-[10px] font-bold uppercase transition-all cursor-pointer ${
+                                    isChecked
+                                      ? "bg-brand-charcoal border-brand-charcoal text-brand-bg"
+                                      : "border-brand-charcoal/10 bg-brand-bg text-brand-charcoal/60 hover:border-brand-charcoal"
+                                  }`}
+                                >
+                                  {size}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        {/* Default Colors */}
+                        <div>
+                          <div className="flex items-center justify-between">
+                            <label className="font-semibold uppercase tracking-wider text-brand-charcoal/60" htmlFor="pColors">
+                              Colors Hex Codes (Comma separated)
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setColorPickerTarget('default');
+                                setIsColorPickerOpen(true);
+                              }}
+                              className="text-[10px] font-bold uppercase tracking-wider text-brand-green hover:text-brand-green/80 flex items-center gap-1 bg-brand-green/10 px-2 py-1 rounded-md"
+                            >
+                              <Plus className="h-3 w-3" />
+                              Pick Colors
+                            </button>
+                          </div>
+                          
+                          {colorsInput.trim() !== "" && (
+                            <div className="mt-2 mb-2 flex flex-wrap gap-2">
+                              {colorsInput.split(",").map(c => c.trim()).filter(Boolean).map((hex, i) => (
+                                <div key={i} className="flex items-center gap-1.5 bg-brand-bg px-2.5 py-1.5 rounded-full border border-brand-charcoal/10 shadow-sm">
+                                  <div className="w-3.5 h-3.5 rounded-full shadow-sm border border-brand-charcoal/10" style={{ backgroundColor: hex }} />
+                                  <span className="text-[10px] font-mono text-brand-charcoal uppercase">{hex}</span>
+                                  <button 
+                                    type="button" 
+                                    onClick={() => {
+                                      const currentColors = colorsInput.split(",").map(c => c.trim()).filter(Boolean);
+                                      currentColors.splice(i, 1);
+                                      setColorsInput(currentColors.join(", "));
+                                    }}
+                                    className="ml-1 text-brand-charcoal/40 hover:text-red-500 transition-colors"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          
+                          <input
+                            type="text"
+                            id="pColors"
+                            value={colorsInput}
+                            onChange={(e) => setColorsInput(e.target.value)}
+                            placeholder="#8B5A2B, #4A3B32 (Or use the picker)"
+                            className="mt-1.5 w-full rounded-xl border border-brand-charcoal/10 bg-brand-bg px-3.5 py-3 text-xs focus:border-brand-green focus:outline-none"
+                          />
+                        </div>
+
+                        {/* Default Sizes */}
+                        <div>
+                          <label className="font-semibold uppercase tracking-wider text-brand-charcoal/60">
+                            Available Sizes
+                          </label>
+                          <div className="flex flex-wrap gap-1.5 mt-2">
+                            {availableSizesList.map((size) => {
+                              const isChecked = selectedSizes.includes(size);
+                              return (
+                                <button
+                                  type="button"
+                                  key={size}
+                                  onClick={() => handleSizeToggle(size)}
+                                  className={`h-7 min-w-8 px-1.5 rounded-lg border text-[10px] font-bold uppercase transition-all cursor-pointer ${
+                                    isChecked
+                                      ? "bg-brand-charcoal border-brand-charcoal text-brand-bg"
+                                      : "border-brand-charcoal/10 bg-brand-bg text-brand-charcoal/60 hover:border-brand-charcoal"
+                                  }`}
+                                >
+                                  {size}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </>
+                    )}
 
                     <div>
                       <label className="font-semibold uppercase tracking-wider text-brand-charcoal/60">
@@ -855,7 +1173,7 @@ export default function AdminDashboardPage() {
                 {/* Inventory List */}
                 <div className="xl:col-span-7 space-y-6">
                   <h2 className="text-xl font-semibold tracking-tight text-brand-charcoal font-serif">
-                    Active Catalog Inventory ({products.length})
+                    Active  Products Inventory ({products.length})
                   </h2>
 
                   <div className="border border-brand-charcoal/5 rounded-3xl overflow-hidden bg-brand-bg shadow-xs">
@@ -1189,6 +1507,125 @@ export default function AdminDashboardPage() {
             )}
 
             {/* -------------------- TAB CONTENT: SETTINGS -------------------- */}
+            {activeTab === "gallery" && (
+              <div className="max-w-5xl bg-brand-gray/30 p-8 rounded-3xl border border-brand-charcoal/5 space-y-8">
+                <div>
+                  <h2 className="text-xl font-semibold tracking-tight text-brand-charcoal font-serif">
+                    Hero Gallery Management
+                  </h2>
+                  <p className="text-xs text-brand-charcoal/50 mt-1 font-light">
+                    Upload and manage dynamic images that appear in the floating gallery hero section on the homepage. At least 8 images are recommended for the best visual experience.
+                  </p>
+                </div>
+
+                <div className="relative border border-dashed border-brand-charcoal/20 rounded-xl bg-brand-bg p-8 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-brand-charcoal/5 transition-colors">
+                  <UploadCloud className="h-8 w-8 text-brand-charcoal/40 mb-2" />
+                  <span className="text-sm font-semibold text-brand-charcoal">
+                    {uploadingGalleryImage ? "Uploading image..." : "Upload new gallery image"}
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    disabled={uploadingGalleryImage}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) uploadGalleryImage(file);
+                    }}
+                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full disabled:cursor-not-allowed"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {galleryImages.map((img) => (
+                    <div key={img.id} className="relative group rounded-xl overflow-hidden aspect-square border border-brand-charcoal/10 shadow-sm bg-brand-bg">
+                      <img src={img.url} alt="Gallery" className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-brand-charcoal/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <button
+                          onClick={() => deleteGalleryImage(img.id)}
+                          className="bg-brand-red text-white p-2 rounded-full hover:scale-110 transition-transform cursor-pointer shadow-lg"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  {galleryImages.length === 0 && (
+                    <div className="col-span-full py-12 text-center text-xs text-brand-charcoal/50">
+                      No images in the gallery yet. Start by uploading one!
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* -------------------- TAB CONTENT: CINEMATIC HERO -------------------- */}
+            {activeTab === "cinematic" && (
+              <div className="max-w-5xl bg-brand-gray/30 p-8 rounded-3xl border border-brand-charcoal/5 space-y-8">
+                <div>
+                  <h2 className="text-xl font-semibold tracking-tight text-brand-charcoal font-serif">
+                    Cinematic Hero Management
+                  </h2>
+                  <p className="text-xs text-brand-charcoal/50 mt-1 font-light">
+                    Upload images and set labels for the desktop Cinematic Video Hero slider.
+                  </p>
+                </div>
+
+                <div className="space-y-4 max-w-md">
+                  <div>
+                    <label className="block text-xs font-semibold text-brand-charcoal mb-2">Image Label</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Summer Drop"
+                      value={cinematicLabel}
+                      onChange={(e) => setCinematicLabel(e.target.value)}
+                      className="w-full bg-brand-bg rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-brand-charcoal/20 border border-brand-charcoal/10 shadow-sm transition-all"
+                    />
+                  </div>
+                  <div className="relative border border-dashed border-brand-charcoal/20 rounded-xl bg-brand-bg p-8 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-brand-charcoal/5 transition-colors">
+                    <UploadCloud className="h-8 w-8 text-brand-charcoal/40 mb-2" />
+                    <span className="text-sm font-semibold text-brand-charcoal">
+                      {uploadingCinematicImage ? "Uploading image..." : "Select image to upload (label required)"}
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      disabled={uploadingCinematicImage || !cinematicLabel}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) uploadCinematicImage(file);
+                      }}
+                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full disabled:cursor-not-allowed"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {cinematicImages.map((img) => (
+                    <div key={img.id} className="relative group rounded-xl overflow-hidden aspect-video border border-brand-charcoal/10 shadow-sm bg-brand-bg flex flex-col">
+                      <img src={img.url} alt={img.label} className="w-full h-full object-cover flex-1" />
+                      <div className="p-2 bg-brand-charcoal text-brand-bg text-center text-xs font-bold shrink-0 truncate">
+                        {img.label}
+                      </div>
+                      <div className="absolute inset-0 bg-brand-charcoal/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pb-8">
+                        <button
+                          onClick={() => deleteCinematicImage(img.id)}
+                          className="bg-brand-red text-white p-2 rounded-full hover:scale-110 transition-transform cursor-pointer shadow-lg"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  {cinematicImages.length === 0 && (
+                    <div className="col-span-full py-12 text-center text-xs text-brand-charcoal/50">
+                      No images in the cinematic hero yet.
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* -------------------- TAB CONTENT: SETTINGS -------------------- */}
             {activeTab === "settings" && (
               <div className="max-w-2xl bg-brand-gray/30 p-8 rounded-3xl border border-brand-charcoal/5 space-y-6">
                 <div>
@@ -1277,6 +1714,70 @@ export default function AdminDashboardPage() {
                     {updatingSettings ? "Saving settings..." : "Save Settings"}
                   </button>
                 </form>
+
+                {/* Manage Categories Section */}
+                <div className="mt-8 pt-8 border-t border-brand-charcoal/10">
+                  <h3 className="text-lg font-semibold tracking-tight text-brand-charcoal font-serif">
+                    Product Categories Management
+                  </h3>
+                  <p className="text-xs text-brand-charcoal/50 mt-1 font-light mb-4">
+                    Add or remove product categories displayed in the dropdown menu when uploading or editing items.
+                  </p>
+                  
+                  <div className="flex gap-2 mb-4">
+                    <input
+                      type="text"
+                      placeholder="e.g. Hoodies, Accessories"
+                      value={newCategoryInput}
+                      onChange={(e) => setNewCategoryInput(e.target.value)}
+                      className="flex-grow rounded-xl border border-brand-charcoal/10 bg-brand-bg px-3.5 py-3 text-xs focus:border-brand-green focus:outline-none text-brand-charcoal"
+                    />
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const trimmed = newCategoryInput.trim();
+                        if (!trimmed) return;
+                        if (categories.includes(trimmed)) {
+                          useAlertStore.getState().showAlert("Category already exists.");
+                          return;
+                        }
+                        const updated = [...categories, trimmed];
+                        const success = await updateSettings({ categories: updated });
+                        if (success) {
+                          setNewCategoryInput("");
+                          useAlertStore.getState().showAlert("Category added successfully!");
+                        }
+                      }}
+                      className="bg-brand-charcoal text-brand-bg px-4 py-2 rounded-xl text-xs font-semibold hover:bg-brand-charcoal/90 transition-all cursor-pointer flex items-center gap-1.5"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Add
+                    </button>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    {categories.map((cat) => (
+                      <div key={cat} className="flex items-center gap-1.5 bg-brand-bg px-3.5 py-2 rounded-full border border-brand-charcoal/10 shadow-sm">
+                        <span className="text-xs font-medium text-brand-charcoal">{cat}</span>
+                        {cat !== "T-Shirts" && cat !== "Couple" && (
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              const updated = categories.filter((c) => c !== cat);
+                              const success = await updateSettings({ categories: updated });
+                              if (success) {
+                                useAlertStore.getState().showAlert(`Category "${cat}" removed.`);
+                              }
+                            }}
+                            className="text-brand-charcoal/40 hover:text-red-500 transition-colors cursor-pointer"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
 
@@ -1536,8 +2037,22 @@ export default function AdminDashboardPage() {
       <ColorPickerModal 
         isOpen={isColorPickerOpen}
         onClose={() => setIsColorPickerOpen(false)}
-        selectedColors={colorsInput.split(",").map(c => c.trim()).filter(Boolean)}
-        onColorsChange={(colors) => setColorsInput(colors.join(", "))}
+        selectedColors={
+          colorPickerTarget === 'male'
+            ? maleColorsInput.split(",").map(c => c.trim()).filter(Boolean)
+            : colorPickerTarget === 'female'
+            ? femaleColorsInput.split(",").map(c => c.trim()).filter(Boolean)
+            : colorsInput.split(",").map(c => c.trim()).filter(Boolean)
+        }
+        onColorsChange={(colors) => {
+          if (colorPickerTarget === 'male') {
+            setMaleColorsInput(colors.join(", "));
+          } else if (colorPickerTarget === 'female') {
+            setFemaleColorsInput(colors.join(", "));
+          } else {
+            setColorsInput(colors.join(", "));
+          }
+        }}
       />
     </div>
   );
