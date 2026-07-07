@@ -2,6 +2,7 @@
 
 import { useEffect, useCallback } from "react";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
+import { getOptimizedUrl } from "@/utils/image";
 
 interface LightboxProps {
   images: string[];
@@ -85,7 +86,7 @@ export default function Lightbox({ images, currentIndex, isOpen, onClose, onNavi
           />
         ) : (
           <img
-            src={images[currentIndex]}
+            src={getOptimizedUrl(images[currentIndex])}
             alt={`View ${currentIndex + 1}`}
             className="max-w-full max-h-full object-contain shadow-2xl rounded-sm select-none"
             onClick={(e) => e.stopPropagation()} // Prevent closing when clicking the image itself
