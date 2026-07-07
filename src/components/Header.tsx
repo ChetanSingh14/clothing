@@ -47,7 +47,7 @@ export default function Header({ onAuthClick }: HeaderProps) {
 
         {/* Center: Navigation Links */}
         <nav className="hidden md:flex items-center space-x-8">
-          {["Home", "Product", "About Us", "Contact"].map((link) => (
+          {["Home", "Product", "Custom Design", "About Us", "Contact"].map((link) => (
             <Link
               key={link}
               href={
@@ -59,6 +59,8 @@ export default function Header({ onAuthClick }: HeaderProps) {
                   ? "/about"
                   : link === "Product"
                   ? "/products"
+                  : link === "Custom Design"
+                  ? "/custom-design"
                   : `/#${link.toLowerCase().replace(" ", "-")}`
               }
               className="text-xs font-bold tracking-widest text-brand-charcoal/70 transition-all hover:text-brand-charcoal uppercase"

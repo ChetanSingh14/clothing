@@ -14,7 +14,7 @@ import PageLoader from "@/components/PageLoader";
 import MediaRenderer from "@/components/MediaRenderer";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useProductStore } from "@/store/useProductStore";
-import { Star, ArrowRight, Loader2 } from "lucide-react";
+import { Star, ArrowRight, Loader2, Paintbrush } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 
@@ -171,6 +171,53 @@ export default function Home() {
                 ))}
               </div>
             )}
+          </div>
+        </section>
+
+        {/* Custom Design CTA Section */}
+        <section className="py-16 bg-brand-bg px-6 sm:px-8 pb-24">
+          <div className="mx-auto max-w-7xl">
+            <motion.div 
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="rounded-[2.5rem] bg-brand-charcoal overflow-hidden border border-brand-charcoal/10 shadow-2xl relative"
+            >
+              {/* Subtle background texture/overlay */}
+              <div className="absolute inset-0 opacity-10 bg-[url('https://images.unsplash.com/photo-1618354691373-d851c5c3a990?q=80&w=2000&auto=format&fit=crop')] bg-cover bg-center mix-blend-luminosity" />
+              <div className="absolute inset-0 bg-gradient-to-br from-brand-charcoal via-brand-charcoal/95 to-brand-charcoal/80" />
+              
+              <div className="relative p-10 sm:p-16 md:p-20 flex flex-col md:flex-row items-center justify-between gap-12 z-10">
+                <div className="max-w-2xl text-center md:text-left">
+                  <span className="text-[11px] font-bold tracking-widest text-brand-green uppercase mb-4 block">
+                    Your Vision, Our Craft
+                  </span>
+                  <h2 className="text-3xl sm:text-5xl font-serif font-semibold mb-6 leading-[1.1] text-brand-bg">
+                    Design Your Signature Look
+                  </h2>
+                  <p className="text-brand-bg/70 text-sm sm:text-base mb-10 max-w-lg mx-auto md:mx-0 font-light leading-relaxed">
+                    Can't find exactly what you're looking for? Use our custom design service to create personalized apparel. Describe your vision, choose your colors, and we'll bring it to life.
+                  </p>
+                  <Link 
+                    href="/custom-design" 
+                    className="inline-flex items-center gap-3 bg-brand-green text-brand-charcoal px-8 py-4 rounded-full font-bold text-xs uppercase tracking-widest hover:bg-white hover:text-brand-charcoal transition-all hover:-translate-y-1 active:translate-y-0 shadow-[0_4px_20px_rgba(205,255,100,0.2)]"
+                  >
+                    <Paintbrush className="w-4 h-4" />
+                    Start Designing Now
+                  </Link>
+                </div>
+                
+                <div className="w-full md:w-1/3 flex justify-center md:justify-end">
+                  <div className="relative w-64 h-64 sm:w-72 sm:h-72 lg:w-80 lg:h-80 rounded-full border border-brand-green/10 p-3 flex-shrink-0">
+                     <div className="w-full h-full rounded-full overflow-hidden relative bg-brand-charcoal shadow-inner">
+                       <img src="https://images.unsplash.com/photo-1562157873-818bc0726f68?q=80&w=800&auto=format&fit=crop" alt="Custom Design T-Shirt" className="object-cover w-full h-full opacity-75 hover:opacity-100 transition-opacity duration-700" />
+                     </div>
+                     {/* Decorative orbit ring */}
+                     <div className="absolute inset-0 rounded-full border border-dashed border-brand-green/30 animate-[spin_60s_linear_infinite]" />
+                  </div>
+                </div>
+              </div>
+            </motion.div>
           </div>
         </section>
       </main>

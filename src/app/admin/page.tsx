@@ -10,7 +10,7 @@ import { useProductStore } from "@/store/useProductStore";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { useAlertStore } from "@/store/useAlertStore";
 import { shallow } from "zustand/shallow";
-import { Plus, Trash2, Tag, Star, Package, Users, Layers, UploadCloud, Loader2, RefreshCw, BarChart2, UserCheck, Shield, ShoppingBag, DollarSign, Calendar, Edit, Settings, Eye, X, Image as ImageIcon } from "lucide-react";
+import { Plus, Trash2, Tag, Star, Package, Users, Layers, UploadCloud, Loader2, RefreshCw, BarChart2, UserCheck, Shield, ShoppingBag, DollarSign, Calendar, Edit, Settings, Eye, X, Image as ImageIcon, Paintbrush } from "lucide-react";
 import { motion } from "framer-motion";
 import { apiFetch } from "@/utils/api";
 import { useRouter } from "next/navigation";
@@ -102,6 +102,31 @@ export default function AdminDashboardPage() {
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [lightboxImages, setLightboxImages] = useState<string[]>([]);
+
+  // Custom Orders States
+  const [customOrders, setCustomOrders] = useState<any[]>([]);
+
+  const fetchCustomOrders = async () => {
+    try {
+      const res = await apiFetch("/custom-orders/admin");
+      if (res.success) setCustomOrders(res.data);
+    } catch (err) {
+      console.error("Failed to fetch custom orders", err);
+    }
+  };
+
+  const handleCustomOrderStatusUpdate = async (orderId: number, status: string) => {
+    try {
+      await apiFetch(`/custom-orders/admin/${orderId}/status`, {
+        method: "PUT",
+        body: JSON.stringify({ status })
+      });
+      useAlertStore.getState().showAlert(`Custom order #${orderId} status updated.`);
+      fetchCustomOrders();
+    } catch (err: any) {
+      useAlertStore.getState().showAlert(err.message || "Failed to update custom order status");
+    }
+  };
 
   // Hero Gallery States
   const [galleryImages, setGalleryImages] = useState<any[]>([]);
@@ -234,6 +259,9 @@ export default function AdminDashboardPage() {
     }
     if (activeTab === "cinematic") {
       fetchCinematicImages();
+    }
+    if (activeTab === "custom-orders") {
+      fetchCustomOrders();
     }
   }, [activeTab]);
 
@@ -523,6 +551,7 @@ export default function AdminDashboardPage() {
                 { id: "products", label: "Products Inventory", icon: Package },
                 { id: "reviews", label: "Reviews Manager", icon: Star },
                 { id: "orders", label: "Sales & Orders", icon: ShoppingBag },
+                { id: "custom-orders", label: "Custom Orders", icon: Paintbrush },
                 { id: "users", label: "Customer Accounts", icon: Users },
                 { id: "gallery", label: "Hero Gallery", icon: ImageIcon },
                 { id: "cinematic", label: "Cinematic Hero", icon: Layers },
@@ -1426,6 +1455,83 @@ export default function AdminDashboardPage() {
                     <div className="border border-brand-charcoal/5 rounded-3xl bg-brand-bg p-12 text-center text-xs text-brand-charcoal/40 italic">
                       No customer orders recorded.
                     </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* -------------------- TAB CONTENT: CUSTOM ORDERS -------------------- */}
+            {activeTab === "custom-orders" && (
+              <div className="space-y-6">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-xl font-semibold tracking-tight text-brand-charcoal font-serif">
+                    Custom Design Orders
+                  </h2>
+                  <span className="text-xs bg-brand-charcoal text-white px-3 py-1 rounded-full font-bold">
+                    {customOrders.length} custom order(s)
+                  </span>
+                </div>
+                
+                <div className="space-y-6">
+                  {customOrders.length === 0 ? (
+                    <p className="text-brand-charcoal/50 text-sm">No custom orders found.</p>
+                  ) : (
+                    customOrders.map((ord: any) => (
+                      <div key={ord.id} className="border border-brand-charcoal/5 rounded-3xl bg-brand-bg p-6 shadow-xs flex flex-col md:flex-row gap-6">
+                        <div className="md:w-1/3">
+                           <div className="w-full aspect-[4/5] bg-brand-gray rounded-xl overflow-hidden border border-brand-charcoal/10 relative">
+                             <img src={ord.designImageUrl} alt="Custom Design" className="object-cover w-full h-full" />
+                           </div>
+                        </div>
+                        <div className="md:w-2/3 space-y-4">
+                           <div className="flex justify-between items-start">
+                             <div>
+                               <h3 className="font-bold text-lg">Order #{ord.id}</h3>
+                               <p className="text-xs text-brand-charcoal/60 mt-1">Submitted: {new Date(ord.createdAt).toLocaleDateString()}</p>
+                             </div>
+                             <select 
+                               value={ord.status || "PENDING"}
+                               onChange={(e) => handleCustomOrderStatusUpdate(ord.id, e.target.value)}
+                               className={`text-[10px] font-bold px-2 py-0.5 rounded border uppercase tracking-wide outline-none cursor-pointer ${
+                                 ord.status === "DELIVERED" || ord.status === "PROCESSED" ? "bg-green-100 text-green-800 border-green-200" :
+                                 ord.status === "CANCELLED" || ord.status === "REJECTED" ? "bg-red-100 text-red-800 border-red-200" :
+                                 "bg-amber-100 text-amber-800 border-amber-200"
+                               }`}
+                             >
+                               <option value="PENDING">PENDING</option>
+                               <option value="APPROVED">APPROVED</option>
+                               <option value="REJECTED">REJECTED</option>
+                               <option value="PROCESSED">PROCESSED</option>
+                               <option value="DELIVERED">DELIVERED</option>
+                             </select>
+                           </div>
+                           
+                           <div className="grid grid-cols-2 gap-4 text-sm bg-white p-4 rounded-xl border border-brand-charcoal/5">
+                             <div>
+                               <span className="block text-[10px] uppercase font-bold text-brand-charcoal/50">Customer</span>
+                               <p className="font-semibold">{ord.fullName}</p>
+                               <p className="text-xs">{ord.email}</p>
+                               <p className="text-xs">{ord.phone}</p>
+                             </div>
+                             <div>
+                               <span className="block text-[10px] uppercase font-bold text-brand-charcoal/50">Preferences</span>
+                               <p className="font-semibold">{ord.color} - Size {ord.size}</p>
+                               <p className="text-xs">Qty: {ord.quantity}</p>
+                             </div>
+                           </div>
+
+                           <div className="bg-white p-4 rounded-xl border border-brand-charcoal/5 text-sm">
+                             <span className="block text-[10px] uppercase font-bold text-brand-charcoal/50">Design Notes</span>
+                             <p className="mt-1">{ord.designNotes || "No additional notes provided."}</p>
+                           </div>
+
+                           <div className="bg-white p-4 rounded-xl border border-brand-charcoal/5 text-sm">
+                             <span className="block text-[10px] uppercase font-bold text-brand-charcoal/50">Shipping Address</span>
+                             <p className="mt-1 text-xs">{ord.address}, {ord.landmark && `${ord.landmark},`} {ord.city}, {ord.state} - {ord.pincode}</p>
+                           </div>
+                        </div>
+                      </div>
+                    ))
                   )}
                 </div>
               </div>
