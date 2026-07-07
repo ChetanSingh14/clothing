@@ -7,7 +7,7 @@ import CartDrawer from "@/components/CartDrawer";
 import { useEffect, useState } from "react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useOrderStore } from "@/store/useOrderStore";
-import { Package, Clock, CheckCircle2, XCircle, ArrowLeft, RotateCcw } from "lucide-react";
+import { Package, Clock, CheckCircle2, XCircle, ArrowLeft, RotateCcw, Truck } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import PageLoader from "@/components/PageLoader";
 import MediaRenderer from "@/components/MediaRenderer";
@@ -22,6 +22,10 @@ export default function OrdersPage() {
   const [selectedOrderForReturn, setSelectedOrderForReturn] = useState<any>(null);
   const [pickupAddressType, setPickupAddressType] = useState<"same" | "different">("same");
   const [customPickupAddress, setCustomPickupAddress] = useState("");
+  
+  const [trackingOrder, setTrackingOrder] = useState<any>(null);
+  const [trackingDetails, setTrackingDetails] = useState<any>(null);
+  const [loadingTracking, setLoadingTracking] = useState(false);
 
   useEffect(() => {
     fetchMe();
@@ -43,6 +47,8 @@ export default function OrdersPage() {
         return <Clock className="h-5 w-5 text-amber-500" />;
       case "DELIVERED":
         return <CheckCircle2 className="h-5 w-5 text-brand-green" />;
+      case "SHIPPED":
+        return <Truck className="h-5 w-5 text-indigo-500" />;
       case "CANCELLED":
         return <XCircle className="h-5 w-5 text-rose-500" />;
       case "RETURN_PENDING":
@@ -78,9 +84,28 @@ export default function OrdersPage() {
       setSelectedOrderForReturn(null);
       setPickupAddressType("same");
       setCustomPickupAddress("");
-      useAlertStore.getState().showAlert("Return request filed successfully!");
+      useAlertStore.getState().showAlert("Exchange request filed successfully!");
     } else {
-      alert("Failed to submit return request.");
+      alert("Failed to submit exchange request.");
+    }
+  };
+
+  const handleTrackOrder = async (order: any) => {
+    setTrackingOrder(order);
+    setLoadingTracking(true);
+    setTrackingDetails(null);
+    try {
+      const { apiFetch } = await import("@/utils/api");
+      const res = await apiFetch(`/orders/${order.id}/track`);
+      if (res.success && res.data) {
+        setTrackingDetails(res.data);
+      } else {
+        setTrackingDetails({ error: res.message || "Failed to load tracking data" });
+      }
+    } catch (err: any) {
+      setTrackingDetails({ error: err.message || "Failed to load tracking data" });
+    } finally {
+      setLoadingTracking(false);
     }
   };
 
@@ -142,10 +167,19 @@ export default function OrdersPage() {
                       <div className="flex items-center gap-2 bg-brand-gray px-3 py-1.5 rounded-full">
                         {getStatusIcon(order.status)}
                         <span className="text-xs font-bold uppercase tracking-wider text-brand-charcoal">
-                          {order.status === "RETURN_PENDING" ? "Return Pending" : order.status}
+                          {order.status === "RETURN_PENDING" ? "Exchange Pending" : order.status === "RETURNED" ? "Exchanged" : order.status}
                         </span>
                       </div>
                       
+                      {order.awbNumber && (
+                        <button 
+                          onClick={() => handleTrackOrder(order)}
+                          className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 underline cursor-pointer"
+                        >
+                          Track Order
+                        </button>
+                      )}
+
                       {order.status === "BOOKED" && (
                         <button 
                           onClick={() => {
@@ -164,7 +198,7 @@ export default function OrdersPage() {
                           onClick={() => setSelectedOrderForReturn(order)}
                           className="text-xs font-semibold text-brand-green hover:text-brand-green-dark underline cursor-pointer"
                         >
-                          Return Order
+                          Exchange Order
                         </button>
                       )}
                     </div>
@@ -203,7 +237,7 @@ export default function OrdersPage() {
                       <p className="text-xs text-brand-charcoal/60 uppercase tracking-wider font-semibold">Payment Method</p>
                       <p className="text-sm font-medium text-brand-charcoal mt-0.5">{order.paymentMethod === "COD" ? "Cash on Delivery" : order.paymentMethod}</p>
                       {order.status === "DELIVERED" && (
-                        <p className="text-[10px] text-brand-green font-semibold mt-2">✓ Eligible for 5 Days easy return.</p>
+                        <p className="text-[10px] text-brand-green font-semibold mt-2">✓ Eligible for 5 Days easy size exchange.</p>
                       )}
                     </div>
                     <div className="text-right">
@@ -231,10 +265,10 @@ export default function OrdersPage() {
               className="bg-brand-bg border border-brand-charcoal/10 max-w-md w-full rounded-3xl p-6 sm:p-8 shadow-2xl relative"
             >
               <h3 className="text-lg font-serif font-semibold text-brand-charcoal mb-4">
-                Request Return for Order #{selectedOrderForReturn.id}
+                Request Size Exchange for Order #{selectedOrderForReturn.id}
               </h3>
               <p className="text-xs text-brand-charcoal/60 mb-6 leading-relaxed">
-                Returns are permitted within 5 days of delivery. Please select the pickup address for your package.
+                Exchanges are permitted within 5 days of delivery for size issues only. Please select the pickup address for your package.
               </p>
 
               <div className="space-y-4 mb-6">
@@ -293,6 +327,76 @@ export default function OrdersPage() {
                   className="px-5 py-2 bg-brand-charcoal text-brand-bg rounded-xl text-xs font-semibold hover:bg-black transition-colors shadow-sm cursor-pointer"
                 >
                   Proceed
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Tracking Modal */}
+      <AnimatePresence>
+        {trackingOrder && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-brand-bg border border-brand-charcoal/10 max-w-md w-full rounded-3xl p-6 sm:p-8 shadow-2xl relative max-h-[85vh] flex flex-col"
+            >
+              <h3 className="text-lg font-serif font-semibold text-brand-charcoal mb-2">
+                Tracking Order #{trackingOrder.id}
+              </h3>
+              <p className="text-xs text-brand-charcoal/50 mb-4">
+                AWB: <span className="font-semibold text-brand-charcoal">{trackingOrder.awbNumber}</span> ({trackingOrder.courierName})
+              </p>
+
+              <div className="flex-grow overflow-y-auto space-y-4 pr-1 my-2">
+                {loadingTracking ? (
+                  <p className="text-xs text-brand-charcoal/50 italic py-8 text-center">Fetching live updates from Shipmozo...</p>
+                ) : trackingDetails?.error ? (
+                  <p className="text-xs text-rose-500 py-4 text-center">{trackingDetails.error}</p>
+                ) : trackingDetails ? (
+                  <div className="space-y-6">
+                    <div className="bg-brand-gray/30 p-4 rounded-2xl border border-brand-charcoal/5">
+                      <p className="text-xs font-semibold text-brand-charcoal">Status: <span className="text-brand-green font-bold uppercase">{trackingDetails.current_status || "In Transit"}</span></p>
+                      {trackingDetails.expected_delivery_date && (
+                        <p className="text-[10px] text-brand-charcoal/50 mt-1">Expected Delivery: {trackingDetails.expected_delivery_date}</p>
+                      )}
+                    </div>
+
+                    <div className="space-y-4 relative border-l border-brand-charcoal/10 ml-3 pl-5 py-1">
+                      {Array.isArray(trackingDetails.scan_detail) && trackingDetails.scan_detail.length > 0 ? (
+                        trackingDetails.scan_detail.map((scan: any, i: number) => (
+                          <div key={i} className="relative text-xs">
+                            <span className="absolute -left-[26px] top-1 h-3 w-3 rounded-full bg-brand-green border-2 border-white shadow-sm" />
+                            <p className="font-semibold text-brand-charcoal">{scan.status || scan.activity}</p>
+                            <p className="text-[10px] text-brand-charcoal/50 mt-0.5">{scan.location} • {scan.date || scan.time}</p>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="relative text-xs">
+                          <span className="absolute -left-[26px] top-1 h-3 w-3 rounded-full bg-brand-green border-2 border-white shadow-sm" />
+                          <p className="font-semibold text-brand-charcoal">Order Registered</p>
+                          <p className="text-[10px] text-brand-charcoal/50 mt-0.5">Shipment is created and waiting to be picked up by the courier.</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-xs text-brand-charcoal/50 italic py-8 text-center">No tracking details available.</p>
+                )}
+              </div>
+
+              <div className="flex items-center justify-end pt-4 border-t border-brand-charcoal/5 mt-4">
+                <button
+                  onClick={() => {
+                    setTrackingOrder(null);
+                    setTrackingDetails(null);
+                  }}
+                  className="px-6 py-2 bg-brand-charcoal text-brand-bg rounded-xl text-xs font-semibold hover:bg-black transition-colors cursor-pointer"
+                >
+                  Close
                 </button>
               </div>
             </motion.div>

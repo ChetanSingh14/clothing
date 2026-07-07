@@ -25,6 +25,10 @@ export default function CartDrawer() {
   const [phoneVerifyError, setPhoneVerifyError] = useState("");
   const [isCheckingOut, setIsCheckingOut] = useState(false);
 
+  const [shippingRates, setShippingRates] = useState<any[]>([]);
+  const [loadingRates, setLoadingRates] = useState(false);
+  const [selectedRate, setSelectedRate] = useState<any>(null);
+
   const [addressDetails, setAddressDetails] = useState({
     fullName: "",
     email: "",
@@ -63,6 +67,48 @@ export default function CartDrawer() {
     }
   }, [isOpen]);
 
+  // Fetch shipping rates when pincode is entered
+  useEffect(() => {
+    const pincodeStr = addressDetails.pincode?.trim();
+    if (pincodeStr && /^\d{6}$/.test(pincodeStr)) {
+      const fetchRates = async () => {
+        setLoadingRates(true);
+        try {
+          const { apiFetch } = await import("@/utils/api");
+          const res = await apiFetch("/orders/shipping-rates", {
+            method: "POST",
+            body: JSON.stringify({
+              pincode: Number(pincodeStr),
+              totalAmount: subtotal,
+              items
+            })
+          });
+          if (res.success && Array.isArray(res.data)) {
+            setShippingRates(res.data);
+            if (res.data.length > 0) {
+              setSelectedRate(res.data[0]);
+            } else {
+              setSelectedRate(null);
+            }
+          } else {
+            setShippingRates([]);
+            setSelectedRate(null);
+          }
+        } catch (err) {
+          console.error("Failed to fetch shipping rates:", err);
+          setShippingRates([]);
+          setSelectedRate(null);
+        } finally {
+          setLoadingRates(false);
+        }
+      };
+      fetchRates();
+    } else {
+      setShippingRates([]);
+      setSelectedRate(null);
+    }
+  }, [addressDetails.pincode, items]);
+
   const completeCheckout = async () => {
     setIsCheckingOut(true);
     if (user) {
@@ -86,7 +132,14 @@ export default function CartDrawer() {
       }
     }
 
-    const success = await checkout(paymentMethod, addressDetails);
+    const detailsWithShipping = {
+      ...addressDetails,
+      courierId: selectedRate ? selectedRate.courier_id : undefined,
+      courierName: selectedRate ? selectedRate.courier_company : undefined,
+      shippingCharge: selectedRate ? selectedRate.rate : 0.0
+    };
+
+    const success = await checkout(paymentMethod, detailsWithShipping);
     setIsCheckingOut(false);
     if (success) {
       useAlertStore.getState().showAlert("Thank you for your order! Your garments are recorded in the system and being prepared for dispatch.");
@@ -335,9 +388,16 @@ export default function CartDrawer() {
                       </motion.div>
                     )}
 
+                    {selectedRate && (
+                      <div className="flex items-center justify-between text-brand-charcoal">
+                        <span className="text-sm font-medium tracking-wide">Shipping ({selectedRate.courier_company})</span>
+                        <span className="text-sm font-semibold">₹{Number(selectedRate.rate).toFixed(2)}</span>
+                      </div>
+                    )}
+                    
                     <div className="flex items-center justify-between text-brand-charcoal pt-2 border-t border-brand-charcoal/5">
                       <span className="text-sm font-semibold tracking-wide">Total</span>
-                      <span className="text-lg font-bold font-serif">₹{total.toFixed(2)}</span>
+                      <span className="text-lg font-bold font-serif">₹{(total + (selectedRate ? Number(selectedRate.rate) : 0)).toFixed(2)}</span>
                     </div>
                   </div>
 
@@ -353,9 +413,49 @@ export default function CartDrawer() {
                     </select>
                   </div>
 
+                  {/* Shipping rates list in cart step if pincode already exists */}
+                  {addressDetails.pincode && /^\d{6}$/.test(addressDetails.pincode) && (
+                    <div className="pt-2 border-t border-brand-charcoal/5">
+                      <h4 className="text-[10px] font-bold uppercase text-brand-charcoal/50 mb-2">Shipping Option (Pincode: {addressDetails.pincode})</h4>
+                      {loadingRates ? (
+                        <p className="text-xs text-brand-charcoal/50 italic py-1">Fetching shipping rates...</p>
+                      ) : shippingRates.length > 0 ? (
+                        <div className="space-y-1.5 max-h-[150px] overflow-y-auto pr-1">
+                          {shippingRates.map((rate, index) => (
+                            <label
+                              key={index}
+                              className={`flex items-center justify-between p-2.5 rounded-xl border text-xs cursor-pointer transition-all ${
+                                selectedRate?.courier_id === rate.courier_id
+                                  ? "border-brand-green bg-brand-green/5 font-semibold text-brand-green-dark"
+                                  : "border-brand-charcoal/10 hover:border-brand-charcoal/30 bg-white"
+                              }`}
+                            >
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="radio"
+                                  name="shipping_rate_cart"
+                                  checked={selectedRate?.courier_id === rate.courier_id}
+                                  onChange={() => setSelectedRate(rate)}
+                                  className="accent-brand-green"
+                                />
+                                <div>
+                                  <p className="font-semibold text-brand-charcoal">{rate.courier_company}</p>
+                                  <p className="text-[9px] text-brand-charcoal/40 font-light">Est: {rate.expected_delivery_date || "3-4 days"}</p>
+                                </div>
+                              </div>
+                              <span className="font-bold text-brand-charcoal">₹{Number(rate.rate).toFixed(2)}</span>
+                            </label>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-rose-500 bg-rose-50 border border-rose-100 rounded-xl p-2.5">No courier service available on Shipmozo.</p>
+                      )}
+                    </div>
+                  )}
+
                   <p className="text-[10px] text-brand-charcoal/40 font-light leading-relaxed">
                     Shipping & taxes calculated at checkout. Custom garment adjustments are free of charge. <br />
-                    <span className="font-semibold text-brand-green mt-1 block">✓ 5 Days easy return policy on all delivered orders.</span>
+                    <span className="font-semibold text-brand-green mt-1 block">✓ 5 Days easy exchange policy (for size issues only). No returns or refunds.</span>
                   </p>
                   <button
                     onClick={() => setCheckoutStep("address")}
@@ -428,6 +528,46 @@ export default function CartDrawer() {
                           <input type="text" value={addressDetails.pincode} onChange={e => setAddressDetails({...addressDetails, pincode: e.target.value})} className="w-full rounded-xl border border-brand-charcoal/10 bg-brand-bg px-3 py-2 text-sm focus:border-brand-green focus:outline-none" />
                         </div>
                       </div>
+                      
+                      {/* Shipping rates list */}
+                      <div className="mt-4 pt-4 border-t border-brand-charcoal/5">
+                        <h4 className="text-[10px] font-bold uppercase text-brand-charcoal/50 mb-2">Select Shipping Method:</h4>
+                        {loadingRates ? (
+                          <p className="text-xs text-brand-charcoal/50 italic py-2">Fetching shipping rates from Shipmozo...</p>
+                        ) : shippingRates.length > 0 ? (
+                          <div className="space-y-2">
+                            {shippingRates.map((rate, index) => (
+                              <label
+                                key={index}
+                                className={`flex items-center justify-between p-3 rounded-xl border text-xs cursor-pointer transition-all ${
+                                  selectedRate?.courier_id === rate.courier_id
+                                    ? "border-brand-green bg-brand-green/5 font-semibold text-brand-green-dark"
+                                    : "border-brand-charcoal/10 hover:border-brand-charcoal/30 bg-white"
+                                }`}
+                              >
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    type="radio"
+                                    name="shipping_rate"
+                                    checked={selectedRate?.courier_id === rate.courier_id}
+                                    onChange={() => setSelectedRate(rate)}
+                                    className="accent-brand-green"
+                                  />
+                                  <div>
+                                    <p className="font-semibold text-brand-charcoal">{rate.courier_company}</p>
+                                    <p className="text-[10px] text-brand-charcoal/40 font-light">Est: {rate.expected_delivery_date || "3-4 days"}</p>
+                                  </div>
+                                </div>
+                                <span className="font-bold text-brand-charcoal">₹{Number(rate.rate).toFixed(2)}</span>
+                              </label>
+                            ))}
+                          </div>
+                        ) : addressDetails.pincode && /^\d{6}$/.test(addressDetails.pincode) ? (
+                          <p className="text-xs text-rose-500 bg-rose-50 border border-rose-100 rounded-xl p-3">No courier service available for this pincode on Shipmozo.</p>
+                        ) : (
+                          <p className="text-xs text-brand-charcoal/40 italic">Please enter a valid 6-digit pincode to view shipping rates.</p>
+                        )}
+                      </div>
                     </div>
                     )}
                   </div>
@@ -448,9 +588,15 @@ export default function CartDrawer() {
                           <span className="text-xs font-semibold">-₹{discount.toFixed(2)}</span>
                         </div>
                       )}
+                      {selectedRate && (
+                        <div className="flex items-center justify-between text-brand-charcoal">
+                          <span className="text-xs font-medium tracking-wide">Shipping ({selectedRate.courier_company})</span>
+                          <span className="text-xs font-semibold">₹{Number(selectedRate.rate).toFixed(2)}</span>
+                        </div>
+                      )}
                       <div className="flex items-center justify-between text-brand-charcoal pt-1 border-t border-brand-charcoal/5">
                         <span className="text-sm font-semibold tracking-wide">Total to Pay</span>
-                        <span className="text-lg font-bold font-serif">₹{total.toFixed(2)}</span>
+                        <span className="text-lg font-bold font-serif">₹{(total + (selectedRate ? Number(selectedRate.rate) : 0)).toFixed(2)}</span>
                       </div>
                     </div>
                     <button

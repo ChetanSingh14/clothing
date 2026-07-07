@@ -20,6 +20,18 @@ export interface OrderData {
   paymentMethod: string;
   items: OrderItem[];
   createdAt: string;
+  deliveredAt?: string;
+  returnAddress?: string;
+  awbNumber?: string;
+  courierName?: string;
+  courierId?: number;
+  shippingCharge?: number;
+  shipmentId?: string;
+  returnShipmentId?: string;
+  returnAwbNumber?: string;
+  returnCourierName?: string;
+  shipmozoStatus?: string;
+  shipmozoError?: string;
 }
 
 interface OrderState {

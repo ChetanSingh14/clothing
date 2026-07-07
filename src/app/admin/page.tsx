@@ -10,7 +10,7 @@ import { useProductStore } from "@/store/useProductStore";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { useAlertStore } from "@/store/useAlertStore";
 import { shallow } from "zustand/shallow";
-import { Plus, Trash2, Tag, Star, Package, Users, Layers, UploadCloud, Loader2, RefreshCw, BarChart2, UserCheck, Shield, ShoppingBag, DollarSign, Calendar, Edit, Settings, Eye, X, Image as ImageIcon } from "lucide-react";
+import { Plus, Trash2, Tag, Star, Package, Users, Layers, UploadCloud, Loader2, RefreshCw, BarChart2, UserCheck, Shield, ShoppingBag, DollarSign, Calendar, Edit, Settings, Eye, X, Image as ImageIcon, Truck } from "lucide-react";
 import { motion } from "framer-motion";
 import { apiFetch } from "@/utils/api";
 import { useRouter } from "next/navigation";
@@ -70,6 +70,18 @@ export default function AdminDashboardPage() {
   const [editPassword, setEditPassword] = useState("");
   const [editingProductId, setEditingProductId] = useState<number | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  
+  const [isShipModalOpen, setIsShipModalOpen] = useState(false);
+  const [shipWeight, setShipWeight] = useState("250");
+  const [shipL, setShipL] = useState("22");
+  const [shipW, setShipW] = useState("10");
+  const [shipH, setShipH] = useState("10");
+  const [shipRates, setShipRates] = useState<any[]>([]);
+  const [loadingRates, setLoadingRates] = useState(false);
+  const [selectedShipRate, setSelectedShipRate] = useState<any>(null);
+  const [shippingOrder, setShippingOrder] = useState<any>(null);
+  const [isShipping, setIsShipping] = useState(false);
+  const [loadingLabel, setLoadingLabel] = useState(false);
   const [images, setImages] = useState<string[]>([]);
   const [modelUrl, setModelUrl] = useState<string>("");
   const [modelThumbnailUrl, setModelThumbnailUrl] = useState<string>("");
@@ -462,6 +474,96 @@ export default function AdminDashboardPage() {
       useAlertStore.getState().showAlert(`Order #${orderId} status updated to ${status}`);
     } else {
       useAlertStore.getState().showAlert("Failed to update order status.");
+    }
+  };
+
+  const handleFetchShipRates = async () => {
+    if (!shippingOrder) return;
+    setLoadingRates(true);
+    setShipRates([]);
+    setSelectedShipRate(null);
+    try {
+      const { apiFetch } = await import("@/utils/api");
+      const res = await apiFetch(`/orders/admin/${shippingOrder.id}/rates`);
+      if (res.success && Array.isArray(res.data)) {
+        setShipRates(res.data);
+        const matchingRate = res.data.find(
+          (r: any) => String(r.courier_id) === String(shippingOrder.courierId) ||
+                      r.courier_company.toLowerCase() === String(shippingOrder.courierName).toLowerCase()
+        );
+        setSelectedShipRate(matchingRate || res.data[0] || null);
+      } else {
+        useAlertStore.getState().showAlert(res.message || "Failed to fetch rates.");
+      }
+    } catch (err: any) {
+      useAlertStore.getState().showAlert(err.message || "Failed to fetch rates.");
+    } finally {
+      setLoadingRates(false);
+    }
+  };
+
+  const handleConfirmShip = async () => {
+    if (!shippingOrder || !selectedShipRate) return;
+    setIsShipping(true);
+    try {
+      const { apiFetch } = await import("@/utils/api");
+      const res = await apiFetch(`/orders/admin/${shippingOrder.id}/ship`, {
+        method: "POST",
+        body: JSON.stringify({
+          weightGrams: Number(shipWeight),
+          length: Number(shipL),
+          width: Number(shipW),
+          height: Number(shipH),
+          courierId: selectedShipRate.courier_id,
+        }),
+      });
+      if (res.success) {
+        useAlertStore.getState().showAlert(`Order successfully pushed to Shipmozo! AWB: ${res.data?.awbNumber || "Pending"}`);
+        setIsShipModalOpen(false);
+        if (selectedOrder && selectedOrder.id === shippingOrder.id) {
+          setSelectedOrder({
+            ...selectedOrder,
+            status: "SHIPPED",
+            awbNumber: res.data?.awbNumber,
+            courierName: res.data?.courierName,
+            shipmozoStatus: "PUSHED",
+          });
+        }
+        await fetchOrders();
+      } else {
+        useAlertStore.getState().showAlert(res.message || "Shipment assignment failed.");
+      }
+    } catch (err: any) {
+      useAlertStore.getState().showAlert(err.message || "Shipment assignment failed.");
+    } finally {
+      setIsShipping(false);
+    }
+  };
+
+  const handleViewLabel = async (orderId: number) => {
+    setLoadingLabel(true);
+    try {
+      const { apiFetch } = await import("@/utils/api");
+      const res = await apiFetch(`/orders/admin/${orderId}/label`);
+      if (res.success && res.label) {
+        const newTab = window.open();
+        if (newTab) {
+          newTab.document.write(`<img src="${res.label}" alt="Shipping Label" style="max-width:100%; height:auto;" />`);
+          newTab.document.title = `Shipping Label - Order #${orderId}`;
+          newTab.document.close();
+        } else {
+          const link = document.createElement("a");
+          link.href = res.label;
+          link.download = `shipping-label-order-${orderId}.png`;
+          link.click();
+        }
+      } else {
+        useAlertStore.getState().showAlert(res.message || "Failed to load shipping label.");
+      }
+    } catch (err: any) {
+      useAlertStore.getState().showAlert(err.message || "Failed to load shipping label.");
+    } finally {
+      setLoadingLabel(false);
     }
   };
 
@@ -1331,6 +1433,8 @@ export default function AdminDashboardPage() {
                                 ord.status === 'DELIVERED' ? 'bg-brand-green/10 text-brand-green border-brand-green/20' : 
                                 ord.status === 'CANCELLED' ? 'bg-red-50 text-red-600 border-red-200' : 
                                 ord.status === 'SHIPPED' ? 'bg-blue-50 text-blue-600 border-blue-200' :
+                                ord.status === 'RETURN_PENDING' ? 'bg-indigo-50 text-indigo-600 border-indigo-200' :
+                                ord.status === 'RETURNED' ? 'bg-purple-50 text-purple-600 border-purple-200' :
                                 'bg-yellow-50 text-yellow-700 border-yellow-200'
                               }`}
                             >
@@ -1338,6 +1442,8 @@ export default function AdminDashboardPage() {
                               <option value="SHIPPED">Shipped</option>
                               <option value="DELIVERED">Delivered</option>
                               <option value="CANCELLED">Cancelled</option>
+                              <option value="RETURN_PENDING">Exchange Pending</option>
+                              <option value="RETURNED">Exchanged</option>
                             </select>
                           </div>
                           <div className="text-[10px] text-brand-charcoal/40 font-light mt-1 flex items-center gap-1">
@@ -1899,9 +2005,11 @@ export default function AdminDashboardPage() {
                       selectedOrder.status === 'DELIVERED' ? 'bg-brand-green/10 text-brand-green border-brand-green/20' : 
                       selectedOrder.status === 'CANCELLED' ? 'bg-red-50 text-red-600 border-red-200' : 
                       selectedOrder.status === 'SHIPPED' ? 'bg-blue-50 text-blue-600 border-blue-200' :
+                      selectedOrder.status === 'RETURN_PENDING' ? 'bg-indigo-50 text-indigo-600 border-indigo-200' :
+                      selectedOrder.status === 'RETURNED' ? 'bg-purple-50 text-purple-600 border-purple-200' :
                       'bg-yellow-50 text-yellow-700 border-yellow-200'
                     }`}>
-                      {selectedOrder.status || "BOOKED"}
+                      {selectedOrder.status === "RETURN_PENDING" ? "Exchange Pending" : selectedOrder.status === "RETURNED" ? "Exchanged" : selectedOrder.status || "BOOKED"}
                     </span>
                   </div>
                   <p className="text-xs text-brand-charcoal/50 mb-8 flex items-center gap-1.5">
@@ -1928,10 +2036,53 @@ export default function AdminDashboardPage() {
                       {selectedOrder.address ? (
                         <>
                           <div className="font-semibold">{selectedOrder.fullName || selectedOrder.user.name}</div>
-                          <div className="text-brand-charcoal/80 leading-relaxed">
+                          <div className="text-brand-charcoal/80 leading-relaxed font-light">
                             {selectedOrder.address}<br />
                             {selectedOrder.landmark && <>{selectedOrder.landmark}<br /></>}
                             {selectedOrder.city}, {selectedOrder.state} - {selectedOrder.pincode}
+                          </div>
+                          
+                          {/* Shipmozo Integration details */}
+                          <div className="mt-4 pt-4 border-t border-brand-charcoal/5 space-y-2">
+                            {selectedOrder.awbNumber ? (
+                              <div className="text-xs">
+                                <p className="font-semibold text-brand-green">✓ Pushed to Shipmozo</p>
+                                <p className="mt-1 text-brand-charcoal/60">Courier: <strong>{selectedOrder.courierName}</strong></p>
+                                <p className="text-brand-charcoal/60">AWB: <strong>{selectedOrder.awbNumber}</strong></p>
+                                <button
+                                  onClick={() => handleViewLabel(selectedOrder.id)}
+                                  disabled={loadingLabel}
+                                  className="mt-3 w-full bg-brand-charcoal text-brand-bg rounded-xl py-2 text-center text-xs font-semibold hover:bg-black transition-colors disabled:opacity-50 cursor-pointer"
+                                >
+                                  {loadingLabel ? "Fetching Label..." : "View Shipping Label"}
+                                </button>
+                              </div>
+                            ) : selectedOrder.status === "BOOKED" ? (
+                              <div>
+                                {selectedOrder.courierName && (
+                                  <p className="text-xs text-brand-charcoal/60 mb-2">
+                                    Customer Choice: <strong>{selectedOrder.courierName}</strong> (₹{selectedOrder.shippingCharge})
+                                  </p>
+                                )}
+                                <button
+                                  onClick={() => {
+                                    setShippingOrder(selectedOrder);
+                                    setIsShipModalOpen(true);
+                                    setShipWeight("250");
+                                    setShipL("22");
+                                    setShipW("10");
+                                    setShipH("10");
+                                    setShipRates([]);
+                                    setSelectedShipRate(null);
+                                  }}
+                                  className="w-full bg-brand-green text-white rounded-xl py-2 text-center text-xs font-semibold hover:bg-brand-green-dark transition-colors cursor-pointer"
+                                >
+                                  Ship via Shipmozo
+                                </button>
+                              </div>
+                            ) : (
+                              <p className="text-xs text-brand-charcoal/40 italic">Shipment not applicable for this status.</p>
+                            )}
                           </div>
                         </>
                       ) : (
@@ -2007,8 +2158,8 @@ export default function AdminDashboardPage() {
                     <div className="text-xs font-bold text-brand-charcoal/40 uppercase tracking-wider">
                       Update Order Status
                     </div>
-                    <div className="flex gap-2">
-                      {['BOOKED', 'SHIPPED', 'DELIVERED', 'CANCELLED'].map((status) => (
+                    <div className="flex flex-wrap gap-2 justify-end">
+                      {['BOOKED', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'RETURN_PENDING', 'RETURNED'].map((status) => (
                         <button
                           key={status}
                           onClick={async () => {
@@ -2021,10 +2172,136 @@ export default function AdminDashboardPage() {
                               : 'bg-brand-gray/50 text-brand-charcoal/60 border border-brand-charcoal/10 hover:bg-brand-charcoal/5 hover:text-brand-charcoal'
                           }`}
                         >
-                          {status}
+                          {status === "RETURN_PENDING" ? "EXCHANGE PENDING" : status === "RETURNED" ? "EXCHANGED" : status}
                         </button>
                       ))}
                     </div>
+                  </div>
+                </motion.div>
+              </div>
+            )}
+
+            {/* Shipmozo Rates Selection Modal Overlay */}
+            {isShipModalOpen && shippingOrder && (
+              <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+                <motion.div
+                  initial={{ scale: 0.95, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  className="w-full max-w-md bg-brand-bg rounded-3xl p-6 sm:p-8 border border-brand-charcoal/10 shadow-2xl relative text-brand-charcoal"
+                >
+                  <button
+                    onClick={() => {
+                      setIsShipModalOpen(false);
+                      setShippingOrder(null);
+                    }}
+                    className="absolute top-6 right-6 p-2 rounded-full hover:bg-brand-charcoal/5 transition-colors cursor-pointer"
+                  >
+                    <X className="h-5 w-5 text-brand-charcoal/60" />
+                  </button>
+
+                  <h3 className="text-xl font-bold font-serif text-brand-charcoal mb-4">Ship Order #{shippingOrder.id} via Shipmozo</h3>
+                  
+                  <div className="space-y-4 mb-6">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[10px] font-bold uppercase text-brand-charcoal/50 ml-1">Weight (grams)</label>
+                        <input
+                          type="number"
+                          value={shipWeight}
+                          onChange={(e) => setShipWeight(e.target.value)}
+                          className="w-full rounded-xl border border-brand-charcoal/10 bg-brand-bg px-3 py-2 text-xs focus:border-brand-green focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold uppercase text-brand-charcoal/50 ml-1">Length (cm)</label>
+                        <input
+                          type="number"
+                          value={shipL}
+                          onChange={(e) => setShipL(e.target.value)}
+                          className="w-full rounded-xl border border-brand-charcoal/10 bg-brand-bg px-3 py-2 text-xs focus:border-brand-green focus:outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[10px] font-bold uppercase text-brand-charcoal/50 ml-1">Width (cm)</label>
+                        <input
+                          type="number"
+                          value={shipW}
+                          onChange={(e) => setShipW(e.target.value)}
+                          className="w-full rounded-xl border border-brand-charcoal/10 bg-brand-bg px-3 py-2 text-xs focus:border-brand-green focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold uppercase text-brand-charcoal/50 ml-1">Height (cm)</label>
+                        <input
+                          type="number"
+                          value={shipH}
+                          onChange={(e) => setShipH(e.target.value)}
+                          className="w-full rounded-xl border border-brand-charcoal/10 bg-brand-bg px-3 py-2 text-xs focus:border-brand-green focus:outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={handleFetchShipRates}
+                      disabled={loadingRates}
+                      className="w-full border border-brand-charcoal text-brand-charcoal hover:bg-brand-charcoal hover:text-brand-bg rounded-xl py-2.5 text-xs font-semibold transition-all cursor-pointer"
+                    >
+                      {loadingRates ? "Fetching Shipping Rates..." : "Fetch Shipping Rates"}
+                    </button>
+
+                    {/* Rates list selection */}
+                    {shipRates.length > 0 && (
+                      <div className="space-y-2 max-h-[200px] overflow-y-auto pr-1">
+                        <label className="text-[10px] font-bold uppercase text-brand-charcoal/50 ml-1">Select Courier Option:</label>
+                        {shipRates.map((rate, index) => (
+                          <label
+                            key={index}
+                            className={`flex items-center justify-between p-3 rounded-xl border text-xs cursor-pointer transition-all ${
+                              selectedShipRate?.courier_id === rate.courier_id
+                                ? "border-brand-green bg-brand-green/5 font-semibold text-brand-green-dark"
+                                : "border-brand-charcoal/10 hover:border-brand-charcoal/30 bg-white"
+                            }`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="radio"
+                                name="ship_rate"
+                                checked={selectedShipRate?.courier_id === rate.courier_id}
+                                onChange={() => setSelectedShipRate(rate)}
+                                className="accent-brand-green"
+                              />
+                              <div>
+                                <p className="font-semibold text-brand-charcoal">{rate.courier_company}</p>
+                                <p className="text-[10px] text-brand-charcoal/40 font-light">Est: {rate.expected_delivery_date || "3-4 days"}</p>
+                              </div>
+                            </div>
+                            <span className="font-bold text-brand-charcoal">₹{Number(rate.rate).toFixed(2)}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-end gap-3 pt-4 border-t border-brand-charcoal/5">
+                    <button
+                      onClick={() => {
+                        setIsShipModalOpen(false);
+                        setShippingOrder(null);
+                      }}
+                      className="px-4 py-2 border border-brand-charcoal/10 rounded-xl text-xs font-semibold text-brand-charcoal/70 hover:bg-brand-charcoal/5 transition-colors cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleConfirmShip}
+                      disabled={isShipping || !selectedShipRate}
+                      className="px-5 py-2 bg-brand-green text-white rounded-xl text-xs font-semibold hover:bg-brand-green-dark transition-colors disabled:opacity-50 cursor-pointer"
+                    >
+                      {isShipping ? "Shipping..." : "Confirm & Ship"}
+                    </button>
                   </div>
                 </motion.div>
               </div>
