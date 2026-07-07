@@ -21,45 +21,38 @@ interface TimelineEvent {
 
 const timelineData: TimelineEvent[] = [
   {
-    year: "2020",
-    title: "VIBE BEGUN",
-    tagline: "Unfinished designs & raw aesthetics.",
-    desc: "A small collective of Gen-Z designers and knitters united under a single mission: to completely disrupt fast-fashion trash. We set up in a tiny warehouse, creating raw street graphics printed on organic cotton fabrics, focused on subcultural artistic ideas.",
+    year: "Founding",
+    title: "THREE FRIENDS",
+    tagline: "A shared passion for creativity.",
+    desc: "MDFK Clothing Co. was born out of a shared passion between three friends. We wanted to build a platform for bold self-expression and premium clothing.",
     image: "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=800&auto=format&fit=crop",
   },
   {
-    year: "2021",
-    title: "SKILLED HANDS",
-    tagline: "Reviving handloom manufacturing.",
-    desc: "We collaborated with regional artisans in the UK, establishing hand-guided looms to produce heavyweight, textured knitwear that machines simply cannot replicate. Fair wages, slower pacing, and unmatched material weight became our signature standard.",
+    year: "Startup",
+    title: "STREETWEAR STARTUP",
+    tagline: "Bold printed apparel.",
+    desc: "What started as a simple idea grew into a brand focused on creating premium printed T-shirts that combine quality, comfort, and bold design.",
     image: "https://images.unsplash.com/photo-1544816155-12df9643f363?q=80&w=800&auto=format&fit=crop",
   },
   {
-    year: "2022",
-    title: "RESPONSIBLE SOURCING",
-    tagline: "100% natural, organic, & recycled.",
-    desc: "We fully banned synthetic polymers and polyester microplastics from our yarns. Shifting entirely to GOTS-certified organic cotton, raw linen, and certified recycled merino wool, we laid the foundation for zero-waste production.",
+    year: "Identity",
+    title: "WEAR YOUR IDENTITY",
+    tagline: "A reflection of personality.",
+    desc: "We believe clothing is a statement. Every design is built to let you stand out, express yourself, and wear something authentic.",
     image: "https://images.unsplash.com/photo-1608248597481-496100c80836?q=80&w=800&auto=format&fit=crop",
   },
   {
-    year: "2023",
-    title: "CIRCULARITY LOOP",
-    tagline: "Wear, return, and repulp.",
-    desc: "Launched our circular fashion loop. When our customers wear out their garments, they ship them back to us. We break down the fibers to spin brand new, high-grade yarns, closing the loop completely and eliminating waste landfill cycles.",
+    year: "Future",
+    title: "JUST GETTING STARTED",
+    tagline: "Creative culture in India.",
+    desc: "As a proudly Indian startup, we are building a brand that represents the next generation of streetwear, creativity, and confidence.",
     image: "https://images.unsplash.com/photo-1532882772639-e4900c976686?q=80&w=800&auto=format&fit=crop",
-  },
-  {
-    year: "2024",
-    title: "DIGITAL MEETS PHYSICAL",
-    tagline: "Building cultural tech nodes.",
-    desc: "We launched interactive 3D model previews and custom decal rendering on our digital storefront. Connecting the virtual Gen-Z avatar identity with offline, durable streetwear. Real-world tailoring meets digital culture.",
-    image: "https://images.unsplash.com/photo-1558769132-cb1aea458c5e?q=80&w=800&auto=format&fit=crop",
   },
 ];
 
 export default function AboutPage() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [activeTimelineYear, setActiveTimelineYear] = useState("2020");
+  const [activeTimelineYear, setActiveTimelineYear] = useState("Founding");
   const { fetchMe } = useAuthStore();
   const { fetchProducts } = useProductStore();
 
@@ -102,9 +95,9 @@ export default function AboutPage() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="max-w-2xl mx-auto text-sm sm:text-base text-brand-charcoal/70 tracking-wide font-light leading-relaxed"
+            className="max-w-3xl mx-auto text-sm sm:text-base text-brand-charcoal/70 tracking-wide font-light leading-relaxed"
           >
-            MDFK is a subculture design studio bridging physical garment artistry with Gen-Z digital lifestyles. We build sustainable clothing made to be worn, loved, and eventually reborn.
+            MDFK Clothing Co. is a streetwear startup founded by three friends who share a passion for creativity, fashion, and self-expression. What started as a simple idea has grown into a brand focused on creating premium printed T-shirts that combine quality, comfort, and bold design.
           </motion.p>
         </section>
 
@@ -116,13 +109,13 @@ export default function AboutPage() {
             
             <div className="relative p-8 sm:p-12 md:p-16 space-y-12">
               <div className="space-y-4 max-w-xl">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-brand-bg/50">Human Artistry</span>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-brand-bg/50">Our Mission</span>
                 <h2 className="text-2xl sm:text-4xl md:text-5xl font-serif tracking-tight leading-tight">
-                  CRAFTED BY REAL PEOPLE - <br className="hidden sm:inline" />
-                  <span className="text-brand-tan">NOT JUST MACHINES</span>
+                  Wear Your Identity. <br className="hidden sm:inline" />
+                  <span className="text-brand-tan">Wear MDFK.</span>
                 </h2>
                 <p className="text-xs sm:text-sm text-brand-bg/70 tracking-wide leading-relaxed font-light">
-                  We are proud of the hands behind every stitch. Meet our creative community and see how each premium piece comes to life.
+                  At MDFK, we believe that clothing is more than just what you wear—it's a reflection of your personality. Every design is created to help people stand out, express themselves, and wear something that feels authentic.
                 </p>
               </div>
 
@@ -130,18 +123,18 @@ export default function AboutPage() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6 border-t border-brand-bg/15">
                 {[
                   {
-                    title: "DESIGN WITH PASSION",
-                    desc: "Our knitwear is designed to reflect subculture. Every stitch is hand-drawn and tested, blending aesthetic graphics with tailored fits.",
+                    title: "CREATIVE DESIGNS",
+                    desc: "Every design is curated to help you stand out. Bold, subcultural concepts merged with modern aesthetic standards.",
                     icon: Flame,
                   },
                   {
-                    title: "CRAFTED BY SKILLED HANDS",
-                    desc: "Made by local artisans using traditional, low-impact methods. Hand-guided looms ensure that no two items are identically manufactured.",
+                    title: "PREMIUM COMFORT",
+                    desc: "Crafted with attention to detail. We utilize high-quality fabrics that feel premium and last for years.",
                     icon: Users,
                   },
                   {
-                    title: "SUSTAINABLE TO FINISH",
-                    desc: "Consciously sourced from start to finish. We utilize recycled materials and organic wool to minimize footprint and promote circularity.",
+                    title: "OUR MISSION",
+                    desc: "To deliver unique graphics and premium apparel while building a community that values originality and confidence.",
                     icon: Recycle,
                   },
                 ].map((item, i) => (
@@ -266,8 +259,8 @@ export default function AboutPage() {
                 icon: Recycle,
               },
               {
-                title: "Made in the UK",
-                desc: "Design prototypes, loom setups, and printing happens locally to support local crafts and reduce shipping footprint.",
+                title: "Made in India",
+                desc: "Design prototypes, print setups, and manufacturing happens locally as a proudly Indian startup.",
                 icon: Sparkles,
               },
               {
@@ -281,8 +274,8 @@ export default function AboutPage() {
                 icon: Users,
               },
               {
-                title: "Easy Returns",
-                desc: "No stress. If your garment doesn't feel and fit exactly how you want it, return it easily within 30 days.",
+                title: "Easy Exchanges",
+                desc: "No stress. If your garment doesn't fit exactly how you want it, exchange it for a different size within 5 days.",
                 icon: Sparkles,
               },
             ].map((card, i) => (
@@ -311,10 +304,10 @@ export default function AboutPage() {
         {/* CTA TO COLLECTION */}
         <section className="max-w-5xl mx-auto px-6 sm:px-8 text-center bg-brand-gray/45 border border-brand-charcoal/5 rounded-3xl p-10 md:p-16 space-y-6">
           <h2 className="text-2xl sm:text-4xl font-serif tracking-tight text-brand-charcoal">
-            Ready to find your favorite knitwear?
+            Ready to find your favorite tees?
           </h2>
           <p className="max-w-md mx-auto text-xs sm:text-sm text-brand-charcoal/60 tracking-wide font-light">
-            Browse our small batch, GOTS-certified custom printed t-shirts and handloom knitwear.
+            Browse our small batch, premium printed t-shirts and bold graphics.
           </p>
           <Link
             href="/"

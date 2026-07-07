@@ -4,12 +4,12 @@ import { useEffect, useState } from "react";
 import Header from "@/components/Header";
 import AnimatedHero from "@/components/AnimatedHero";
 import BentoGrid from "@/components/BentoGrid";
-import Testimonials from "@/components/Testimonials";
+// import Testimonials from "@/components/Testimonials";
 import ContactSection from "@/components/ContactSection";
 import Footer from "@/components/Footer";
 import AuthModal from "@/components/AuthModal";
 import CartDrawer from "@/components/CartDrawer";
-import ProductSliderHero from "@/components/ProductSliderHero";
+import CinematicVideoHero from "@/components/CinematicVideoHero";
 import PageLoader from "@/components/PageLoader";
 import MediaRenderer from "@/components/MediaRenderer";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -41,9 +41,9 @@ export default function Home() {
   };
 
   // Build dynamic categories list (always including T-Shirts and Hoodies)
-  const defaultCategories = ["All", "T-Shirts", "Hoodies"];
+  const defaultCategories = ["All"];
   const uniqueProductCategories = Array.from(new Set(products.map((p) => p.category)))
-    .filter((cat) => cat && !["All", "T-Shirts", "Hoodies"].includes(cat));
+    .filter((cat) => cat && !["All"].includes(cat));
   const categoriesList = [...defaultCategories, ...uniqueProductCategories];
 
   return (
@@ -53,21 +53,17 @@ export default function Home() {
       <main className="flex-grow">
         {user ? (
           <>
-            {products.length > 0 && (
-              <ProductSliderHero 
-                featuredProduct={products[0]} 
-              />
-            )}
+            <CinematicVideoHero onStartClick={handleStartClick} />
           </>
         ) : (
           <>
             <AnimatedHero onStartClick={handleStartClick} />
             <BentoGrid />
-            <Testimonials />
+            {/* <Testimonials /> */}
           </>
         )}
 
-        <section id="catalog" className="py-24 bg-brand-bg px-6 sm:px-8">
+        <section id="catalog" className="py-10 bg-brand-bg px-6 sm:px-8">
           <div className="mx-auto max-w-7xl">
             {/* Headings */}
             <div className="flex flex-col md:flex-row md:items-end justify-between mb-12">

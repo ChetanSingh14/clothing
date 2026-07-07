@@ -36,11 +36,11 @@ export default function Header({ onAuthClick }: HeaderProps) {
       transition={{ duration: 0.8, ease: "easeOut" }}
       className="sticky top-0 z-50 w-full border-b border-brand-charcoal/5 bg-brand-bg/85 backdrop-blur-md"
     >
-      <div className="mx-auto flex min-h-[4rem] sm:min-h-[4.5rem] md:min-h-[5.5rem] py-2 max-w-7xl items-center justify-between px-4 sm:px-8">
+      <div className="mx-auto flex min-h-[3.5rem] sm:min-h-[4rem] md:min-h-[4.5rem] py-2 max-w-7xl items-center justify-between px-4 sm:px-8">
         <div className="flex items-center">
           <Link href="/" className="flex items-center">
-            <div className="relative w-28 sm:w-36 md:w-52 lg:w-60 flex items-center justify-start">
-              <img src={logoUrl} alt={companyName} className="object-contain h-auto max-h-[35px] sm:max-h-[50px] md:max-h-[70px] lg:max-h-[92px] w-full" />
+            <div className="relative w-28 sm:w-36 md:w-44 lg:w-48 flex items-center justify-start">
+              <img src={logoUrl} alt={companyName} className="object-contain h-auto max-h-[32px] sm:max-h-[40px] md:max-h-[48px] lg:max-h-[55px] w-full" />
             </div>
           </Link>
         </div>
@@ -120,13 +120,13 @@ export default function Header({ onAuthClick }: HeaderProps) {
           
           {user ? (
             <div className="flex items-center gap-2 sm:gap-3">
-              <Link href="/profile" className="hidden sm:inline-flex items-center gap-2.5 text-xs font-medium text-brand-charcoal/70 tracking-wide hover:text-brand-charcoal transition-colors">
+              <Link href="/profile" className="flex items-center gap-2.5 text-xs font-medium text-brand-charcoal/70 tracking-wide hover:text-brand-charcoal transition-colors">
                 {user.profileImage ? (
                   <img src={user.profileImage} alt="Profile" className="w-8 h-8 rounded-full object-cover border border-brand-charcoal/20" />
                 ) : (
                   <User className="w-8 h-8 rounded-full bg-brand-gray p-1.5 text-brand-charcoal/50" />
                 )}
-                <span>hi, <span className="font-bold text-brand-charcoal text-sm">{user.name.split(" ")[0]}</span></span>
+                <span className="hidden sm:inline">hi, <span className="font-bold text-brand-charcoal text-sm">{user.name.split(" ")[0]}</span></span>
               </Link>
             </div>
           ) : (
@@ -190,18 +190,7 @@ export default function Header({ onAuthClick }: HeaderProps) {
                 ADMIN PANEL
               </Link>
             )}
-            {/* Show user orders links on mobile dropdown directly if logged in */}
-            {user && (
-              <div className="pt-2 border-t border-brand-charcoal/5 flex flex-col gap-3">
-                <Link
-                  href="/profile"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="text-xs font-bold tracking-widest text-brand-charcoal/70 transition-all hover:text-brand-charcoal uppercase py-1"
-                >
-                  MY PROFILE
-                </Link>
-              </div>
-            )}
+
           </motion.div>
         )}
       </AnimatePresence>

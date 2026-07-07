@@ -2,6 +2,7 @@
 
 import React from "react";
 import Image from "next/image";
+import { getOptimizedUrl } from "@/utils/image";
 
 interface MediaRendererProps {
   src: string;
@@ -26,6 +27,7 @@ export default function MediaRenderer({
 }: MediaRendererProps) {
   if (!src) return null;
 
+  const optimizedSrc = getOptimizedUrl(src);
   const cleanSrc = src.toLowerCase().split('?')[0].split('#')[0];
   const isVideo =
     cleanSrc.endsWith('.mp4') ||
@@ -58,7 +60,7 @@ export default function MediaRenderer({
   if (useNextImage) {
     return (
       <Image
-        src={src}
+        src={optimizedSrc}
         alt={alt}
         className={className}
         fill={fill}
@@ -72,7 +74,7 @@ export default function MediaRenderer({
 
   return (
     <img
-      src={src}
+      src={optimizedSrc}
       alt={alt}
       className={className}
       onClick={onClick}

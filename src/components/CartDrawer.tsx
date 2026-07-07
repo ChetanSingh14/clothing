@@ -3,15 +3,16 @@
 import { useCartStore } from "@/store/useCartStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useAlertStore } from "@/store/useAlertStore";
-import { ShoppingBag, X, Plus, Minus, Trash2, ArrowLeft, AlertCircle } from "lucide-react";
+import { ShoppingBag, X, Plus, Minus, Trash2, ArrowLeft, AlertCircle, Tag, CheckCircle } from "lucide-react";
 import MediaRenderer from "./MediaRenderer";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
+import { formatColor } from "@/utils/color";
 
 import { useState, useEffect } from "react";
 
 export default function CartDrawer() {
-  const { items, isOpen, setIsOpen, updateQuantity, removeItem, getCartTotal, clearCart, checkout } = useCartStore();
+  const { items, isOpen, setIsOpen, updateQuantity, removeItem, getSubtotal, getCartTotal, clearCart, checkout, appliedOffer, offerLoading, offerError, checkOfferStatus } = useCartStore();
   const { user, fetchMe, sendPhoneOtp, verifyPhoneOtp } = useAuthStore();
   const [paymentMethod, setPaymentMethod] = useState("COD");
   const [checkoutStep, setCheckoutStep] = useState<"cart" | "address">("cart");
@@ -145,6 +146,10 @@ export default function CartDrawer() {
     }
   };
 
+  const subtotal = getSubtotal();
+  const total = getCartTotal();
+  const discount = appliedOffer ? appliedOffer.discountAmount : 0;
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -232,10 +237,17 @@ export default function CartDrawer() {
                           </h4>
                           <p className="text-[11px] text-brand-charcoal/50 tracking-wide mt-0.5 capitalize">
                             Size: {item.size} / Color:{" "}
-                            <span
-                              className="inline-block w-2.5 h-2.5 rounded-full border border-brand-charcoal/10 align-middle ml-1"
-                              style={{ backgroundColor: item.color }}
-                            />
+                            {item.color.includes("M:") ? (
+                              <span className="font-semibold text-brand-charcoal/70 lowercase">{formatColor(item.color)}</span>
+                            ) : (
+                              <>
+                                <span className="font-semibold text-brand-charcoal/70 lowercase">{formatColor(item.color)}</span>
+                                <span
+                                  className="inline-block w-2.5 h-2.5 rounded-full border border-brand-charcoal/10 align-middle ml-1"
+                                  style={{ backgroundColor: item.color }}
+                                />
+                              </>
+                            )}
                           </p>
                         </div>
 
@@ -280,10 +292,55 @@ export default function CartDrawer() {
               {/* Footer Summary */}
               {items.length > 0 && (
                 <div className="px-6 py-6 border-t border-brand-charcoal/5 bg-brand-gray/30 space-y-4">
-                  <div className="flex items-center justify-between text-brand-charcoal">
-                    <span className="text-sm font-medium tracking-wide">Subtotal</span>
-                    <span className="text-lg font-bold font-serif">₹{getCartTotal().toFixed(2)}</span>
+                  {/* Offer Status Section */}
+                  <div className="space-y-2">
+                    {appliedOffer ? (
+                      <div className="flex items-center justify-between bg-brand-green/10 border border-brand-green/20 rounded-xl px-3.5 py-2.5">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="h-4 w-4 text-brand-green" />
+                          <span className="text-xs font-bold text-brand-green tracking-wider">QR Offer Applied</span>
+                          <span className="text-[10px] text-brand-green/70">(-₹{appliedOffer.discountAmount})</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 px-3.5 py-2.5 bg-brand-charcoal/5 rounded-xl border border-brand-charcoal/10">
+                        <Tag className="h-4 w-4 text-brand-charcoal/40" />
+                        <span className="text-xs text-brand-charcoal/60">No active offers. Scan packaging QR to unlock!</span>
+                      </div>
+                    )}
+                    
+                    {offerError && (
+                      <p className="text-[10px] text-rose-500 font-medium flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" />
+                        {offerError}
+                      </p>
+                    )}
                   </div>
+
+                  {/* Price breakdown */}
+                  <div className="space-y-2 pt-2 border-t border-brand-charcoal/5">
+                    <div className="flex items-center justify-between text-brand-charcoal">
+                      <span className="text-sm font-medium tracking-wide">Subtotal</span>
+                      <span className="text-sm font-semibold">₹{subtotal.toFixed(2)}</span>
+                    </div>
+                    
+                    {appliedOffer && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        className="flex items-center justify-between text-brand-green"
+                      >
+                        <span className="text-sm font-medium tracking-wide">Offer Discount</span>
+                        <span className="text-sm font-semibold">-₹{discount.toFixed(2)}</span>
+                      </motion.div>
+                    )}
+
+                    <div className="flex items-center justify-between text-brand-charcoal pt-2 border-t border-brand-charcoal/5">
+                      <span className="text-sm font-semibold tracking-wide">Total</span>
+                      <span className="text-lg font-bold font-serif">₹{total.toFixed(2)}</span>
+                    </div>
+                  </div>
+
                   <div className="flex flex-col gap-2 pt-2 border-t border-brand-charcoal/5">
                     <label className="text-xs font-semibold text-brand-charcoal uppercase tracking-wider">Payment Method</label>
                     <select
@@ -298,7 +355,7 @@ export default function CartDrawer() {
 
                   <p className="text-[10px] text-brand-charcoal/40 font-light leading-relaxed">
                     Shipping & taxes calculated at checkout. Custom garment adjustments are free of charge. <br />
-                    <span className="font-semibold text-brand-green mt-1 block">✓ 7 Days easy return policy on all delivered orders.</span>
+                    <span className="font-semibold text-brand-green mt-1 block">✓ 5 Days easy size exchange (no returns) on all delivered orders.</span>
                   </p>
                   <button
                     onClick={() => setCheckoutStep("address")}
@@ -376,9 +433,25 @@ export default function CartDrawer() {
                   </div>
                   
                   <div className="px-6 py-6 border-t border-brand-charcoal/5 bg-brand-gray/30 space-y-4">
-                    <div className="flex items-center justify-between text-brand-charcoal">
-                      <span className="text-sm font-medium tracking-wide">Total to Pay</span>
-                      <span className="text-lg font-bold font-serif">₹{getCartTotal().toFixed(2)}</span>
+                    {/* Show discount in address step too */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-brand-charcoal">
+                        <span className="text-sm font-medium tracking-wide">Subtotal</span>
+                        <span className="text-sm">₹{subtotal.toFixed(2)}</span>
+                      </div>
+                      {appliedOffer && (
+                        <div className="flex items-center justify-between text-brand-green">
+                          <span className="text-xs font-medium tracking-wide flex items-center gap-1">
+                            <Tag className="h-3 w-3" />
+                            QR Offer Applied
+                          </span>
+                          <span className="text-xs font-semibold">-₹{discount.toFixed(2)}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between text-brand-charcoal pt-1 border-t border-brand-charcoal/5">
+                        <span className="text-sm font-semibold tracking-wide">Total to Pay</span>
+                        <span className="text-lg font-bold font-serif">₹{total.toFixed(2)}</span>
+                      </div>
                     </div>
                     <button
                       onClick={handleCheckout}

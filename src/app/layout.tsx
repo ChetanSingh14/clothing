@@ -20,6 +20,11 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://www.mdfkclothing.com"),
   title: "MDFK CLOTHING CO. - Printed Streetwear Tees",
   description: "Discover bold graphic tees crafted for Gen Z, featuring exclusive prints and premium cotton blends.",
+  icons: {
+    icon: "/icon.png",
+    shortcut: "/icon.png",
+    apple: "/icon.png",
+  },
 };
 
 export default function RootLayout({
@@ -28,7 +33,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" data-scroll-behavior="smooth" className={`${playfairDisplay.variable} ${plusJakartaSans.variable} h-full antialiased`}>
+    <html lang="en" data-scroll-behavior="smooth" className={`${playfairDisplay.variable} ${plusJakartaSans.variable} h-full antialiased overflow-x-hidden`}>
       <body className="min-h-full bg-brand-bg text-brand-charcoal font-sans antialiased overflow-x-hidden">
         {children}
         <Chatbot />

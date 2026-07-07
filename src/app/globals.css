@@ -21,23 +21,9 @@
   --foreground: #111111;
 }
 
-/* Custom Scrollbar Styles for premium feel */
+/* Hide Scrollbar for a premium, app-like feel */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: #F5E1D0;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #C2B29B;
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #556B4E;
+  display: none;
 }
 
 html {
@@ -45,9 +31,13 @@ html {
 }
 
 body {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
   background-color: var(--background);
   color: var(--foreground);
   overflow-x: hidden;
+  width: 100%;
+  position: relative;
 }
 
 /* Custom styles for Awwwards perspective effect */

@@ -27,6 +27,7 @@ interface OrderState {
   loading: boolean;
   fetchMyOrders: () => Promise<void>;
   cancelOrder: (orderId: number) => Promise<boolean>;
+  returnOrder: (orderId: number, returnAddress: string) => Promise<boolean>;
 }
 
 export const useOrderStore = create<OrderState>((set, get) => ({
@@ -63,6 +64,28 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       return false;
     } catch (err) {
       console.error("Failed to cancel order:", err);
+      return false;
+    } finally {
+      set({ loading: false });
+    }
+  },
+
+  returnOrder: async (orderId: number, returnAddress: string) => {
+    set({ loading: true });
+    try {
+      const res = await apiFetch(`/orders/${orderId}/return`, {
+        method: "POST",
+        body: JSON.stringify({ returnAddress }),
+      });
+      if (res.success) {
+        set((state) => ({
+          orders: state.orders.map((o) => (o.id === orderId ? { ...o, status: "RETURN_PENDING" } : o)),
+        }));
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error("Failed to return order:", err);
       return false;
     } finally {
       set({ loading: false });
