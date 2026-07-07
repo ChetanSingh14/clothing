@@ -37,6 +37,8 @@ interface AdminState {
   updateProduct: (id: number, data: any) => Promise<boolean>;
   adminUpdateUser: (id: number, data: any) => Promise<boolean>;
   updateOrderStatus: (id: number, status: string) => Promise<boolean>;
+  nimbusShipOrder: (id: number) => Promise<{ success: boolean; message?: string }>;
+  nimbusCancelOrder: (id: number) => Promise<{ success: boolean; message?: string }>;
 }
 
 export const useAdminStore = create<AdminState>((set, get) => ({
@@ -221,6 +223,42 @@ export const useAdminStore = create<AdminState>((set, get) => ({
     } catch (err: any) {
       set({ error: err.message || "Failed to update order status", loading: false });
       return false;
+    }
+  },
+
+  nimbusShipOrder: async (id) => {
+    set({ loading: true, error: null });
+    try {
+      const res = await apiFetch(`/orders/admin/${id}/nimbus-ship`, {
+        method: "POST",
+      });
+      if (res.success) {
+        set({ loading: false });
+        await get().fetchOrders();
+        return { success: true, message: res.message || "Shipped with Nimbuspost successfully" };
+      }
+      return { success: false, message: res.message || "Failed to ship" };
+    } catch (err: any) {
+      set({ error: err.message || "Failed to ship order", loading: false });
+      return { success: false, message: err.message || "Failed to ship order" };
+    }
+  },
+
+  nimbusCancelOrder: async (id) => {
+    set({ loading: true, error: null });
+    try {
+      const res = await apiFetch(`/orders/admin/${id}/nimbus-cancel`, {
+        method: "POST",
+      });
+      if (res.success) {
+        set({ loading: false });
+        await get().fetchOrders();
+        return { success: true, message: res.message || "Shipment cancelled successfully" };
+      }
+      return { success: false, message: res.message || "Failed to cancel shipment" };
+    } catch (err: any) {
+      set({ error: err.message || "Failed to cancel shipment", loading: false });
+      return { success: false, message: err.message || "Failed to cancel shipment" };
     }
   },
 }));

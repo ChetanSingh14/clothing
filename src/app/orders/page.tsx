@@ -17,12 +17,14 @@ import { formatColor } from "@/utils/color";
 
 export default function OrdersPage() {
   const { user, fetchMe, initialized } = useAuthStore();
-  const { orders, loading, fetchMyOrders, cancelOrder, returnOrder } = useOrderStore();
+  const { orders, loading, fetchMyOrders, cancelOrder, returnOrder, trackNimbusOrder } = useOrderStore();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [selectedOrderForReturn, setSelectedOrderForReturn] = useState<any>(null);
   const [pickupAddressType, setPickupAddressType] = useState<"same" | "different">("same");
   const [customPickupAddress, setCustomPickupAddress] = useState("");
   const [sizeChangeNotes, setSizeChangeNotes] = useState("");
+  const [trackingInfo, setTrackingInfo] = useState<any>(null);
+  const [isTrackingModalOpen, setIsTrackingModalOpen] = useState(false);
 
   useEffect(() => {
     fetchMe();
@@ -91,6 +93,16 @@ export default function OrdersPage() {
       useAlertStore.getState().showAlert("Exchange request filed successfully!");
     } else {
       alert("Failed to submit exchange request.");
+    }
+  };
+
+  const handleTrackOrder = async (orderId: number) => {
+    const info = await trackNimbusOrder(orderId);
+    if (info) {
+      setTrackingInfo(info);
+      setIsTrackingModalOpen(true);
+    } else {
+      useAlertStore.getState().showAlert("Could not fetch tracking information.");
     }
   };
 
@@ -175,6 +187,14 @@ export default function OrdersPage() {
                           className="text-xs font-semibold text-brand-green hover:text-brand-green-dark underline cursor-pointer"
                         >
                           Exchange Size
+                        </button>
+                      )}
+                      {order.nimbuspostAwb && (
+                        <button 
+                          onClick={() => handleTrackOrder(order.id)}
+                          className="text-xs font-semibold text-blue-600 hover:text-blue-700 underline cursor-pointer"
+                        >
+                          Track Order
                         </button>
                       )}
                     </div>
@@ -322,6 +342,71 @@ export default function OrdersPage() {
           </div>
         )}
       </AnimatePresence>
+
+      {/* Tracking Modal */}
+      <AnimatePresence>
+        {isTrackingModalOpen && trackingInfo && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-brand-bg border border-brand-charcoal/10 max-w-lg w-full rounded-3xl p-6 sm:p-8 shadow-2xl relative max-h-[80vh] overflow-y-auto"
+            >
+              <div className="flex justify-between items-center mb-6 border-b border-brand-charcoal/5 pb-4">
+                <h3 className="text-lg font-serif font-semibold text-brand-charcoal">
+                  Tracking Details
+                </h3>
+                <button
+                  onClick={() => setIsTrackingModalOpen(false)}
+                  className="text-brand-charcoal/50 hover:text-brand-charcoal"
+                >
+                  <XCircle className="h-6 w-6" />
+                </button>
+              </div>
+
+              <div className="space-y-4 mb-6">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="block text-[10px] uppercase text-brand-charcoal/50 font-bold mb-1">AWB Number</span>
+                    <span className="font-semibold">{trackingInfo.awb_number}</span>
+                  </div>
+                  <div>
+                    <span className="block text-[10px] uppercase text-brand-charcoal/50 font-bold mb-1">Status</span>
+                    <span className="font-semibold uppercase text-brand-green">{trackingInfo.status}</span>
+                  </div>
+                  <div>
+                    <span className="block text-[10px] uppercase text-brand-charcoal/50 font-bold mb-1">Courier</span>
+                    <span className="font-semibold">{trackingInfo.courier_name || "Assigned"}</span>
+                  </div>
+                </div>
+              </div>
+
+              {trackingInfo.history && trackingInfo.history.length > 0 ? (
+                <div className="space-y-4 relative before:absolute before:inset-0 before:ml-2 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-300 before:to-transparent">
+                  {trackingInfo.history.map((hist: any, index: number) => (
+                    <div key={index} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+                      <div className="flex items-center justify-center w-4 h-4 rounded-full border border-white bg-slate-300 text-slate-500 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2" />
+                      <div className="w-[calc(100%-2rem)] md:w-[calc(50%-1.5rem)] p-3 rounded-lg border border-brand-charcoal/10 bg-white shadow-sm">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-xs font-bold text-brand-charcoal">{hist.message || hist.status_code}</span>
+                        </div>
+                        <p className="text-[10px] text-brand-charcoal/60">{hist.location}</p>
+                        <time className="text-[9px] text-brand-charcoal/40 font-mono mt-1 block">{hist.event_time}</time>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center p-6 bg-brand-gray/30 rounded-xl">
+                  <p className="text-xs font-medium text-brand-charcoal/50">Tracking history not available yet.</p>
+                </div>
+              )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
       <CartDrawer />
     </div>

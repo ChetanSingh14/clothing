@@ -20,6 +20,8 @@ export interface OrderData {
   paymentMethod: string;
   items: OrderItem[];
   createdAt: string;
+  nimbuspostAwb?: string;
+  nimbuspostLabel?: string;
 }
 
 interface OrderState {
@@ -28,6 +30,7 @@ interface OrderState {
   fetchMyOrders: () => Promise<void>;
   cancelOrder: (orderId: number) => Promise<boolean>;
   returnOrder: (orderId: number, returnAddress: string) => Promise<boolean>;
+  trackNimbusOrder: (orderId: number) => Promise<any>;
 }
 
 export const useOrderStore = create<OrderState>((set, get) => ({
@@ -89,6 +92,19 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       return false;
     } finally {
       set({ loading: false });
+    }
+  },
+
+  trackNimbusOrder: async (orderId: number) => {
+    try {
+      const res = await apiFetch(`/orders/${orderId}/nimbus-track`);
+      if (res.success) {
+        return res.data;
+      }
+      return null;
+    } catch (err) {
+      console.error("Failed to track order:", err);
+      return null;
     }
   },
 }));

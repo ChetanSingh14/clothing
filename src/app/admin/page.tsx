@@ -40,7 +40,9 @@ export default function AdminDashboardPage() {
     updateProduct,
     uploadProductImage,
     adminUpdateUser,
-    updateOrderStatus
+    updateOrderStatus,
+    nimbusShipOrder,
+    nimbusCancelOrder
   } = useAdminStore();
   
   const { products, fetchProducts } = useProductStore();
@@ -463,6 +465,26 @@ export default function AdminDashboardPage() {
     } else {
       useAlertStore.getState().showAlert("Failed to update order status.");
     }
+  };
+
+  const handleNimbusShip = async (orderId: number) => {
+    const res = await nimbusShipOrder(orderId);
+    if (res.success) {
+      useAlertStore.getState().showAlert(res.message || "Shipped via Nimbuspost");
+    } else {
+      useAlertStore.getState().showAlert(res.message || "Failed to ship");
+    }
+  };
+
+  const handleNimbusCancel = async (orderId: number) => {
+    useAlertStore.getState().showConfirm("Are you sure you want to cancel the Nimbuspost shipment?", async () => {
+      const res = await nimbusCancelOrder(orderId);
+      if (res.success) {
+        useAlertStore.getState().showAlert(res.message || "Shipment cancelled");
+      } else {
+        useAlertStore.getState().showAlert(res.message || "Failed to cancel shipment");
+      }
+    });
   };
 
   const handleDeleteReview = async (id: number) => {
@@ -1344,6 +1366,14 @@ export default function AdminDashboardPage() {
                             <Calendar className="h-3 w-3" />
                             <span>{new Date(ord.createdAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}</span>
                           </div>
+                          {ord.nimbuspostAwb && (
+                            <div className="text-[10px] mt-2 bg-brand-charcoal/5 p-1 rounded font-medium inline-block">
+                              AWB: {ord.nimbuspostAwb}
+                              {ord.nimbuspostLabel && (
+                                <a href={ord.nimbuspostLabel} target="_blank" rel="noreferrer" className="text-blue-500 ml-2 hover:underline">View Label</a>
+                              )}
+                            </div>
+                          )}
                         </div>
 
                         <div className="sm:text-right flex flex-col items-end">
@@ -1357,6 +1387,25 @@ export default function AdminDashboardPage() {
                             <Eye className="h-3 w-3" />
                             View Full Details
                           </button>
+                          
+                          <div className="mt-2 flex gap-2 justify-end">
+                            {!ord.nimbuspostAwb && ord.status === 'BOOKED' && (
+                              <button
+                                onClick={() => handleNimbusShip(ord.id)}
+                                className="text-xs bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700 cursor-pointer"
+                              >
+                                Ship with Nimbuspost
+                              </button>
+                            )}
+                            {ord.nimbuspostAwb && ord.status !== 'CANCELLED' && (
+                              <button
+                                onClick={() => handleNimbusCancel(ord.id)}
+                                className="text-[10px] text-red-500 underline cursor-pointer"
+                              >
+                                Cancel Shipment
+                              </button>
+                            )}
+                          </div>
                         </div>
                       </div>
 
