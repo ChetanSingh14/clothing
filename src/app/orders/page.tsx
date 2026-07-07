@@ -13,6 +13,7 @@ import PageLoader from "@/components/PageLoader";
 import MediaRenderer from "@/components/MediaRenderer";
 import Link from "next/link";
 import { useAlertStore } from "@/store/useAlertStore";
+import { formatColor } from "@/utils/color";
 
 export default function OrdersPage() {
   const { user, fetchMe, initialized } = useAuthStore();
@@ -58,7 +59,7 @@ export default function OrdersPage() {
     const refDate = order.deliveredAt ? new Date(order.deliveredAt) : new Date(order.createdAt);
     const diffTime = Math.abs(new Date().getTime() - refDate.getTime());
     const diffDays = diffTime / (1000 * 60 * 60 * 24);
-    return diffDays <= 7;
+    return diffDays <= 5;
   };
 
   const handleProceedReturn = async () => {
@@ -180,9 +181,12 @@ export default function OrdersPage() {
                           <p className="text-[11px] text-brand-charcoal/60 capitalize mt-0.5">
                             Size: {item.size} • Color:{" "}
                             {item.color.includes("M:") ? (
-                              <span className="font-semibold text-brand-charcoal/80 lowercase">{item.color}</span>
+                              <span className="font-semibold text-brand-charcoal/80 lowercase">{formatColor(item.color)}</span>
                             ) : (
-                              <span className="inline-block w-2.5 h-2.5 rounded-full border border-brand-charcoal/20 align-middle ml-1" style={{ backgroundColor: item.color }} />
+                              <>
+                                <span className="font-semibold text-brand-charcoal/80 lowercase">{formatColor(item.color)}</span>
+                                <span className="inline-block w-2.5 h-2.5 rounded-full border border-brand-charcoal/20 align-middle ml-1" style={{ backgroundColor: item.color }} />
+                              </>
                             )}
                           </p>
                           <p className="text-xs font-medium text-brand-charcoal mt-1">Qty: {item.quantity}</p>
@@ -199,7 +203,7 @@ export default function OrdersPage() {
                       <p className="text-xs text-brand-charcoal/60 uppercase tracking-wider font-semibold">Payment Method</p>
                       <p className="text-sm font-medium text-brand-charcoal mt-0.5">{order.paymentMethod === "COD" ? "Cash on Delivery" : order.paymentMethod}</p>
                       {order.status === "DELIVERED" && (
-                        <p className="text-[10px] text-brand-green font-semibold mt-2">✓ Eligible for 7 Days easy return.</p>
+                        <p className="text-[10px] text-brand-green font-semibold mt-2">✓ Eligible for 5 Days easy return.</p>
                       )}
                     </div>
                     <div className="text-right">
@@ -230,7 +234,7 @@ export default function OrdersPage() {
                 Request Return for Order #{selectedOrderForReturn.id}
               </h3>
               <p className="text-xs text-brand-charcoal/60 mb-6 leading-relaxed">
-                Returns are permitted within 7 days of delivery. Please select the pickup address for your package.
+                Returns are permitted within 5 days of delivery. Please select the pickup address for your package.
               </p>
 
               <div className="space-y-4 mb-6">

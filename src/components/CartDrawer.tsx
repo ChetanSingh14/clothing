@@ -7,6 +7,7 @@ import { ShoppingBag, X, Plus, Minus, Trash2, ArrowLeft, AlertCircle, Tag, Check
 import MediaRenderer from "./MediaRenderer";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
+import { formatColor } from "@/utils/color";
 
 import { useState, useEffect } from "react";
 
@@ -237,12 +238,15 @@ export default function CartDrawer() {
                           <p className="text-[11px] text-brand-charcoal/50 tracking-wide mt-0.5 capitalize">
                             Size: {item.size} / Color:{" "}
                             {item.color.includes("M:") ? (
-                              <span className="font-semibold text-brand-charcoal/70 lowercase">{item.color}</span>
+                              <span className="font-semibold text-brand-charcoal/70 lowercase">{formatColor(item.color)}</span>
                             ) : (
-                              <span
-                                className="inline-block w-2.5 h-2.5 rounded-full border border-brand-charcoal/10 align-middle ml-1"
-                                style={{ backgroundColor: item.color }}
-                              />
+                              <>
+                                <span className="font-semibold text-brand-charcoal/70 lowercase">{formatColor(item.color)}</span>
+                                <span
+                                  className="inline-block w-2.5 h-2.5 rounded-full border border-brand-charcoal/10 align-middle ml-1"
+                                  style={{ backgroundColor: item.color }}
+                                />
+                              </>
                             )}
                           </p>
                         </div>
@@ -351,7 +355,7 @@ export default function CartDrawer() {
 
                   <p className="text-[10px] text-brand-charcoal/40 font-light leading-relaxed">
                     Shipping & taxes calculated at checkout. Custom garment adjustments are free of charge. <br />
-                    <span className="font-semibold text-brand-green mt-1 block">✓ 7 Days easy return policy on all delivered orders.</span>
+                    <span className="font-semibold text-brand-green mt-1 block">✓ 5 Days easy return policy on all delivered orders.</span>
                   </p>
                   <button
                     onClick={() => setCheckoutStep("address")}

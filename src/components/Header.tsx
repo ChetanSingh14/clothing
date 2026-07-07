@@ -190,18 +190,7 @@ export default function Header({ onAuthClick }: HeaderProps) {
                 ADMIN PANEL
               </Link>
             )}
-            {/* Show user orders links on mobile dropdown directly if logged in */}
-            {user && (
-              <div className="pt-2 border-t border-brand-charcoal/5 flex flex-col gap-3">
-                <Link
-                  href="/profile"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="text-xs font-bold tracking-widest text-brand-charcoal/70 transition-all hover:text-brand-charcoal uppercase py-1"
-                >
-                  MY PROFILE
-                </Link>
-              </div>
-            )}
+
           </motion.div>
         )}
       </AnimatePresence>

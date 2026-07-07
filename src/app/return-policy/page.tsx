@@ -15,7 +15,7 @@ export default function ReturnPolicyPage() {
           
           <h2 className="text-2xl font-serif font-bold text-brand-charcoal mt-8 mb-4">Returns</h2>
           <p>
-            Our policy lasts 7 days. If 7 days have gone by since your purchase, unfortunately we can’t offer you a refund or exchange.
+            Our policy lasts 5 days. If 5 days have gone by since your purchase, unfortunately we can’t offer you a refund or exchange.
           </p>
           <p>
             To be eligible for a return, your item must be unused and in the same condition that you received it. It must also be in the original packaging.

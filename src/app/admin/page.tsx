@@ -19,6 +19,7 @@ import Lightbox from "@/components/Lightbox";
 import PageLoader from "@/components/PageLoader";
 import ColorPickerModal from "@/components/ColorPickerModal";
 import MediaRenderer from "@/components/MediaRenderer";
+import { formatColor } from "@/utils/color";
 
 export default function AdminDashboardPage() {
   const router = useRouter();
@@ -1393,9 +1394,12 @@ export default function AdminDashboardPage() {
                                     <span className="flex items-center gap-1">
                                       color:{" "}
                                       {item.color.includes("M:") ? (
-                                        <span className="font-semibold text-brand-charcoal/80 text-[10px] lowercase">{item.color}</span>
+                                        <span className="font-semibold text-brand-charcoal/80 text-[10px] lowercase">{formatColor(item.color)}</span>
                                       ) : (
-                                        <span className="h-2 w-2 rounded-full border border-brand-charcoal/10 inline-block" style={{ backgroundColor: item.color }} />
+                                        <>
+                                          <span className="font-semibold text-brand-charcoal/80 text-[10px] lowercase">{formatColor(item.color)}</span>
+                                          <span className="h-2 w-2 rounded-full border border-brand-charcoal/10 inline-block" style={{ backgroundColor: item.color }} />
+                                        </>
                                       )}
                                     </span>
                                   </div>
@@ -1958,11 +1962,14 @@ export default function AdminDashboardPage() {
                             <div className="flex items-center gap-3 text-[11px] text-brand-charcoal/60 mt-1">
                               <span className="uppercase">Size: <span className="font-semibold">{item.size}</span></span>
                               <span className="flex items-center gap-1.5">
-                                Color: 
+                                Color:{" "}
                                 {item.color.includes("M:") ? (
-                                  <span className="font-semibold text-brand-charcoal/80 text-xs lowercase">{item.color}</span>
+                                  <span className="font-semibold text-brand-charcoal/80 text-xs lowercase">{formatColor(item.color)}</span>
                                 ) : (
-                                  <span className="h-3 w-3 rounded-full border border-brand-charcoal/10 inline-block shadow-sm" style={{ backgroundColor: item.color }} title={item.color} />
+                                  <>
+                                    <span className="font-semibold text-brand-charcoal/80 text-xs lowercase">{formatColor(item.color)}</span>
+                                    <span className="h-3 w-3 rounded-full border border-brand-charcoal/10 inline-block shadow-sm" style={{ backgroundColor: item.color }} />
+                                  </>
                                 )}
                               </span>
                             </div>
