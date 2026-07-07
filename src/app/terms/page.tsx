@@ -1,5 +1,11 @@
+import type { Metadata } from "next";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+
+export const metadata: Metadata = {
+  title: "Terms of Service - MDFK CLOTHING CO.",
+  description: "Read the terms of service of MDFK CLOTHING CO., legally owned and operated by MADE DIFFERENT FK.",
+};
 
 export default function TermsPage() {
   return (

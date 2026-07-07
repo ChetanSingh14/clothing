@@ -1,5 +1,11 @@
+import type { Metadata } from "next";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+
+export const metadata: Metadata = {
+  title: "Privacy Policy - MDFK CLOTHING CO.",
+  description: "Learn about how MADE DIFFERENT FK (mdfkclothing.com) collects, uses, and protects your personal and order information.",
+};
 
 export default function PrivacyPolicyPage() {
   return (
