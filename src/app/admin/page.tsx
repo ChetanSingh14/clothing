@@ -1391,8 +1391,12 @@ export default function AdminDashboardPage() {
                                     <span className="uppercase">size: {item.size}</span>
                                     <span>•</span>
                                     <span className="flex items-center gap-1">
-                                      color: 
-                                      <span className="h-2 w-2 rounded-full border border-brand-charcoal/10 inline-block" style={{ backgroundColor: item.color }} />
+                                      color:{" "}
+                                      {item.color.includes("M:") ? (
+                                        <span className="font-semibold text-brand-charcoal/80 text-[10px] lowercase">{item.color}</span>
+                                      ) : (
+                                        <span className="h-2 w-2 rounded-full border border-brand-charcoal/10 inline-block" style={{ backgroundColor: item.color }} />
+                                      )}
                                     </span>
                                   </div>
                                 </div>
@@ -1955,7 +1959,11 @@ export default function AdminDashboardPage() {
                               <span className="uppercase">Size: <span className="font-semibold">{item.size}</span></span>
                               <span className="flex items-center gap-1.5">
                                 Color: 
-                                <span className="h-3 w-3 rounded-full border border-brand-charcoal/10 inline-block shadow-sm" style={{ backgroundColor: item.color }} title={item.color} />
+                                {item.color.includes("M:") ? (
+                                  <span className="font-semibold text-brand-charcoal/80 text-xs lowercase">{item.color}</span>
+                                ) : (
+                                  <span className="h-3 w-3 rounded-full border border-brand-charcoal/10 inline-block shadow-sm" style={{ backgroundColor: item.color }} title={item.color} />
+                                )}
                               </span>
                             </div>
                           </div>

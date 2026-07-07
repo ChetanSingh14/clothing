@@ -7,8 +7,8 @@ import CartDrawer from "@/components/CartDrawer";
 import { useEffect, useState } from "react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useOrderStore } from "@/store/useOrderStore";
-import { Package, Clock, CheckCircle2, XCircle, ArrowLeft } from "lucide-react";
-import { motion } from "framer-motion";
+import { Package, Clock, CheckCircle2, XCircle, ArrowLeft, RotateCcw } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import PageLoader from "@/components/PageLoader";
 import MediaRenderer from "@/components/MediaRenderer";
 import Link from "next/link";
@@ -16,8 +16,11 @@ import { useAlertStore } from "@/store/useAlertStore";
 
 export default function OrdersPage() {
   const { user, fetchMe, initialized } = useAuthStore();
-  const { orders, loading, fetchMyOrders, cancelOrder } = useOrderStore();
+  const { orders, loading, fetchMyOrders, cancelOrder, returnOrder } = useOrderStore();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [selectedOrderForReturn, setSelectedOrderForReturn] = useState<any>(null);
+  const [pickupAddressType, setPickupAddressType] = useState<"same" | "different">("same");
+  const [customPickupAddress, setCustomPickupAddress] = useState("");
 
   useEffect(() => {
     fetchMe();
@@ -41,8 +44,42 @@ export default function OrdersPage() {
         return <CheckCircle2 className="h-5 w-5 text-brand-green" />;
       case "CANCELLED":
         return <XCircle className="h-5 w-5 text-rose-500" />;
+      case "RETURN_PENDING":
+        return <Clock className="h-5 w-5 text-indigo-500" />;
+      case "RETURNED":
+        return <RotateCcw className="h-5 w-5 text-brand-charcoal/50" />;
       default:
         return <Package className="h-5 w-5 text-brand-charcoal/50" />;
+    }
+  };
+
+  const canReturn = (order: any) => {
+    if (order.status !== "DELIVERED") return false;
+    const refDate = order.deliveredAt ? new Date(order.deliveredAt) : new Date(order.createdAt);
+    const diffTime = Math.abs(new Date().getTime() - refDate.getTime());
+    const diffDays = diffTime / (1000 * 60 * 60 * 24);
+    return diffDays <= 7;
+  };
+
+  const handleProceedReturn = async () => {
+    if (!selectedOrderForReturn) return;
+    const finalAddress = pickupAddressType === "same"
+      ? `${selectedOrderForReturn.address || ""}, ${selectedOrderForReturn.landmark ? selectedOrderForReturn.landmark + ", " : ""}${selectedOrderForReturn.city || ""}, ${selectedOrderForReturn.state || ""} - ${selectedOrderForReturn.pincode || ""}`
+      : customPickupAddress.trim();
+
+    if (pickupAddressType === "different" && !finalAddress) {
+      alert("Please provide the pickup address.");
+      return;
+    }
+
+    const success = await returnOrder(selectedOrderForReturn.id, finalAddress);
+    if (success) {
+      setSelectedOrderForReturn(null);
+      setPickupAddressType("same");
+      setCustomPickupAddress("");
+      useAlertStore.getState().showAlert("Return request filed successfully!");
+    } else {
+      alert("Failed to submit return request.");
     }
   };
 
@@ -104,7 +141,7 @@ export default function OrdersPage() {
                       <div className="flex items-center gap-2 bg-brand-gray px-3 py-1.5 rounded-full">
                         {getStatusIcon(order.status)}
                         <span className="text-xs font-bold uppercase tracking-wider text-brand-charcoal">
-                          {order.status}
+                          {order.status === "RETURN_PENDING" ? "Return Pending" : order.status}
                         </span>
                       </div>
                       
@@ -120,6 +157,15 @@ export default function OrdersPage() {
                           Cancel
                         </button>
                       )}
+                      
+                      {canReturn(order) && (
+                        <button 
+                          onClick={() => setSelectedOrderForReturn(order)}
+                          className="text-xs font-semibold text-brand-green hover:text-brand-green-dark underline cursor-pointer"
+                        >
+                          Return Order
+                        </button>
+                      )}
                     </div>
                   </div>
 
@@ -132,8 +178,12 @@ export default function OrdersPage() {
                         <div className="flex-grow">
                           <h4 className="text-sm font-semibold text-brand-charcoal">{item.title}</h4>
                           <p className="text-[11px] text-brand-charcoal/60 capitalize mt-0.5">
-                            Size: {item.size} • Color: 
-                            <span className="inline-block w-2.5 h-2.5 rounded-full border border-brand-charcoal/20 align-middle ml-1" style={{ backgroundColor: item.color }} />
+                            Size: {item.size} • Color:{" "}
+                            {item.color.includes("M:") ? (
+                              <span className="font-semibold text-brand-charcoal/80 lowercase">{item.color}</span>
+                            ) : (
+                              <span className="inline-block w-2.5 h-2.5 rounded-full border border-brand-charcoal/20 align-middle ml-1" style={{ backgroundColor: item.color }} />
+                            )}
                           </p>
                           <p className="text-xs font-medium text-brand-charcoal mt-1">Qty: {item.quantity}</p>
                         </div>
@@ -165,6 +215,86 @@ export default function OrdersPage() {
       </main>
 
       <Footer />
+
+      {/* Return Request Modal */}
+      <AnimatePresence>
+        {selectedOrderForReturn && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-brand-bg border border-brand-charcoal/10 max-w-md w-full rounded-3xl p-6 sm:p-8 shadow-2xl relative"
+            >
+              <h3 className="text-lg font-serif font-semibold text-brand-charcoal mb-4">
+                Request Return for Order #{selectedOrderForReturn.id}
+              </h3>
+              <p className="text-xs text-brand-charcoal/60 mb-6 leading-relaxed">
+                Returns are permitted within 7 days of delivery. Please select the pickup address for your package.
+              </p>
+
+              <div className="space-y-4 mb-6">
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="pickupAddress"
+                    checked={pickupAddressType === "same"}
+                    onChange={() => setPickupAddressType("same")}
+                    className="mt-0.5 accent-brand-charcoal"
+                  />
+                  <div>
+                    <span className="text-xs font-semibold text-brand-charcoal">Pickup from delivery address</span>
+                    <p className="text-[11px] text-brand-charcoal/50 mt-1 font-light">
+                      {selectedOrderForReturn.address || "No address specified"}, {selectedOrderForReturn.landmark ? selectedOrderForReturn.landmark + ", " : ""}{selectedOrderForReturn.city || ""}, {selectedOrderForReturn.state || ""} - {selectedOrderForReturn.pincode || ""}
+                    </p>
+                  </div>
+                </label>
+
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="pickupAddress"
+                    checked={pickupAddressType === "different"}
+                    onChange={() => setPickupAddressType("different")}
+                    className="mt-0.5 accent-brand-charcoal"
+                  />
+                  <div className="flex-grow">
+                    <span className="text-xs font-semibold text-brand-charcoal">Pickup from a different address</span>
+                    {pickupAddressType === "different" && (
+                      <textarea
+                        rows={3}
+                        value={customPickupAddress}
+                        onChange={(e) => setCustomPickupAddress(e.target.value)}
+                        placeholder="Enter the complete pickup address, landmark, city, state, and pincode..."
+                        className="w-full mt-2 rounded-xl border border-brand-charcoal/10 bg-white p-3 text-xs focus:ring-1 focus:ring-brand-green focus:outline-none resize-none"
+                      />
+                    )}
+                  </div>
+                </label>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-brand-charcoal/5">
+                <button
+                  onClick={() => {
+                    setSelectedOrderForReturn(null);
+                    setPickupAddressType("same");
+                    setCustomPickupAddress("");
+                  }}
+                  className="px-4 py-2 border border-brand-charcoal/10 rounded-xl text-xs font-semibold text-brand-charcoal/70 hover:bg-brand-charcoal/5 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleProceedReturn}
+                  className="px-5 py-2 bg-brand-charcoal text-brand-bg rounded-xl text-xs font-semibold hover:bg-black transition-colors shadow-sm cursor-pointer"
+                >
+                  Proceed
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
       <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
       <CartDrawer />
     </div>

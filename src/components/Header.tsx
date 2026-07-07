@@ -120,13 +120,13 @@ export default function Header({ onAuthClick }: HeaderProps) {
           
           {user ? (
             <div className="flex items-center gap-2 sm:gap-3">
-              <Link href="/profile" className="hidden sm:inline-flex items-center gap-2.5 text-xs font-medium text-brand-charcoal/70 tracking-wide hover:text-brand-charcoal transition-colors">
+              <Link href="/profile" className="flex items-center gap-2.5 text-xs font-medium text-brand-charcoal/70 tracking-wide hover:text-brand-charcoal transition-colors">
                 {user.profileImage ? (
                   <img src={user.profileImage} alt="Profile" className="w-8 h-8 rounded-full object-cover border border-brand-charcoal/20" />
                 ) : (
                   <User className="w-8 h-8 rounded-full bg-brand-gray p-1.5 text-brand-charcoal/50" />
                 )}
-                <span>hi, <span className="font-bold text-brand-charcoal text-sm">{user.name.split(" ")[0]}</span></span>
+                <span className="hidden sm:inline">hi, <span className="font-bold text-brand-charcoal text-sm">{user.name.split(" ")[0]}</span></span>
               </Link>
             </div>
           ) : (

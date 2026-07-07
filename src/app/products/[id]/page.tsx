@@ -115,6 +115,7 @@ export default function ProductDetailPage() {
   useEffect(() => {
     if (user) {
       fetchWishlist();
+      setReviewName(user.name);
     }
   }, [user]);
 
@@ -212,12 +213,11 @@ export default function ProductDetailPage() {
       setIsAuthModalOpen(true);
       return;
     }
-    if (!reviewName || !reviewComment) return;
+    const nameToUse = user.name || reviewName || "Anonymous";
 
-    const success = await submitReview(activeProduct.id, reviewName, reviewRating, reviewComment);
+    const success = await submitReview(activeProduct.id, nameToUse, reviewRating, reviewComment || "");
     if (success) {
       setReviewComment("");
-      setReviewName("");
       setReviewRating(5);
       setReviewSuccess(true);
       setTimeout(() => setReviewSuccess(false), 4000);
@@ -342,7 +342,10 @@ export default function ProductDetailPage() {
                           {(activeProduct.maleColors && activeProduct.maleColors.length > 0 ? activeProduct.maleColors : activeProduct.colors).map((color) => (
                             <div key={`m-${color}`} className="flex flex-col items-center gap-1.5">
                               <button
-                                onClick={() => setMaleColor(color)}
+                                onClick={() => {
+                                  setMaleColor(color);
+                                  setSelectedColor(color);
+                                }}
                                 className={`h-9 w-9 rounded-full border-2 transition-all cursor-pointer relative flex items-center justify-center shadow-sm ${
                                   maleColor === color ? "border-brand-charcoal scale-110" : "border-brand-bg hover:scale-105"
                                 }`}
@@ -352,6 +355,9 @@ export default function ProductDetailPage() {
                                   <Check className="h-4 w-4 text-white mix-blend-difference" />
                                 )}
                               </button>
+                              <span className="text-[10px] font-medium text-brand-charcoal/60 capitalize">
+                                {color}
+                              </span>
                             </div>
                           ))}
                         </div>
@@ -364,7 +370,10 @@ export default function ProductDetailPage() {
                           {(activeProduct.femaleColors && activeProduct.femaleColors.length > 0 ? activeProduct.femaleColors : activeProduct.colors).map((color) => (
                             <div key={`f-${color}`} className="flex flex-col items-center gap-1.5">
                               <button
-                                onClick={() => setFemaleColor(color)}
+                                onClick={() => {
+                                  setFemaleColor(color);
+                                  setSelectedColor(color);
+                                }}
                                 className={`h-9 w-9 rounded-full border-2 transition-all cursor-pointer relative flex items-center justify-center shadow-sm ${
                                   femaleColor === color ? "border-brand-charcoal scale-110" : "border-brand-bg hover:scale-105"
                                 }`}
@@ -374,6 +383,9 @@ export default function ProductDetailPage() {
                                   <Check className="h-4 w-4 text-white mix-blend-difference" />
                                 )}
                               </button>
+                              <span className="text-[10px] font-medium text-brand-charcoal/60 capitalize">
+                                {color}
+                              </span>
                             </div>
                           ))}
                         </div>
@@ -650,29 +662,12 @@ export default function ProductDetailPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <input
-                    type="text"
-                    required
-                    value={reviewName}
-                    onChange={(e) => setReviewName(e.target.value)}
-                    placeholder="Your Name"
-                    className="w-full rounded-xl border border-brand-charcoal/10 shadow-sm bg-brand-bg px-3 py-2 text-xs focus:ring-1 focus:ring-brand-green focus:outline-none"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Review Title (Optional)"
-                    className="w-full rounded-xl border border-brand-charcoal/10 shadow-sm bg-brand-bg px-3 py-2 text-xs focus:ring-1 focus:ring-brand-green focus:outline-none"
-                  />
-                </div>
-
                 <div>
                   <textarea
-                    required
                     rows={3}
                     value={reviewComment}
                     onChange={(e) => setReviewComment(e.target.value)}
-                    placeholder="Share your thoughts about this garment's texture, weight, and style fit..."
+                    placeholder="Share your thoughts about this garment's texture, weight, and style fit (optional)..."
                     className="w-full rounded-xl border border-brand-charcoal/10 shadow-sm bg-brand-bg px-3 py-2 text-xs focus:ring-1 focus:ring-brand-green focus:outline-none resize-none"
                   />
                 </div>

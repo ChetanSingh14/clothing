@@ -236,10 +236,14 @@ export default function CartDrawer() {
                           </h4>
                           <p className="text-[11px] text-brand-charcoal/50 tracking-wide mt-0.5 capitalize">
                             Size: {item.size} / Color:{" "}
-                            <span
-                              className="inline-block w-2.5 h-2.5 rounded-full border border-brand-charcoal/10 align-middle ml-1"
-                              style={{ backgroundColor: item.color }}
-                            />
+                            {item.color.includes("M:") ? (
+                              <span className="font-semibold text-brand-charcoal/70 lowercase">{item.color}</span>
+                            ) : (
+                              <span
+                                className="inline-block w-2.5 h-2.5 rounded-full border border-brand-charcoal/10 align-middle ml-1"
+                                style={{ backgroundColor: item.color }}
+                              />
+                            )}
                           </p>
                         </div>
 

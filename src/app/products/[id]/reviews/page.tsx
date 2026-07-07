@@ -38,6 +38,12 @@ export default function ProductReviewsPage() {
     }
   }, [productId]);
 
+  useEffect(() => {
+    if (user) {
+      setReviewName(user.name);
+    }
+  }, [user]);
+
   if (loading || !activeProduct) {
     return (
       <div className="min-h-screen bg-brand-bg flex flex-col justify-between">
@@ -54,12 +60,11 @@ export default function ProductReviewsPage() {
       setIsAuthModalOpen(true);
       return;
     }
-    if (!reviewName || !reviewComment) return;
+    const nameToUse = user.name || reviewName || "Anonymous";
 
-    const success = await submitReview(activeProduct.id, reviewName, reviewRating, reviewComment);
+    const success = await submitReview(activeProduct.id, nameToUse, reviewRating, reviewComment || "");
     if (success) {
       setReviewComment("");
-      setReviewName("");
       setReviewRating(5);
       setReviewSuccess(true);
       setTimeout(() => setReviewSuccess(false), 4000);
@@ -202,28 +207,14 @@ export default function ProductReviewsPage() {
                 </div>
 
                 <div>
-                  <label htmlFor="name" className="block text-xs font-semibold text-brand-charcoal mb-2 uppercase tracking-wider">Name</label>
-                  <input
-                    id="name"
-                    type="text"
-                    required
-                    value={reviewName}
-                    onChange={(e) => setReviewName(e.target.value)}
-                    className="w-full bg-white border border-brand-charcoal/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-green/50 transition-shadow"
-                    placeholder="John Doe"
-                  />
-                </div>
-
-                <div>
                   <label htmlFor="comment" className="block text-xs font-semibold text-brand-charcoal mb-2 uppercase tracking-wider">Comment</label>
                   <textarea
                     id="comment"
-                    required
                     rows={4}
                     value={reviewComment}
                     onChange={(e) => setReviewComment(e.target.value)}
                     className="w-full bg-white border border-brand-charcoal/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-green/50 transition-shadow resize-none"
-                    placeholder="Share your thoughts about this product..."
+                    placeholder="Share your thoughts about this product (optional)..."
                   />
                 </div>
 
