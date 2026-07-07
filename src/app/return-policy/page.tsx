@@ -6,30 +6,29 @@ export default function ReturnPolicyPage() {
     <div className="min-h-screen bg-brand-bg flex flex-col justify-between selection:bg-brand-green/20 selection:text-brand-charcoal">
       <Header />
       <main className="flex-grow max-w-4xl mx-auto w-full px-6 sm:px-8 py-24 md:py-32">
-        <h1 className="text-4xl md:text-5xl font-serif text-brand-charcoal tracking-tight mb-8">Return Policy</h1>
+        <h1 className="text-4xl md:text-5xl font-serif text-brand-charcoal tracking-tight mb-8">Exchange Policy</h1>
         
         <div className="prose prose-sm md:prose-base prose-stone max-w-none text-brand-charcoal/80 space-y-6">
           <p>
-            We want you to be completely satisfied with your purchase from mdfkclothing.com, which is legally owned and operated by MADE DIFFERENT FK.
+            We want to ensure your garments fit you perfectly. MDFK Clothing (mdfkclothing.com, legally owned and operated by MADE DIFFERENT FK) offers an easy size exchange policy. Please note that <strong>we do not offer returns, refunds, or cancellations</strong> once an order is placed.
           </p>
           
-          <h2 className="text-2xl font-serif font-bold text-brand-charcoal mt-8 mb-4">Returns</h2>
+          <h2 className="text-2xl font-serif font-bold text-brand-charcoal mt-8 mb-4">5-Day Size Exchanges</h2>
           <p>
-            Our policy lasts 5 days. If 5 days have gone by since your purchase, unfortunately we can’t offer you a refund or exchange.
+            Our exchange window lasts <strong>5 days</strong> from the date of delivery. If 5 days have gone by since your package was delivered, unfortunately we cannot offer you a size exchange.
           </p>
           <p>
-            To be eligible for a return, your item must be unused and in the same condition that you received it. It must also be in the original packaging.
-          </p>
-          
-          <h2 className="text-2xl font-serif font-bold text-brand-charcoal mt-8 mb-4">Refunds (if applicable)</h2>
-          <p>
-            Once your return is received and inspected, we will send you an email to notify you that we have received your returned item. We will also notify you of the approval or rejection of your refund.
+            To be eligible for an exchange, your item must be unused, unwashed, and in the same condition that you received it. It must also be in its original packaging.
           </p>
           
-          <h2 className="text-2xl font-serif font-bold text-brand-charcoal mt-8 mb-4">Shipping</h2>
+          <h2 className="text-2xl font-serif font-bold text-brand-charcoal mt-8 mb-4">No Refunds</h2>
           <p>
-            To return your product, you should mail your product to the address provided by our support team.
-            You will be responsible for paying for your own shipping costs for returning your item. Shipping costs are non-refundable.
+            We do not issue refunds under any circumstances. If you have ordered an incorrect size, we will happily replace it with the correct size subject to availability.
+          </p>
+          
+          <h2 className="text-2xl font-serif font-bold text-brand-charcoal mt-8 mb-4">Process</h2>
+          <p>
+            To request a size exchange, navigate to your <strong>Orders</strong> page in your account dashboard within 5 days of delivery, select the order, specify the required size changes, and submit the request. Our team will arrange a reverse pickup or contact you for further details.
           </p>
         </div>
       </main>

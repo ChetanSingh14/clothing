@@ -355,7 +355,7 @@ export default function CartDrawer() {
 
                   <p className="text-[10px] text-brand-charcoal/40 font-light leading-relaxed">
                     Shipping & taxes calculated at checkout. Custom garment adjustments are free of charge. <br />
-                    <span className="font-semibold text-brand-green mt-1 block">✓ 5 Days easy return policy on all delivered orders.</span>
+                    <span className="font-semibold text-brand-green mt-1 block">✓ 5 Days easy size exchange (no returns) on all delivered orders.</span>
                   </p>
                   <button
                     onClick={() => setCheckoutStep("address")}

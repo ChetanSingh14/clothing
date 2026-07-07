@@ -274,8 +274,8 @@ export default function AboutPage() {
                 icon: Users,
               },
               {
-                title: "Easy Returns",
-                desc: "No stress. If your garment doesn't feel and fit exactly how you want it, return it easily within 5 days.",
+                title: "Easy Exchanges",
+                desc: "No stress. If your garment doesn't fit exactly how you want it, exchange it for a different size within 5 days.",
                 icon: Sparkles,
               },
             ].map((card, i) => (

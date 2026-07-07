@@ -560,6 +560,13 @@ export default function ProductDetailPage() {
                           <div className="text-xs font-semibold mt-0.5 text-brand-charcoal">6-12 Working Days</div>
                         </div>
                       </div>
+                      <div className="flex items-start gap-3 bg-brand-gray/30 p-3 rounded-2xl shadow-sm border border-brand-charcoal/5 sm:col-span-2">
+                        <div className="bg-brand-charcoal text-brand-bg rounded-full h-8 w-8 flex items-center justify-center shrink-0 text-sm">🔄</div>
+                        <div>
+                          <div className="text-[10px] text-brand-charcoal/60 font-semibold uppercase">Exchange Policy</div>
+                          <div className="text-xs font-semibold mt-0.5 text-brand-charcoal">5 Days size exchange only (no returns/refunds)</div>
+                        </div>
+                      </div>
                     </motion.div>
                   )}
                 </AnimatePresence>

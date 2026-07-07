@@ -19,6 +19,11 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 export const metadata: Metadata = {
   title: "MDFK CLOTHING CO. - Printed Streetwear Tees",
   description: "Discover bold graphic tees crafted for Gen Z, featuring exclusive prints and premium cotton blends.",
+  icons: {
+    icon: "/icon.png",
+    shortcut: "/icon.png",
+    apple: "/icon.png",
+  },
 };
 
 export default function RootLayout({

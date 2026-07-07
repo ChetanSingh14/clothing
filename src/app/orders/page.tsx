@@ -22,6 +22,7 @@ export default function OrdersPage() {
   const [selectedOrderForReturn, setSelectedOrderForReturn] = useState<any>(null);
   const [pickupAddressType, setPickupAddressType] = useState<"same" | "different">("same");
   const [customPickupAddress, setCustomPickupAddress] = useState("");
+  const [sizeChangeNotes, setSizeChangeNotes] = useState("");
 
   useEffect(() => {
     fetchMe();
@@ -64,23 +65,32 @@ export default function OrdersPage() {
 
   const handleProceedReturn = async () => {
     if (!selectedOrderForReturn) return;
-    const finalAddress = pickupAddressType === "same"
+
+    if (!sizeChangeNotes.trim()) {
+      alert("Please specify the size changes you need.");
+      return;
+    }
+
+    const baseAddress = pickupAddressType === "same"
       ? `${selectedOrderForReturn.address || ""}, ${selectedOrderForReturn.landmark ? selectedOrderForReturn.landmark + ", " : ""}${selectedOrderForReturn.city || ""}, ${selectedOrderForReturn.state || ""} - ${selectedOrderForReturn.pincode || ""}`
       : customPickupAddress.trim();
 
-    if (pickupAddressType === "different" && !finalAddress) {
+    if (pickupAddressType === "different" && !baseAddress) {
       alert("Please provide the pickup address.");
       return;
     }
+
+    const finalAddress = `Pickup Address: ${baseAddress} | Size Changes: ${sizeChangeNotes.trim()}`;
 
     const success = await returnOrder(selectedOrderForReturn.id, finalAddress);
     if (success) {
       setSelectedOrderForReturn(null);
       setPickupAddressType("same");
       setCustomPickupAddress("");
-      useAlertStore.getState().showAlert("Return request filed successfully!");
+      setSizeChangeNotes("");
+      useAlertStore.getState().showAlert("Exchange request filed successfully!");
     } else {
-      alert("Failed to submit return request.");
+      alert("Failed to submit exchange request.");
     }
   };
 
@@ -142,7 +152,7 @@ export default function OrdersPage() {
                       <div className="flex items-center gap-2 bg-brand-gray px-3 py-1.5 rounded-full">
                         {getStatusIcon(order.status)}
                         <span className="text-xs font-bold uppercase tracking-wider text-brand-charcoal">
-                          {order.status === "RETURN_PENDING" ? "Return Pending" : order.status}
+                          {order.status === "RETURN_PENDING" ? "Exchange Pending" : order.status === "RETURNED" ? "Exchanged" : order.status}
                         </span>
                       </div>
                       
@@ -164,7 +174,7 @@ export default function OrdersPage() {
                           onClick={() => setSelectedOrderForReturn(order)}
                           className="text-xs font-semibold text-brand-green hover:text-brand-green-dark underline cursor-pointer"
                         >
-                          Return Order
+                          Exchange Size
                         </button>
                       )}
                     </div>
@@ -203,7 +213,7 @@ export default function OrdersPage() {
                       <p className="text-xs text-brand-charcoal/60 uppercase tracking-wider font-semibold">Payment Method</p>
                       <p className="text-sm font-medium text-brand-charcoal mt-0.5">{order.paymentMethod === "COD" ? "Cash on Delivery" : order.paymentMethod}</p>
                       {order.status === "DELIVERED" && (
-                        <p className="text-[10px] text-brand-green font-semibold mt-2">✓ Eligible for 5 Days easy return.</p>
+                        <p className="text-[10px] text-brand-green font-semibold mt-2">✓ Eligible for 5 Days easy size exchange (no returns).</p>
                       )}
                     </div>
                     <div className="text-right">
@@ -220,7 +230,7 @@ export default function OrdersPage() {
 
       <Footer />
 
-      {/* Return Request Modal */}
+      {/* Size Exchange Request Modal */}
       <AnimatePresence>
         {selectedOrderForReturn && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
@@ -231,10 +241,10 @@ export default function OrdersPage() {
               className="bg-brand-bg border border-brand-charcoal/10 max-w-md w-full rounded-3xl p-6 sm:p-8 shadow-2xl relative"
             >
               <h3 className="text-lg font-serif font-semibold text-brand-charcoal mb-4">
-                Request Return for Order #{selectedOrderForReturn.id}
+                Request Size Exchange for Order #{selectedOrderForReturn.id}
               </h3>
               <p className="text-xs text-brand-charcoal/60 mb-6 leading-relaxed">
-                Returns are permitted within 5 days of delivery. Please select the pickup address for your package.
+                Exchanges are permitted within 5 days of delivery for size changes only. No returns or refunds are allowed. Please select the pickup address and specify the required size changes.
               </p>
 
               <div className="space-y-4 mb-6">
@@ -275,6 +285,18 @@ export default function OrdersPage() {
                     )}
                   </div>
                 </label>
+
+                <div className="pt-4 border-t border-brand-charcoal/5">
+                  <label className="block text-xs font-semibold text-brand-charcoal mb-2">Required Size Changes *</label>
+                  <textarea
+                    rows={2}
+                    value={sizeChangeNotes}
+                    onChange={(e) => setSizeChangeNotes(e.target.value)}
+                    placeholder="Specify the items and sizes you need to change (e.g. Change M to L)"
+                    className="w-full rounded-xl border border-brand-charcoal/10 bg-white p-3 text-xs focus:ring-1 focus:ring-brand-green focus:outline-none resize-none"
+                    required
+                  />
+                </div>
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-4 border-t border-brand-charcoal/5">
@@ -283,6 +305,7 @@ export default function OrdersPage() {
                     setSelectedOrderForReturn(null);
                     setPickupAddressType("same");
                     setCustomPickupAddress("");
+                    setSizeChangeNotes("");
                   }}
                   className="px-4 py-2 border border-brand-charcoal/10 rounded-xl text-xs font-semibold text-brand-charcoal/70 hover:bg-brand-charcoal/5 transition-colors cursor-pointer"
                 >

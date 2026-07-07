@@ -17,7 +17,7 @@ export default function Chatbot() {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "bot",
-      text: "Hi! Welcome to MDFK CLOTHING . How can I help you today? You can ask about our catalog, return policy, or log in to track your orders.",
+      text: "Hi! Welcome to MDFK CLOTHING . How can I help you today? You can ask about our catalog, exchange policy, or log in to track your orders.",
     },
   ]);
   const [inputValue, setInputValue] = useState("");
@@ -27,7 +27,7 @@ export default function Chatbot() {
   const quickPrompts = [
     "What do you sell?",
     "Track my orders",
-    "Return policy",
+    "Exchange policy",
     "Payment options",
   ];
 
