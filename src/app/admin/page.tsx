@@ -1582,12 +1582,19 @@ export default function AdminDashboardPage() {
                     <p className="text-brand-charcoal/50 text-sm">No custom orders found.</p>
                   ) : (
                     customOrders.map((ord: any) => (
-                      <div key={ord.id} className="border border-brand-charcoal/5 rounded-3xl bg-brand-bg p-6 shadow-xs flex flex-col md:flex-row gap-6">
-                        <div className="md:w-1/3">
-                           <div className="w-full aspect-[4/5] bg-brand-gray rounded-xl overflow-hidden border border-brand-charcoal/10 relative">
-                             <img src={ord.designImageUrl} alt="Custom Design" className="object-cover w-full h-full" />
-                           </div>
-                        </div>
+                       <div key={ord.id} className="border border-brand-charcoal/5 rounded-3xl bg-brand-bg p-6 shadow-xs flex flex-col md:flex-row gap-6">
+                         <div className="md:w-1/3">
+                            <div className="grid grid-cols-2 gap-2">
+                              {ord.designImageUrl?.split(',').filter(Boolean).map((imgUrl: string, idx: number) => (
+                                <div key={idx} className="w-full aspect-square bg-brand-gray rounded-xl overflow-hidden border border-brand-charcoal/10 relative group flex items-center justify-center">
+                                  <img src={imgUrl} alt={`Custom Design ${idx + 1}`} className="object-contain w-full h-full p-1" />
+                                  <span className="absolute bottom-1 left-1 text-[8px] bg-brand-charcoal/70 text-brand-bg px-1.5 py-0.5 rounded-md font-semibold font-sans">
+                                    {idx === 0 ? "Front" : idx === 1 ? "Back" : "Logo"}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                         </div>
                         <div className="md:w-2/3 space-y-4">
                            <div className="flex justify-between items-start">
                              <div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import AuthModal from "@/components/AuthModal";
@@ -19,24 +19,43 @@ export default function CustomDesignPage() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   
   // Form State
-  const [fileBase64, setFileBase64] = useState<string>("");
+  const [frontImageBase64, setFrontImageBase64] = useState<string>("");
+  const [backImageBase64, setBackImageBase64] = useState<string>("");
+  const [logoImageBase64, setLogoImageBase64] = useState<string>("");
   const [formData, setFormData] = useState({
     designNotes: "",
     color: "Black",
     size: "M",
-    quantity: 1,
-    fullName: user?.name || "",
-    email: user?.email || "",
-    phone: user?.phone || "",
-    address: user?.address || "",
-    landmark: user?.landmark || "",
-    pincode: user?.pincode || "",
-    state: user?.state || "",
-    city: user?.city || ""
+    quantity: 3,
+    fullName: "",
+    email: "",
+    phone: "",
+    address: "",
+    landmark: "",
+    pincode: "",
+    state: "",
+    city: ""
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Sync user details to form when loaded
+  useEffect(() => {
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        fullName: prev.fullName || user.fullName || user.name || "",
+        email: prev.email || user.email || "",
+        phone: prev.phone || user.phone || "",
+        address: prev.address || user.address || "",
+        landmark: prev.landmark || user.landmark || "",
+        pincode: prev.pincode || user.pincode || "",
+        state: prev.state || user.state || "",
+        city: prev.city || user.city || ""
+      }));
+    }
+  }, [user]);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, position: 'front' | 'back' | 'logo') => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -47,7 +66,10 @@ export default function CustomDesignPage() {
 
     const reader = new FileReader();
     reader.onloadend = () => {
-      setFileBase64(reader.result as string);
+      const base64 = reader.result as string;
+      if (position === 'front') setFrontImageBase64(base64);
+      else if (position === 'back') setBackImageBase64(base64);
+      else if (position === 'logo') setLogoImageBase64(base64);
     };
     reader.readAsDataURL(file);
   };
@@ -64,8 +86,16 @@ export default function CustomDesignPage() {
       setIsAuthModalOpen(true);
       return;
     }
-    if (!fileBase64) {
-      showAlert("Please upload a custom design image first.");
+
+    const uploadedImages = [frontImageBase64, backImageBase64, logoImageBase64].filter(Boolean);
+
+    if (uploadedImages.length === 0) {
+      showAlert("Please upload at least one design image (Front, Back, or Logo).");
+      return;
+    }
+
+    if (Number(formData.quantity) < 3) {
+      showAlert("Minimum order quantity for custom design is 3.");
       return;
     }
 
@@ -73,7 +103,7 @@ export default function CustomDesignPage() {
     try {
       const payload = {
         ...formData,
-        designImageUrl: fileBase64,
+        designImageUrl: uploadedImages.join(","),
         quantity: Number(formData.quantity)
       };
 
@@ -82,7 +112,7 @@ export default function CustomDesignPage() {
         body: JSON.stringify(payload)
       });
 
-      showAlert("Custom order submitted successfully! We will review it shortly.");
+      showAlert("Custom order submitted successfully! Our design team will review it and connect with you shortly.");
       router.push("/profile"); // Assuming there's a profile or orders page
     } catch (err: any) {
       showAlert(err.message || "Failed to submit custom order.");
@@ -114,6 +144,30 @@ export default function CustomDesignPage() {
           </motion.p>
         </div>
 
+        {/* Process Explanation Banner */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+          <div className="bg-white/60 backdrop-blur-md border border-brand-charcoal/5 rounded-2xl p-5 space-y-2">
+            <span className="text-lg">👕</span>
+            <h3 className="font-serif font-semibold text-brand-charcoal">Minimum 3 Orders</h3>
+            <p className="text-[11px] text-brand-charcoal/75 leading-relaxed font-light">Custom designs require a minimum order of 3 tees. Enjoy premium, bespoke streetwear printing.</p>
+          </div>
+          <div className="bg-white/60 backdrop-blur-md border border-brand-charcoal/5 rounded-2xl p-5 space-y-2">
+            <span className="text-lg">🎨</span>
+            <h3 className="font-serif font-semibold text-brand-charcoal">Mix Sizes & Colors</h3>
+            <p className="text-[11px] text-brand-charcoal/75 leading-relaxed font-light">Mix any sizes (S-XXL) and fabric colors (Black, White, Navy, Grey) under the same custom design print.</p>
+          </div>
+          <div className="bg-white/60 backdrop-blur-md border border-brand-charcoal/5 rounded-2xl p-5 space-y-2">
+            <span className="text-lg">💬</span>
+            <h3 className="font-serif font-semibold text-brand-charcoal">Personal Contact</h3>
+            <p className="text-[11px] text-brand-charcoal/75 leading-relaxed font-light">Our team will connect with you via WhatsApp & Email within 24 hours to show digital mockups before printing.</p>
+          </div>
+          <div className="bg-white/60 backdrop-blur-md border border-brand-charcoal/5 rounded-2xl p-5 space-y-2">
+            <span className="text-lg">💳</span>
+            <h3 className="font-serif font-semibold text-brand-charcoal">Advance Payment</h3>
+            <p className="text-[11px] text-brand-charcoal/75 leading-relaxed font-light">Custom tees are custom-made; order creation starts only after the advance payment is confirmed ("pay advance seen").</p>
+          </div>
+        </div>
+
         <motion.form 
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -131,34 +185,94 @@ export default function CustomDesignPage() {
                <h2 className="text-2xl font-bold tracking-tight text-brand-charcoal font-serif">Your Design</h2>
             </div>
             
-            <div className="relative">
-              {fileBase64 ? (
-                <div className="relative w-full aspect-square md:aspect-[4/5] rounded-2xl border-2 border-brand-charcoal/10 overflow-hidden bg-brand-gray group flex items-center justify-center">
-                  <img src={fileBase64} alt="Custom Design Preview" className="object-contain w-full h-full p-4" />
-                  <button
-                    type="button"
-                    onClick={() => setFileBase64("")}
-                    className="absolute top-4 right-4 bg-red-500 text-white rounded-full p-2 shadow-md hover:bg-red-600 transition-colors"
-                  >
-                    <X size={18} />
-                  </button>
+            <div className="space-y-4">
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-brand-charcoal/50 mb-2">Upload Graphics (PNG/JPG, Max 10MB)</label>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {/* Front Graphic */}
+                <div className="relative aspect-square rounded-2xl border-2 border-dashed border-brand-charcoal/15 hover:border-brand-green/60 bg-brand-charcoal/[0.01] hover:bg-brand-green/[0.03] transition-all duration-300 flex flex-col items-center justify-center text-center p-4 cursor-pointer overflow-hidden group">
+                  {frontImageBase64 ? (
+                    <div className="relative w-full h-full flex items-center justify-center">
+                      <img src={frontImageBase64} alt="Front Design" className="object-contain w-full h-full" />
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setFrontImageBase64(""); }}
+                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1.5 shadow-md hover:bg-red-600 transition-colors z-20"
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center w-full h-full">
+                      <UploadCloud size={20} className="text-brand-charcoal/60 mb-2 group-hover:scale-110 transition-transform duration-300" />
+                      <span className="text-[10px] font-bold text-brand-charcoal block leading-tight">Front Graphic *</span>
+                      <span className="text-[8px] text-brand-charcoal/40 block mt-1">Recommended</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleFileChange(e, 'front')}
+                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
+                      />
+                    </div>
+                  )}
                 </div>
-              ) : (
-                <div className="relative w-full aspect-square md:aspect-[4/5] rounded-[2rem] border-2 border-dashed border-brand-charcoal/20 hover:border-brand-green/60 bg-brand-charcoal/[0.02] hover:bg-brand-green/5 transition-all duration-300 flex flex-col items-center justify-center text-center p-8 cursor-pointer overflow-hidden group">
-                  <div className="w-16 h-16 rounded-full bg-white shadow-sm flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
-                    <UploadCloud size={28} strokeWidth={1.5} className="text-brand-charcoal" />
-                  </div>
-                  <p className="font-bold text-brand-charcoal mb-2 text-lg">Click to Upload Design</p>
-                  <p className="text-xs text-brand-charcoal/50 mb-6">PNG, JPG or JPEG (Max 10MB)</p>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-brand-green px-4 py-2 bg-brand-green/10 rounded-full">Transparent backgrounds preferred</p>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileChange}
-                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                  />
+
+                {/* Back Graphic */}
+                <div className="relative aspect-square rounded-2xl border-2 border-dashed border-brand-charcoal/15 hover:border-brand-green/60 bg-brand-charcoal/[0.01] hover:bg-brand-green/[0.03] transition-all duration-300 flex flex-col items-center justify-center text-center p-4 cursor-pointer overflow-hidden group">
+                  {backImageBase64 ? (
+                    <div className="relative w-full h-full flex items-center justify-center">
+                      <img src={backImageBase64} alt="Back Design" className="object-contain w-full h-full" />
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setBackImageBase64(""); }}
+                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1.5 shadow-md hover:bg-red-600 transition-colors z-20"
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center w-full h-full">
+                      <UploadCloud size={20} className="text-brand-charcoal/60 mb-2 group-hover:scale-110 transition-transform duration-300" />
+                      <span className="text-[10px] font-bold text-brand-charcoal block leading-tight">Back Graphic</span>
+                      <span className="text-[8px] text-brand-charcoal/40 block mt-1">Optional</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleFileChange(e, 'back')}
+                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
+                      />
+                    </div>
+                  )}
                 </div>
-              )}
+
+                {/* Logo Graphic */}
+                <div className="relative aspect-square rounded-2xl border-2 border-dashed border-brand-charcoal/15 hover:border-brand-green/60 bg-brand-charcoal/[0.01] hover:bg-brand-green/[0.03] transition-all duration-300 flex flex-col items-center justify-center text-center p-4 cursor-pointer overflow-hidden group">
+                  {logoImageBase64 ? (
+                    <div className="relative w-full h-full flex items-center justify-center">
+                      <img src={logoImageBase64} alt="Logo Design" className="object-contain w-full h-full" />
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setLogoImageBase64(""); }}
+                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1.5 shadow-md hover:bg-red-600 transition-colors z-20"
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center w-full h-full">
+                      <UploadCloud size={20} className="text-brand-charcoal/60 mb-2 group-hover:scale-110 transition-transform duration-300" />
+                      <span className="text-[10px] font-bold text-brand-charcoal block leading-tight">Logo / Sleeve</span>
+                      <span className="text-[8px] text-brand-charcoal/40 block mt-1">Optional</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleFileChange(e, 'logo')}
+                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
 
             <div className="space-y-5">
@@ -168,7 +282,7 @@ export default function CustomDesignPage() {
                   name="designNotes"
                   value={formData.designNotes}
                   onChange={handleInputChange}
-                  placeholder="E.g., Print size, placement (front/back), or any special requests..."
+                  placeholder="E.g., Print size, placement (front/back), sizing mix details, or any special requests..."
                   rows={3}
                   className="w-full bg-brand-bg/30 border border-brand-charcoal/10 rounded-2xl px-5 py-4 text-sm focus:outline-none focus:border-brand-green focus:ring-1 focus:ring-brand-green transition-all resize-none shadow-inner"
                 />
@@ -195,11 +309,11 @@ export default function CustomDesignPage() {
                 </div>
               </div>
               <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-brand-charcoal/50 mb-2">Quantity</label>
+                <label className="block text-[10px] font-bold uppercase tracking-widest text-brand-charcoal/50 mb-2">Quantity * (Minimum 3)</label>
                 <input
                   type="number"
                   name="quantity"
-                  min="1"
+                  min="3"
                   value={formData.quantity}
                   onChange={handleInputChange}
                   className="w-full bg-brand-bg/30 border border-brand-charcoal/10 rounded-2xl px-5 py-4 text-sm focus:outline-none focus:border-brand-green focus:ring-1 focus:ring-brand-green transition-all shadow-inner font-medium"
@@ -279,7 +393,7 @@ export default function CustomDesignPage() {
                 {!isSubmitting && <ArrowRight size={18} className="group-hover:translate-x-2 transition-transform duration-300" />}
               </button>
               <p className="text-[10px] text-brand-charcoal/50 text-center mt-3">
-                By submitting this form, you request a custom print. Our team will review the design and contact you regarding pricing and confirmation.
+                By submitting this form, you request a custom print. Our team will review the design and contact you. Note: Custom order creation starts only after the advance payment is confirmed ("pay advance seen").
               </p>
             </div>
 
