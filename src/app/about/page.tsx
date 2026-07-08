@@ -24,7 +24,7 @@ const timelineData: TimelineEvent[] = [
     year: "Founding",
     title: "FOUR FRIENDS",
     tagline: "A shared passion for creativity.",
-    desc: "MDFK Clothing Co. was born out of a shared passion between three friends. We wanted to build a platform for bold self-expression and premium clothing.",
+    desc: "MDFK Clothing Co. was born out of a shared passion between four friends. We wanted to build a platform for bold self-expression and premium clothing.",
     image: "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=800&auto=format&fit=crop",
   },
   {
@@ -97,7 +97,7 @@ export default function AboutPage() {
             transition={{ duration: 0.8, delay: 0.2 }}
             className="max-w-3xl mx-auto text-sm sm:text-base text-brand-charcoal/70 tracking-wide font-light leading-relaxed"
           >
-            MDFK Clothing Co. is a streetwear startup founded by three friends who share a passion for creativity, fashion, and self-expression. What started as a simple idea has grown into a brand focused on creating premium printed T-shirts that combine quality, comfort, and bold design.
+            MDFK Clothing Co. is a streetwear startup founded by four friends who share a passion for creativity, fashion, and self-expression. What started as a simple idea has grown into a brand focused on creating premium printed T-shirts that combine quality, comfort, and bold design.
           </motion.p>
         </section>
 
