@@ -2260,12 +2260,20 @@ export default function AdminDashboardPage() {
                   <div className="flex justify-end pt-6 border-t border-brand-charcoal/10">
                     <div className="w-full max-w-xs space-y-3">
                       <div className="flex justify-between items-center text-sm text-brand-charcoal/60">
-                        <span>Subtotal</span>
-                        <span>₹{selectedOrder.totalAmount.toFixed(2)}</span>
+                        <span>Items Subtotal</span>
+                        <span>₹{(selectedOrder.totalAmount - (selectedOrder.shippingCharges || 0) - (selectedOrder.codCharges || 0)).toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between items-center text-sm text-brand-charcoal/60">
                         <span>Shipping</span>
-                        <span>Free</span>
+                        <span>₹{(selectedOrder.shippingCharges || 0).toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-sm text-brand-charcoal/60">
+                        <span>COD Charges</span>
+                        <span>₹{(selectedOrder.codCharges || 0).toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-sm text-brand-charcoal/60">
+                        <span>RTO Charges (Return Est.)</span>
+                        <span>₹{(selectedOrder.rtoCharges || 0).toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between items-center pt-3 border-t border-brand-charcoal/5">
                         <span className="font-bold text-brand-charcoal uppercase text-xs tracking-wider">Gross Total</span>

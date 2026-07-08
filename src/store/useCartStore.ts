@@ -154,6 +154,8 @@ export const useCartStore = create<CartState>((set, get) => ({
     const { items, getSubtotal, clearCart, appliedOffer } = get();
     if (items.length === 0) return false;
 
+    const { shippingCharges, codCharges, rtoCharges, ...cleanDetails } = details;
+
     try {
       const res = await apiFetch("/orders", {
         method: "POST",
@@ -161,8 +163,11 @@ export const useCartStore = create<CartState>((set, get) => ({
           totalAmount: getSubtotal(), // Send subtotal, backend will validate & apply offer discount
           items: items,
           paymentMethod,
-          details,
+          details: cleanDetails,
           applyOffer: !!appliedOffer,
+          shippingCharges: shippingCharges || 0,
+          codCharges: codCharges || 0,
+          rtoCharges: rtoCharges || 0,
         }),
       });
       if (res.success) {

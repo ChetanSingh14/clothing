@@ -24,6 +24,10 @@ export default function CartDrawer() {
   const [phoneOtpToken, setPhoneOtpToken] = useState("");
   const [phoneVerifyError, setPhoneVerifyError] = useState("");
   const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [shippingFee, setShippingFee] = useState<number>(50);
+  const [codFee, setCodFee] = useState<number>(50);
+  const [rtoFee, setRtoFee] = useState<number>(50);
+  const [shippingLoading, setShippingLoading] = useState(false);
 
   const [addressDetails, setAddressDetails] = useState({
     fullName: "",
@@ -35,6 +39,39 @@ export default function CartDrawer() {
     state: "",
     city: "",
   });
+
+  const fetchShippingFee = async (pin: string, payMethod: string, amount: number) => {
+    if (!pin || pin.trim().length !== 6 || !/^\d+$/.test(pin)) {
+      setShippingFee(50);
+      setCodFee(payMethod === "COD" ? 50 : 0);
+      setRtoFee(50);
+      return;
+    }
+    setShippingLoading(true);
+    try {
+      const { apiFetch } = await import("@/utils/api");
+      const res = await apiFetch("/orders/calculate-shipping", {
+        method: "POST",
+        body: JSON.stringify({ pincode: pin, paymentMethod: payMethod, orderAmount: amount }),
+      });
+      if (res.success && typeof res.shippingFee === "number") {
+        setShippingFee(res.shippingFee);
+        setCodFee(res.codFee ?? 0);
+        setRtoFee(res.rtoFee ?? res.shippingFee);
+      } else {
+        setShippingFee(50);
+        setCodFee(payMethod === "COD" ? 50 : 0);
+        setRtoFee(50);
+      }
+    } catch (error) {
+      console.error("Error calculating shipping:", error);
+      setShippingFee(50);
+      setCodFee(payMethod === "COD" ? 50 : 0);
+      setRtoFee(50);
+    } finally {
+      setShippingLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (user) {
@@ -55,6 +92,12 @@ export default function CartDrawer() {
       }
     }
   }, [user]);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchShippingFee(addressDetails.pincode, paymentMethod, getCartTotal());
+    }
+  }, [addressDetails.pincode, paymentMethod, isOpen, items, getCartTotal]);
 
   // Reset to cart step when drawer closes
   useEffect(() => {
@@ -86,7 +129,7 @@ export default function CartDrawer() {
       }
     }
 
-    const success = await checkout(paymentMethod, addressDetails);
+    const success = await checkout(paymentMethod, { ...addressDetails, shippingCharges: shippingFee, codCharges: codFee, rtoCharges: rtoFee });
     setIsCheckingOut(false);
     if (success) {
       useAlertStore.getState().showAlert("Thank you for your order! Your garments are recorded in the system and being prepared for dispatch.");
@@ -335,9 +378,31 @@ export default function CartDrawer() {
                       </motion.div>
                     )}
 
+                    <div className="flex items-center justify-between text-brand-charcoal">
+                      <span className="text-sm font-medium tracking-wide">
+                        Shipping {addressDetails.pincode ? `(${addressDetails.pincode})` : "(Estimate)"}
+                      </span>
+                      <span className="text-sm font-semibold">
+                        {shippingLoading ? "Calculating..." : `₹${shippingFee.toFixed(2)}`}
+                      </span>
+                    </div>
+
+                    {paymentMethod === "COD" && (
+                      <div className="flex items-center justify-between text-brand-charcoal">
+                        <span className="text-sm font-medium tracking-wide">
+                          COD Charges
+                        </span>
+                        <span className="text-sm font-semibold">
+                          {shippingLoading ? "Calculating..." : `₹${codFee.toFixed(2)}`}
+                        </span>
+                      </div>
+                    )}
+
                     <div className="flex items-center justify-between text-brand-charcoal pt-2 border-t border-brand-charcoal/5">
                       <span className="text-sm font-semibold tracking-wide">Total</span>
-                      <span className="text-lg font-bold font-serif">₹{total.toFixed(2)}</span>
+                      <span className="text-lg font-bold font-serif">
+                        ₹{(total + shippingFee + (paymentMethod === "COD" ? codFee : 0)).toFixed(2)}
+                      </span>
                     </div>
                   </div>
 
@@ -448,9 +513,29 @@ export default function CartDrawer() {
                           <span className="text-xs font-semibold">-₹{discount.toFixed(2)}</span>
                         </div>
                       )}
+                      <div className="flex items-center justify-between text-brand-charcoal">
+                        <span className="text-sm font-medium tracking-wide">
+                          Shipping {addressDetails.pincode ? `(${addressDetails.pincode})` : "(Estimate)"}
+                        </span>
+                        <span className="text-sm font-semibold">
+                          {shippingLoading ? "Calculating..." : `₹${shippingFee.toFixed(2)}`}
+                        </span>
+                      </div>
+                      {paymentMethod === "COD" && (
+                        <div className="flex items-center justify-between text-brand-charcoal">
+                          <span className="text-sm font-medium tracking-wide">
+                            COD Charges
+                          </span>
+                          <span className="text-sm font-semibold">
+                            {shippingLoading ? "Calculating..." : `₹${codFee.toFixed(2)}`}
+                          </span>
+                        </div>
+                      )}
                       <div className="flex items-center justify-between text-brand-charcoal pt-1 border-t border-brand-charcoal/5">
                         <span className="text-sm font-semibold tracking-wide">Total to Pay</span>
-                        <span className="text-lg font-bold font-serif">₹{total.toFixed(2)}</span>
+                        <span className="text-lg font-bold font-serif">
+                          ₹{(total + shippingFee + (paymentMethod === "COD" ? codFee : 0)).toFixed(2)}
+                        </span>
                       </div>
                     </div>
                     <button
