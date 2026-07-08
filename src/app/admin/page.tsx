@@ -494,14 +494,13 @@ export default function AdminDashboardPage() {
         if (img.endsWith(".glb") || img.endsWith(".gltf")) {
           modelFound = img;
         } else {
-          if (isCouple) {
-            const cleanUrl = img.split("#color=")[0];
-            parsedGalleryImages.push(cleanUrl);
-          } else if (img.includes("#color=")) {
+          if (img.includes("#color=")) {
             const [url, hash] = img.split("#color=");
             const color = decodeURIComponent(hash);
             if (!parsedColorImages[color]) parsedColorImages[color] = [];
             parsedColorImages[color].push(url);
+          } else {
+            parsedGalleryImages.push(img);
           }
         }
       });
@@ -1146,12 +1145,11 @@ export default function AdminDashboardPage() {
                         </div>
                       )}
                     </div>
-                    {category?.toLowerCase().includes("couple") ? (
-                      <div>
-                        <div className="flex items-center justify-between">
-                          <label className="font-semibold uppercase tracking-wider text-brand-charcoal/60">
-                            Product Gallery Media (Up to 15 items)
-                          </label>
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <label className="font-semibold uppercase tracking-wider text-brand-charcoal/60">
+                          Product Gallery Media (Up to 15 items)
+                        </label>
                           <div className="relative">
                             <button
                               type="button"
@@ -1198,16 +1196,24 @@ export default function AdminDashboardPage() {
                           )}
                         </div>
                       </div>
-                    ) : (
-                      <div>
-                        <label className="font-semibold uppercase tracking-wider text-brand-charcoal/60">
-                          Color-Specific Media (Up to 8 per color)
-                        </label>
-                        <div className="space-y-3 mt-2 mb-6">
-                          {(() => {
-                            const activeSlots = colorsInput.split(",").map(c => c.trim()).filter(c => c !== "").map(color => ({ gender: "", color, key: color }));
-                            
-                            return activeSlots.map((slot, idx) => {
+                    <div>
+                      <label className="font-semibold uppercase tracking-wider text-brand-charcoal/60">
+                        Color-Specific Media (Up to 8 per color)
+                      </label>
+                      <div className="space-y-3 mt-2 mb-6">
+                        {(() => {
+                          const isCouple = category?.toLowerCase().includes("couple");
+                          let activeSlots: { gender: string, color: string, key: string }[] = [];
+                          
+                          if (isCouple) {
+                            const maleSlots = maleColorsInput.split(",").map(c => c.trim()).filter(Boolean).map(color => ({ gender: "Male", color, key: `Male:${color}` }));
+                            const femaleSlots = femaleColorsInput.split(",").map(c => c.trim()).filter(Boolean).map(color => ({ gender: "Female", color, key: `Female:${color}` }));
+                            activeSlots = [...maleSlots, ...femaleSlots];
+                          } else {
+                            activeSlots = colorsInput.split(",").map(c => c.trim()).filter(Boolean).map(color => ({ gender: "", color, key: color }));
+                          }
+                          
+                          return activeSlots.map((slot, idx) => {
                               const uploadedImages = colorImages[slot.key] || [];
                               const uploadedCount = uploadedImages.length;
                               return (
@@ -1216,7 +1222,7 @@ export default function AdminDashboardPage() {
                                     <div className="flex items-center gap-3">
                                       <span className="h-6 w-6 rounded-full border border-brand-charcoal/20" style={{ backgroundColor: slot.color }}></span>
                                       <span className="text-xs font-semibold text-brand-charcoal">
-                                        {slot.color}
+                                        {slot.gender ? `${slot.gender} - ` : ""}{slot.color}
                                       </span>
                                     </div>
                                     <div className="flex items-center gap-3">
@@ -1266,9 +1272,8 @@ export default function AdminDashboardPage() {
                               );
                             });
                           })()}
-                        </div>
                       </div>
-                    )}
+                    </div>
 
                     <div>
                       <label className="font-semibold uppercase tracking-wider text-brand-charcoal/60">

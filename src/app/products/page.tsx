@@ -120,9 +120,9 @@ export default function ProductsPage() {
                           <h3 className="text-lg font-semibold text-brand-charcoal tracking-tight font-serif group-hover:text-brand-green transition-colors leading-tight">
                             {product.title}
                           </h3>
-                          <span className="text-sm font-bold font-serif text-brand-charcoal shrink-0">
+                          {/* <span className="text-sm font-bold font-serif text-brand-charcoal shrink-0">
                             ₹{product.price.toFixed(2)}
-                          </span>
+                          </span> */}
                         </div>
                         
                         <p className="text-xs text-brand-charcoal/60 mt-2 font-light line-clamp-2 leading-relaxed">
