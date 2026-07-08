@@ -15,6 +15,54 @@ import Link from "next/link";
 import { useAlertStore } from "@/store/useAlertStore";
 import { formatColor } from "@/utils/color";
 
+const getStepIndex = (status: string) => {
+  const s = (status || "").toLowerCase();
+  if (s.includes("deliver")) return 4;
+  if (s.includes("out for delivery")) return 3;
+  if (s.includes("transit") || s.includes("ship")) return 2;
+  if (s.includes("pick") || s.includes("dispatch")) return 1;
+  return 0; // Booked
+};
+
+const getStepDate = (stepIdx: number, history: any[], status: string) => {
+  if (!history || !Array.isArray(history)) return null;
+  
+  // Delivered is the 5th step (index 4)
+  if (stepIdx === 4) {
+    const ev = history.find(h => (h.message || h.status_code || "").toLowerCase().includes("deliver"));
+    return ev ? ev.event_time || ev.created_at : null;
+  }
+  // Out for Delivery is the 4th step (index 3)
+  if (stepIdx === 3) {
+    const ev = history.find(h => (h.message || h.status_code || "").toLowerCase().includes("out for delivery"));
+    return ev ? ev.event_time || ev.created_at : null;
+  }
+  // In Transit is the 3rd step (index 2)
+  if (stepIdx === 2) {
+    const ev = history.find(h => {
+      const msg = (h.message || h.status_code || "").toLowerCase();
+      return msg.includes("transit") || msg.includes("shipped");
+    });
+    return ev ? ev.event_time || ev.created_at : null;
+  }
+  // Picked Up is the 2nd step (index 1)
+  if (stepIdx === 1) {
+    const ev = history.find(h => {
+      const msg = (h.message || h.status_code || "").toLowerCase();
+      return msg.includes("pick") || msg.includes("dispatch") || msg.includes("manifest");
+    });
+    return ev ? ev.event_time || ev.created_at : null;
+  }
+  // Booked is the 1st step (index 0)
+  if (stepIdx === 0) {
+    if (history.length > 0) {
+      const lastEv = history[history.length - 1]; // First event chronologically
+      return lastEv.event_time || lastEv.created_at;
+    }
+  }
+  return null;
+};
+
 export default function OrdersPage() {
   const { user, fetchMe, initialized } = useAuthStore();
   const { orders, loading, fetchMyOrders, cancelOrder, returnOrder, trackNimbusOrder } = useOrderStore();
@@ -345,66 +393,130 @@ export default function OrdersPage() {
 
       {/* Tracking Modal */}
       <AnimatePresence>
-        {isTrackingModalOpen && trackingInfo && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-brand-bg border border-brand-charcoal/10 max-w-lg w-full rounded-3xl p-6 sm:p-8 shadow-2xl relative max-h-[80vh] overflow-y-auto"
-            >
-              <div className="flex justify-between items-center mb-6 border-b border-brand-charcoal/5 pb-4">
-                <h3 className="text-lg font-serif font-semibold text-brand-charcoal">
-                  Tracking Details
-                </h3>
-                <button
-                  onClick={() => setIsTrackingModalOpen(false)}
-                  className="text-brand-charcoal/50 hover:text-brand-charcoal"
-                >
-                  <XCircle className="h-6 w-6" />
-                </button>
-              </div>
+        {isTrackingModalOpen && trackingInfo && (() => {
+          const currentStep = getStepIndex(trackingInfo.status);
+          const isCancelled = (trackingInfo.status || "").toLowerCase().includes("cancel") || 
+            (orders.find(o => o.nimbuspostAwb === trackingInfo.awb_number)?.status === "CANCELLED");
+          
+          const steps = [
+            { label: "Order Booked", desc: "Your order has been registered in our system." },
+            { label: "Picked Up", desc: "Shipment picked up by courier partner." },
+            { label: "In Transit", desc: "Your package is on its way to the destination." },
+            { label: "Out for Delivery", desc: "The package is out for delivery in your local area." },
+            { label: "Delivered", desc: "Order has been successfully delivered." }
+          ];
 
-              <div className="space-y-4 mb-6">
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="block text-[10px] uppercase text-brand-charcoal/50 font-bold mb-1">AWB Number</span>
-                    <span className="font-semibold">{trackingInfo.awb_number}</span>
-                  </div>
-                  <div>
-                    <span className="block text-[10px] uppercase text-brand-charcoal/50 font-bold mb-1">Status</span>
-                    <span className="font-semibold uppercase text-brand-green">{trackingInfo.status}</span>
-                  </div>
-                  <div>
-                    <span className="block text-[10px] uppercase text-brand-charcoal/50 font-bold mb-1">Courier</span>
-                    <span className="font-semibold">{trackingInfo.courier_name || "Assigned"}</span>
-                  </div>
+          return (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="bg-brand-bg border border-brand-charcoal/10 max-w-lg w-full rounded-3xl p-6 sm:p-8 shadow-2xl relative max-h-[85vh] overflow-y-auto text-brand-charcoal"
+              >
+                <div className="flex justify-between items-center mb-6 border-b border-brand-charcoal/5 pb-4">
+                  <h3 className="text-lg font-serif font-semibold text-brand-charcoal">
+                    Tracking Details
+                  </h3>
+                  <button
+                    onClick={() => setIsTrackingModalOpen(false)}
+                    className="text-brand-charcoal/50 hover:text-brand-charcoal"
+                  >
+                    <XCircle className="h-6 w-6" />
+                  </button>
                 </div>
-              </div>
 
-              {trackingInfo.history && trackingInfo.history.length > 0 ? (
-                <div className="space-y-4 relative before:absolute before:inset-0 before:ml-2 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-300 before:to-transparent">
-                  {trackingInfo.history.map((hist: any, index: number) => (
-                    <div key={index} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-                      <div className="flex items-center justify-center w-4 h-4 rounded-full border border-white bg-slate-300 text-slate-500 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2" />
-                      <div className="w-[calc(100%-2rem)] md:w-[calc(50%-1.5rem)] p-3 rounded-lg border border-brand-charcoal/10 bg-white shadow-sm">
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-xs font-bold text-brand-charcoal">{hist.message || hist.status_code}</span>
-                        </div>
-                        <p className="text-[10px] text-brand-charcoal/60">{hist.location}</p>
-                        <time className="text-[9px] text-brand-charcoal/40 font-mono mt-1 block">{hist.event_time}</time>
-                      </div>
+                <div className="space-y-6">
+                  {/* Header Info */}
+                  <div className="grid grid-cols-2 gap-4 text-xs border-b border-brand-charcoal/5 pb-4 mb-6">
+                    <div>
+                      <span className="block text-[9px] uppercase text-brand-charcoal/40 font-bold mb-0.5">AWB Number</span>
+                      <span className="font-semibold">{trackingInfo.awb_number}</span>
                     </div>
-                  ))}
+                    <div>
+                      <span className="block text-[9px] uppercase text-brand-charcoal/40 font-bold mb-0.5">Status</span>
+                      <span className={`font-bold uppercase ${isCancelled ? 'text-rose-500' : 'text-brand-green'}`}>
+                        {isCancelled ? 'CANCELLED' : trackingInfo.status}
+                      </span>
+                    </div>
+                    <div className="col-span-2">
+                      <span className="block text-[9px] uppercase text-brand-charcoal/40 font-bold mb-0.5">Courier</span>
+                      <span className="font-semibold">{trackingInfo.courier_name || "Assigned Partner"}</span>
+                    </div>
+                  </div>
+
+                  {isCancelled && (
+                    <div className="bg-rose-50 border border-rose-100 text-rose-700 px-4 py-3 rounded-2xl text-xs font-semibold flex items-center gap-2 mb-6">
+                      <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping inline-block" />
+                      <span>This shipment has been cancelled. Please contact support if you need further help.</span>
+                    </div>
+                  )}
+
+                  {/* Stepper */}
+                  <div className="relative border-l border-brand-charcoal/10 pl-6 ml-3 space-y-8 my-4">
+                    {steps.map((step, idx) => {
+                      const isCompleted = idx < currentStep && !isCancelled;
+                      const isActive = idx === currentStep && !isCancelled;
+                      const stepDate = getStepDate(idx, trackingInfo.history, trackingInfo.status);
+
+                      return (
+                        <div key={idx} className="relative">
+                          {/* Step Icon Node */}
+                          <div className={`absolute -left-[35px] top-0.5 w-6 h-6 rounded-full flex items-center justify-center border text-[10px] font-bold transition-all ${
+                            isCompleted 
+                              ? "bg-brand-green border-brand-green text-white"
+                              : isActive
+                              ? "bg-brand-charcoal border-brand-charcoal text-white animate-pulse"
+                              : "bg-white border-brand-charcoal/20 text-brand-charcoal/40"
+                          }`}>
+                            {isCompleted ? "✓" : idx + 1}
+                          </div>
+
+                          {/* Step Content */}
+                          <div>
+                            <h4 className={`text-xs font-bold uppercase tracking-wider ${isActive ? "text-brand-charcoal" : "text-brand-charcoal/80"}`}>
+                              {step.label}
+                            </h4>
+                            <p className="text-[11px] text-brand-charcoal/50 mt-0.5 font-light leading-relaxed">{step.desc}</p>
+                            {stepDate && (
+                              <time className="text-[9px] text-brand-charcoal/40 bg-brand-charcoal/5 px-2 py-0.5 rounded font-mono inline-block mt-1.5">
+                                {new Date(stepDate).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
+                              </time>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Raw History dropdown for detailed updates */}
+                  {trackingInfo.history && trackingInfo.history.length > 0 && (
+                    <div className="mt-8 pt-6 border-t border-brand-charcoal/5">
+                      <details className="group cursor-pointer">
+                        <summary className="flex justify-between items-center text-xs font-semibold text-brand-charcoal select-none list-none">
+                          <span>View Detailed Scans History</span>
+                          <span className="transition-transform group-open:rotate-180 text-[10px]">▼</span>
+                        </summary>
+                        <div className="mt-4 space-y-4 pt-2">
+                          {trackingInfo.history.map((hist: any, index: number) => (
+                            <div key={index} className="flex gap-4 items-start text-xs border-b border-brand-charcoal/5 pb-3 last:border-0 last:pb-0">
+                              <div className="w-1.5 h-1.5 rounded-full bg-brand-charcoal/20 mt-1.5 flex-shrink-0" />
+                              <div className="flex-grow">
+                                <div className="font-semibold text-brand-charcoal">{hist.message || hist.status_code}</div>
+                                <div className="text-[10px] text-brand-charcoal/50 mt-0.5 font-light">{hist.location || "Location not specified"}</div>
+                                <time className="text-[9px] text-brand-charcoal/40 font-mono mt-1 block">{hist.event_time}</time>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </details>
+                    </div>
+                  )}
                 </div>
-              ) : (
-                <div className="text-center p-6 bg-brand-gray/30 rounded-xl">
-                  <p className="text-xs font-medium text-brand-charcoal/50">Tracking history not available yet.</p>
-                </div>
-              )}
-            </motion.div>
-          </div>
-        )}
+              </motion.div>
+            </div>
+          );
+        })()}
       </AnimatePresence>
 
       <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
