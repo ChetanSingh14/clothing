@@ -50,9 +50,15 @@ const getColorImages = (color: string, defaultImages: string[]) => {
     if (parts.length > 1) {
       try {
         const imgColor = decodeURIComponent(parts[1]);
-        return imgColor === color || imgColor === color.replace('#', '');
+        return imgColor === color || 
+               imgColor === color.replace('#', '') ||
+               imgColor.endsWith(color) ||
+               imgColor.endsWith(color.replace('#', '')) ||
+               imgColor.includes(color) ||
+               imgColor.includes(color.replace('#', ''));
       } catch (e) {
-        return parts[1] === color;
+        const rawColor = parts[1];
+        return rawColor === color || rawColor.endsWith(color) || rawColor.includes(color);
       }
     }
     return false;
@@ -61,7 +67,7 @@ const getColorImages = (color: string, defaultImages: string[]) => {
   let imagesToUse = backendColorImages.length > 0 ? backendColorImages : undefined;
   if (!imagesToUse) {
     const baseImages = defaultImages.filter(img => !img.includes('#color='));
-    imagesToUse = MOCK_COLOR_IMAGES[color] || (baseImages.length > 0 ? baseImages : MOCK_COLOR_IMAGES.default);
+    imagesToUse = baseImages.length > 0 ? baseImages : (MOCK_COLOR_IMAGES[color] || MOCK_COLOR_IMAGES.default);
   }
   if (imagesToUse.length === 0 && defaultImages.length > 0) imagesToUse = defaultImages;
 

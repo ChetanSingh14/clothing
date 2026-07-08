@@ -96,6 +96,7 @@ export default function AdminDashboardPage() {
   
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadingModel, setUploadingModel] = useState(false);
+  const [uploadingGallery, setUploadingGallery] = useState(false);
   const [formSuccess, setFormSuccess] = useState(false);
   const [newCategoryInput, setNewCategoryInput] = useState("");
 
@@ -326,6 +327,32 @@ export default function AdminDashboardPage() {
     reader.readAsDataURL(file);
   };
 
+  const handleGalleryImagesUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploadingGallery(true);
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const reader = new FileReader();
+      const uploadPromise = new Promise<string | null>((resolve) => {
+        reader.onloadend = async () => {
+          const base64Data = reader.result as string;
+          const url = await uploadProductImage(base64Data);
+          resolve(url);
+        };
+        reader.readAsDataURL(file);
+      });
+      const url = await uploadPromise;
+      if (url) {
+        setImages(prev => [...prev, url]);
+      } else {
+        useAlertStore.getState().showAlert(`Failed to upload ${file.name}`);
+      }
+    }
+    setUploadingGallery(false);
+  };
+
   const handleModelFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -382,11 +409,17 @@ export default function AdminDashboardPage() {
     
     const imagesToSubmit = [uploadedImageUrl];
     
-    Object.entries(colorImages).forEach(([color, urls]) => {
-      urls.forEach(url => {
-        imagesToSubmit.push(`${url}#color=${encodeURIComponent(color)}`);
+    if (category.toLowerCase().includes("couple")) {
+      images.forEach((url) => {
+        imagesToSubmit.push(url);
       });
-    });
+    } else {
+      Object.entries(colorImages).forEach(([color, urls]) => {
+        urls.forEach(url => {
+          imagesToSubmit.push(`${url}#color=${encodeURIComponent(color)}`);
+        });
+      });
+    }
 
     if (uploadedModelUrl) {
       imagesToSubmit.push(uploadedModelUrl);
@@ -398,7 +431,9 @@ export default function AdminDashboardPage() {
       price: Number(price),
       category,
       images: imagesToSubmit,
-      colors,
+      colors: category.toLowerCase().includes("couple") 
+        ? Array.from(new Set([...maleColors, ...femaleColors]))
+        : colors,
       sizes: selectedSizes,
       maleColors: category.toLowerCase().includes("couple") ? maleColors : [],
       femaleColors: category.toLowerCase().includes("couple") ? femaleColors : [],
@@ -423,6 +458,7 @@ export default function AdminDashboardPage() {
       setUploadedImageUrl("");
       setUploadedModelUrl("");
       setColorImages({});
+      setImages([]);
       setFormSuccess(true);
       await fetchProducts(); // reload products listing
       await fetchStats(); // reload stats
@@ -449,25 +485,35 @@ export default function AdminDashboardPage() {
       setUploadedImageUrl(prod.images[0]); // Primary image
       
       const parsedColorImages: Record<string, string[]> = {};
+      const parsedGalleryImages: string[] = [];
       let modelFound = "";
+      
+      const isCouple = prod.category?.toLowerCase().includes("couple");
       
       prod.images.slice(1).forEach((img: string) => {
         if (img.endsWith(".glb") || img.endsWith(".gltf")) {
           modelFound = img;
-        } else if (img.includes("#color=")) {
-          const [url, hash] = img.split("#color=");
-          const color = decodeURIComponent(hash);
-          if (!parsedColorImages[color]) parsedColorImages[color] = [];
-          parsedColorImages[color].push(url);
+        } else {
+          if (isCouple) {
+            const cleanUrl = img.split("#color=")[0];
+            parsedGalleryImages.push(cleanUrl);
+          } else if (img.includes("#color=")) {
+            const [url, hash] = img.split("#color=");
+            const color = decodeURIComponent(hash);
+            if (!parsedColorImages[color]) parsedColorImages[color] = [];
+            parsedColorImages[color].push(url);
+          }
         }
       });
       
       setColorImages(parsedColorImages);
+      setImages(parsedGalleryImages);
       setUploadedModelUrl(modelFound);
     } else {
       setUploadedImageUrl("");
       setUploadedModelUrl("");
       setColorImages({});
+      setImages([]);
     }
     
     // Smooth scroll to top
@@ -1100,70 +1146,129 @@ export default function AdminDashboardPage() {
                         </div>
                       )}
                     </div>
-
-                    <div>
-                      <label className="font-semibold uppercase tracking-wider text-brand-charcoal/60">
-                        Color-Specific Media (Up to 8 per color)
-                      </label>
-                      <div className="space-y-3 mt-2 mb-6">
-                        {colorsInput.split(",").map(c => c.trim()).filter(c => c !== "").map((color, idx) => {
-                          const uploadedImages = colorImages[color] || [];
-                          const uploadedCount = uploadedImages.length;
-                          return (
-                            <div key={idx} className="flex flex-col gap-3 bg-brand-charcoal/5 p-3 rounded-xl border border-brand-charcoal/10">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                  <span className="h-6 w-6 rounded-full border border-brand-charcoal/20" style={{ backgroundColor: color }}></span>
-                                  <span className="text-xs font-semibold text-brand-charcoal">{color}</span>
+                    {category?.toLowerCase().includes("couple") ? (
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <label className="font-semibold uppercase tracking-wider text-brand-charcoal/60">
+                            Product Gallery Media (Up to 15 items)
+                          </label>
+                          <div className="relative">
+                            <button
+                              type="button"
+                              className="text-[10px] bg-brand-charcoal text-brand-bg px-3 py-1.5 rounded-lg font-semibold hover:bg-brand-charcoal/80 cursor-pointer"
+                            >
+                              {uploadingGallery ? "Uploading..." : "Upload Media"}
+                            </button>
+                            <input
+                              type="file"
+                              multiple
+                              accept="image/*,video/mp4,video/webm,video/x-m4v,video/quicktime"
+                              disabled={uploadingGallery}
+                              onChange={handleGalleryImagesUpload}
+                              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-3 mt-2 mb-6">
+                          {images.length > 0 ? (
+                            <div className="flex flex-wrap gap-2 bg-brand-charcoal/5 p-3 rounded-xl border border-brand-charcoal/10">
+                              {images.map((url, imgIdx) => (
+                                <div 
+                                  key={imgIdx} 
+                                  className="relative h-16 w-12 bg-brand-gray rounded-md overflow-hidden border border-brand-charcoal/10 cursor-pointer group"
+                                >
+                                  <MediaRenderer src={url} alt={`Gallery ${imgIdx}`} className="object-cover h-full w-full" onClick={() => openLightbox(images, imgIdx)} />
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setImages(prev => prev.filter((_, i) => i !== imgIdx));
+                                    }}
+                                    className="absolute top-0 right-0 bg-red-500/90 text-white rounded-bl-md p-[2px] opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                                  >
+                                    <X size={10} />
+                                  </button>
                                 </div>
-                                <div className="flex items-center gap-3">
-                                  <span className="text-[10px] text-brand-charcoal/50 font-bold uppercase">{uploadedCount}/8 items</span>
-                                  {uploadedCount < 8 && (
-                                    <div className="relative">
-                                      <button type="button" className="text-[10px] bg-brand-charcoal text-brand-bg px-3 py-1.5 rounded-lg font-semibold hover:bg-brand-charcoal/80 cursor-pointer">
-                                        {uploadingColor === color ? "Uploading..." : "Upload"}
-                                      </button>
-                                      <input
-                                        type="file"
-                                        accept="image/*,video/mp4,video/webm,video/x-m4v,video/quicktime"
-                                        disabled={uploadingColor !== null}
-                                        onChange={(e) => handleColorImageFileChange(e, color)}
-                                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                                      />
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="text-center py-6 border border-dashed border-brand-charcoal/20 rounded-xl text-brand-charcoal/50 text-[10px] uppercase font-bold">
+                              No gallery media uploaded yet.
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <div>
+                        <label className="font-semibold uppercase tracking-wider text-brand-charcoal/60">
+                          Color-Specific Media (Up to 8 per color)
+                        </label>
+                        <div className="space-y-3 mt-2 mb-6">
+                          {(() => {
+                            const activeSlots = colorsInput.split(",").map(c => c.trim()).filter(c => c !== "").map(color => ({ gender: "", color, key: color }));
+                            
+                            return activeSlots.map((slot, idx) => {
+                              const uploadedImages = colorImages[slot.key] || [];
+                              const uploadedCount = uploadedImages.length;
+                              return (
+                                <div key={idx} className="flex flex-col gap-3 bg-brand-charcoal/5 p-3 rounded-xl border border-brand-charcoal/10">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                      <span className="h-6 w-6 rounded-full border border-brand-charcoal/20" style={{ backgroundColor: slot.color }}></span>
+                                      <span className="text-xs font-semibold text-brand-charcoal">
+                                        {slot.color}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                      <span className="text-[10px] text-brand-charcoal/50 font-bold uppercase">{uploadedCount}/8 items</span>
+                                      {uploadedCount < 8 && (
+                                        <div className="relative">
+                                          <button type="button" className="text-[10px] bg-brand-charcoal text-brand-bg px-3 py-1.5 rounded-lg font-semibold hover:bg-brand-charcoal/80 cursor-pointer">
+                                            {uploadingColor === slot.key ? "Uploading..." : "Upload"}
+                                          </button>
+                                          <input
+                                            type="file"
+                                            accept="image/*,video/mp4,video/webm,video/x-m4v,video/quicktime"
+                                            disabled={uploadingColor !== null}
+                                            onChange={(e) => handleColorImageFileChange(e, slot.key)}
+                                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                                          />
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                  {uploadedImages.length > 0 && (
+                                    <div className="flex gap-2">
+                                      {uploadedImages.map((url, imgIdx) => (
+                                        <div 
+                                          key={imgIdx} 
+                                          className="relative h-12 w-10 bg-brand-gray rounded-md overflow-hidden border border-brand-charcoal/10 cursor-pointer group"
+                                        >
+                                          <MediaRenderer src={url} alt={`Preview ${imgIdx}`} className="object-cover h-full w-full" onClick={() => openLightbox(uploadedImages, imgIdx)} />
+                                          <button
+                                            type="button"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setColorImages(prev => ({
+                                                ...prev,
+                                                [slot.key]: prev[slot.key].filter((_, i) => i !== imgIdx)
+                                              }));
+                                            }}
+                                            className="absolute top-0 right-0 bg-red-500/90 text-white rounded-bl-md p-[2px] opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                                          >
+                                            <X size={10} />
+                                          </button>
+                                        </div>
+                                      ))}
                                     </div>
                                   )}
                                 </div>
-                              </div>
-                              {uploadedImages.length > 0 && (
-                                <div className="flex gap-2">
-                                  {uploadedImages.map((url, imgIdx) => (
-                                    <div 
-                                      key={imgIdx} 
-                                      className="relative h-12 w-10 bg-brand-gray rounded-md overflow-hidden border border-brand-charcoal/10 cursor-pointer group"
-                                    >
-                                      <MediaRenderer src={url} alt={`Preview ${imgIdx}`} className="object-cover h-full w-full" onClick={() => openLightbox(uploadedImages, imgIdx)} />
-                                      <button
-                                        type="button"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setColorImages(prev => ({
-                                            ...prev,
-                                            [color]: prev[color].filter((_, i) => i !== imgIdx)
-                                          }));
-                                        }}
-                                        className="absolute top-0 right-0 bg-red-500/90 text-white rounded-bl-md p-[2px] opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
-                                      >
-                                        <X size={10} />
-                                      </button>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
+                              );
+                            });
+                          })()}
+                        </div>
                       </div>
-                    </div>
+                    )}
 
                     <div>
                       <label className="font-semibold uppercase tracking-wider text-brand-charcoal/60">
