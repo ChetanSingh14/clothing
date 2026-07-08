@@ -1,7 +1,7 @@
 import { useAuthStore } from "@/store/useAuthStore";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api/v1";
-// const API_URL ="http://localhost:4000/api/v1";
+// const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api/v1";
+const API_URL ="https://apis.mdfkclothing.com/api/v1";
 
 export const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
   const token = useAuthStore.getState().token;
