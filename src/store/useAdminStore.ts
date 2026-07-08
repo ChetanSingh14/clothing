@@ -40,12 +40,19 @@ interface AdminState {
   nimbusShipOrder: (id: number) => Promise<{ success: boolean; message?: string }>;
   nimbusCancelOrder: (id: number) => Promise<{ success: boolean; message?: string }>;
   nimbusTrackOrder: (id: number) => Promise<{ success: boolean; data?: any; message?: string }>;
+  exchangeOrders: any[];
+  fetchExchangeOrders: () => Promise<void>;
+  updateExchangeOrderStatus: (id: number, status: string) => Promise<boolean>;
+  nimbusShipExchangeOrder: (id: number) => Promise<{ success: boolean; message?: string }>;
+  nimbusCancelExchangeOrder: (id: number) => Promise<{ success: boolean; message?: string }>;
+  nimbusTrackExchangeOrder: (id: number) => Promise<{ success: boolean; data?: any; message?: string }>;
 }
 
 export const useAdminStore = create<AdminState>((set, get) => ({
   stats: null,
   users: [],
   orders: [],
+  exchangeOrders: [],
   reviews: [],
   loading: false,
   error: null,
@@ -272,6 +279,85 @@ export const useAdminStore = create<AdminState>((set, get) => ({
       return { success: false, message: res.message || "Failed to track" };
     } catch (err: any) {
       return { success: false, message: err.message || "Failed to track shipment" };
+    }
+  },
+
+  fetchExchangeOrders: async () => {
+    set({ loading: true, error: null });
+    try {
+      const res = await apiFetch("/orders/admin/exchanges");
+      if (res.success && res.data) {
+        set({ exchangeOrders: res.data, loading: false });
+      }
+    } catch (err: any) {
+      set({ error: err.message || "Failed to load admin exchange orders", loading: false });
+    }
+  },
+
+  updateExchangeOrderStatus: async (id, status) => {
+    set({ loading: true, error: null });
+    try {
+      const res = await apiFetch(`/orders/admin/exchanges/${id}/status`, {
+        method: "PUT",
+        body: JSON.stringify({ status }),
+      });
+      if (res.success) {
+        set({ loading: false });
+        await get().fetchExchangeOrders();
+        return true;
+      }
+      return false;
+    } catch (err: any) {
+      set({ error: err.message || "Failed to update exchange order status", loading: false });
+      return false;
+    }
+  },
+
+  nimbusShipExchangeOrder: async (id) => {
+    set({ loading: true, error: null });
+    try {
+      const res = await apiFetch(`/orders/admin/exchanges/${id}/nimbus-ship`, {
+        method: "POST",
+      });
+      if (res.success) {
+        set({ loading: false });
+        await get().fetchExchangeOrders();
+        return { success: true, message: res.message || "Shipped exchange with Nimbuspost successfully" };
+      }
+      return { success: false, message: res.message || "Failed to ship exchange" };
+    } catch (err: any) {
+      set({ error: err.message || "Failed to ship exchange order", loading: false });
+      return { success: false, message: err.message || "Failed to ship exchange order" };
+    }
+  },
+
+  nimbusCancelExchangeOrder: async (id) => {
+    set({ loading: true, error: null });
+    try {
+      const res = await apiFetch(`/orders/admin/exchanges/${id}/nimbus-cancel`, {
+        method: "POST",
+      });
+      if (res.success) {
+        set({ loading: false });
+        await get().fetchExchangeOrders();
+        return { success: true, message: res.message || "Exchange shipment cancelled successfully" };
+      }
+      return { success: false, message: res.message || "Failed to cancel exchange shipment" };
+    } catch (err: any) {
+      set({ error: err.message || "Failed to cancel exchange shipment", loading: false });
+      return { success: false, message: err.message || "Failed to cancel exchange shipment" };
+    }
+  },
+
+  nimbusTrackExchangeOrder: async (id) => {
+    try {
+      const res = await apiFetch(`/orders/admin/exchanges/${id}/nimbus-track`);
+      if (res.success) {
+        return { success: true, data: res.data };
+      }
+      return { success: false, message: res.message || "Failed to track exchange" };
+    } catch (err: any) {
+      return { success: false, message: err.message || "Failed to track exchange shipment" };
     }
   },
 }));

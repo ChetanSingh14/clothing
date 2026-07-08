@@ -43,7 +43,13 @@ export default function AdminDashboardPage() {
     updateOrderStatus,
     nimbusShipOrder,
     nimbusCancelOrder,
-    nimbusTrackOrder
+    nimbusTrackOrder,
+    exchangeOrders,
+    fetchExchangeOrders,
+    updateExchangeOrderStatus,
+    nimbusShipExchangeOrder,
+    nimbusCancelExchangeOrder,
+    nimbusTrackExchangeOrder
   } = useAdminStore();
   
   const { products, fetchProducts } = useProductStore();
@@ -59,7 +65,7 @@ export default function AdminDashboardPage() {
   const updateSettings = useSettingsStore((state) => state.updateSettings);
 
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("overview"); // overview, products, reviews, orders, users, settings
+  const [activeTab, setActiveTab] = useState("overview"); // overview, products, reviews, orders, exchange-orders, users, settings
 
   // Brand customize states
   const [tempCompanyName, setTempCompanyName] = useState("");
@@ -266,6 +272,9 @@ export default function AdminDashboardPage() {
     }
     if (activeTab === "custom-orders") {
       fetchCustomOrders();
+    }
+    if (activeTab === "exchange-orders") {
+      fetchExchangeOrders();
     }
   }, [activeTab]);
 
@@ -541,6 +550,50 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const handleExchangeOrderStatusUpdate = async (exchangeId: number, status: string) => {
+    const success = await updateExchangeOrderStatus(exchangeId, status);
+    if (success) {
+      useAlertStore.getState().showAlert(`Exchange Order #${exchangeId} status updated to ${status}`);
+    } else {
+      useAlertStore.getState().showAlert("Failed to update exchange order status.");
+    }
+  };
+
+  const handleExchangeNimbusShip = async (exchangeId: number) => {
+    const res = await nimbusShipExchangeOrder(exchangeId);
+    if (res.success) {
+      useAlertStore.getState().showAlert(res.message || "Shipped via Nimbuspost");
+    } else {
+      useAlertStore.getState().showAlert(res.message || "Failed to ship");
+    }
+  };
+
+  const handleExchangeNimbusCancel = async (exchangeId: number) => {
+    useAlertStore.getState().showConfirm("Are you sure you want to cancel the Nimbuspost shipment for this exchange?", async () => {
+      const res = await nimbusCancelExchangeOrder(exchangeId);
+      if (res.success) {
+        useAlertStore.getState().showAlert(res.message || "Shipment cancelled");
+      } else {
+        useAlertStore.getState().showAlert(res.message || "Failed to cancel shipment");
+      }
+    });
+  };
+
+  const handleExchangeNimbusTrack = async (exchangeId: number) => {
+    const res = await nimbusTrackExchangeOrder(exchangeId);
+    if (res.success && res.data) {
+      const d = res.data;
+      const history = d.history || [];
+      const latestStatus = history.length > 0 ? history[history.length - 1] : null;
+      const statusText = latestStatus
+        ? `${latestStatus.status_body || latestStatus.event_type || "Unknown"} (${latestStatus.event_time || latestStatus.timestamp || ""})\nLocation: ${latestStatus.event_location || latestStatus.location || "N/A"}`
+        : `Status: ${d.current_status || d.status || "In Transit"}`;
+      useAlertStore.getState().showAlert(`📦 Tracking for AWB ${d.awb || ""}\n\n${statusText}`);
+    } else {
+      useAlertStore.getState().showAlert(res.message || "Failed to get tracking info");
+    }
+  };
+
   const handleNimbusShip = async (orderId: number) => {
     const res = await nimbusShipOrder(orderId);
     if (res.success) {
@@ -590,6 +643,7 @@ export default function AdminDashboardPage() {
     await fetchProducts();
     await fetchUsers();
     await fetchOrders();
+    await fetchExchangeOrders();
     await fetchReviews();
   };
 
@@ -634,6 +688,7 @@ export default function AdminDashboardPage() {
                 { id: "products", label: "Products Inventory", icon: Package },
                 { id: "reviews", label: "Reviews Manager", icon: Star },
                 { id: "orders", label: "Sales & Orders", icon: ShoppingBag },
+                { id: "exchange-orders", label: "Size Exchange Log", icon: RefreshCw },
                 { id: "custom-orders", label: "Custom Orders", icon: Paintbrush },
                 { id: "users", label: "Customer Accounts", icon: Users },
                 { id: "gallery", label: "Hero Gallery", icon: ImageIcon },
@@ -1637,6 +1692,179 @@ export default function AdminDashboardPage() {
                   {orders.length === 0 && (
                     <div className="border border-brand-charcoal/5 rounded-3xl bg-brand-bg p-12 text-center text-xs text-brand-charcoal/40 italic">
                       No customer orders recorded.
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* -------------------- TAB CONTENT: EXCHANGE ORDERS -------------------- */}
+            {activeTab === "exchange-orders" && (
+              <div className="space-y-6">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-xl font-semibold tracking-tight text-brand-charcoal font-serif">
+                    Size Exchange Log
+                  </h2>
+                  <span className="text-xs bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full font-bold border border-indigo-200">
+                    {exchangeOrders ? exchangeOrders.length : 0} exchange(s) processed
+                  </span>
+                </div>
+
+                <div className="space-y-6">
+                  {exchangeOrders && exchangeOrders.map((ord: any) => (
+                    <div key={ord.id} className="border border-brand-charcoal/5 rounded-3xl bg-brand-bg p-6 shadow-xs relative overflow-hidden">
+                      {/* Header bar of order card */}
+                      <div className="flex flex-col sm:flex-row justify-between border-b border-brand-charcoal/5 pb-4 mb-4 text-xs gap-3">
+                        <div>
+                          <div className="font-bold text-brand-charcoal text-sm flex items-center gap-2">
+                            <span>Exchange #{ord.id}</span>
+                            <span className="text-[10px] bg-brand-charcoal/5 text-brand-charcoal/60 px-2 py-0.5 rounded font-mono">Original: #{ord.originalOrderId}</span>
+                            <select 
+                              value={ord.status || "BOOKED"}
+                              onChange={(e) => handleExchangeOrderStatusUpdate(ord.id, e.target.value)}
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded border uppercase tracking-wide outline-none cursor-pointer ${
+                                ord.status === 'DELIVERED' ? 'bg-brand-green/10 text-brand-green border-brand-green/20' : 
+                                ord.status === 'CANCELLED' ? 'bg-red-50 text-red-600 border-red-200' : 
+                                ord.status === 'SHIPPED' ? 'bg-blue-50 text-blue-600 border-blue-200' :
+                                'bg-yellow-50 text-yellow-700 border-yellow-200'
+                              }`}
+                            >
+                              <option value="BOOKED">Booked</option>
+                              <option value="SHIPPED">Shipped</option>
+                              <option value="DELIVERED">Delivered</option>
+                              <option value="CANCELLED">Cancelled</option>
+                            </select>
+                          </div>
+                          <div className="text-[10px] text-brand-charcoal/40 font-light mt-1 flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            <span>{new Date(ord.createdAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}</span>
+                          </div>
+                          {ord.nimbuspostAwb && (
+                            <div className="text-[10px] mt-2 bg-brand-charcoal/5 p-1 rounded font-medium inline-block">
+                              AWB: {ord.nimbuspostAwb}
+                              {ord.nimbuspostLabel && (
+                                <a href={ord.nimbuspostLabel} target="_blank" rel="noreferrer" className="text-blue-500 ml-2 hover:underline">View Label</a>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="sm:text-right flex flex-col items-end">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-brand-charcoal/40">Buyer profile</span>
+                          <div className="font-semibold text-brand-charcoal">{ord.user?.name || ord.fullName}</div>
+                          <div className="text-[10px] text-brand-charcoal/50 mb-2">{ord.user?.email || ord.email}</div>
+                          <button
+                            onClick={() => setSelectedOrder(ord)}
+                            className="text-xs bg-brand-charcoal text-brand-bg px-3 py-1.5 rounded-lg font-semibold hover:bg-brand-charcoal/90 transition-all cursor-pointer inline-flex items-center gap-1 mt-auto"
+                          >
+                            <Eye className="h-3 w-3" />
+                            View Full Details
+                          </button>
+                          
+                          <div className="mt-2 flex gap-2 justify-end">
+                            {!ord.nimbuspostAwb && ord.status === 'BOOKED' && (
+                              <button
+                                onClick={() => handleExchangeNimbusShip(ord.id)}
+                                className="text-xs bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700 cursor-pointer"
+                              >
+                                Ship with Nimbuspost
+                              </button>
+                            )}
+                            {ord.nimbuspostAwb && ord.status !== 'CANCELLED' && (
+                              <button
+                                onClick={() => handleExchangeNimbusTrack(ord.id)}
+                                className="text-[10px] text-blue-500 underline cursor-pointer"
+                              >
+                                Track Shipment
+                              </button>
+                            )}
+                            {ord.nimbuspostAwb && ord.status !== 'CANCELLED' && (
+                              <button
+                                onClick={() => handleExchangeNimbusCancel(ord.id)}
+                                className="text-[10px] text-red-500 underline cursor-pointer"
+                              >
+                                Cancel Shipment
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Pickup Address & Exchange Notes Alert Box */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        {ord.pickupAddress && (
+                          <div className="p-3.5 rounded-2xl bg-indigo-50/50 border border-indigo-100 text-xs text-brand-charcoal/80">
+                            <span className="font-bold text-indigo-700 block mb-1">📦 Return Pickup Address</span>
+                            <div>{ord.pickupAddress}</div>
+                          </div>
+                        )}
+                        {ord.exchangeNotes && (
+                          <div className="p-3.5 rounded-2xl bg-yellow-50/50 border border-yellow-100 text-xs text-brand-charcoal/80">
+                            <span className="font-bold text-yellow-700 block mb-1">💬 Size Exchange Request Details</span>
+                            <div className="italic font-medium">"{ord.exchangeNotes}"</div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Shipping Details */}
+                      {ord.address && (
+                        <div className="mt-2 p-4 rounded-2xl bg-brand-gray/30 border border-brand-charcoal/5 text-xs text-brand-charcoal/70">
+                          <div className="font-semibold text-brand-charcoal mb-1 flex items-center justify-between">
+                            <span>Replacement Delivery Address</span>
+                            {ord.phone && <span className="text-[10px] font-mono">Ph: {ord.phone}</span>}
+                          </div>
+                          <div>{ord.fullName || (ord.user && ord.user.name)}</div>
+                          <div>{ord.address}</div>
+                          {ord.landmark && <div>Landmark: {ord.landmark}</div>}
+                          <div>{ord.city}, {ord.state} - {ord.pincode}</div>
+                        </div>
+                      )}
+
+                      {/* Items details list */}
+                      <div className="space-y-3 mt-4">
+                        <span className="text-[9px] font-bold uppercase tracking-wider text-brand-charcoal/40 block">Original Purchased Garments ({ord.items ? ord.items.length : 0})</span>
+                        <div className="divide-y divide-brand-charcoal/5">
+                          {ord.items && ord.items.map((item: any, idx: number) => (
+                            <div key={idx} className="py-2.5 flex items-center justify-between text-xs">
+                              <div className="flex items-center gap-3">
+                                {item.image && (
+                                  <div className="relative h-10 w-8 rounded bg-brand-gray overflow-hidden flex-shrink-0">
+                                    <MediaRenderer src={item.image} alt={item.title} className="object-cover h-full w-full" />
+                                  </div>
+                                )}
+                                <div>
+                                  <h4 className="font-semibold text-brand-charcoal">{item.title}</h4>
+                                  <div className="flex items-center gap-2 text-[10px] text-brand-charcoal/50 font-light mt-0.5">
+                                    <span className="uppercase">Size: {item.size}</span>
+                                    <span>•</span>
+                                    <span className="flex items-center gap-1">
+                                      Color:{" "}
+                                      {item.color.includes("M:") ? (
+                                        <span className="font-semibold text-brand-charcoal/80 text-[10px] lowercase">{formatColor(item.color)}</span>
+                                      ) : (
+                                        <>
+                                          <span className="font-semibold text-brand-charcoal/80 text-[10px] lowercase">{formatColor(item.color)}</span>
+                                          <span className="h-2 w-2 rounded-full border border-brand-charcoal/10 inline-block" style={{ backgroundColor: item.color }} />
+                                        </>
+                                      )}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="text-right">
+                                <div className="font-semibold text-brand-charcoal">₹{item.price.toFixed(2)}</div>
+                                <div className="text-[10px] text-brand-charcoal/40 font-light">Qty: {item.quantity}</div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {(!exchangeOrders || exchangeOrders.length === 0) && (
+                    <div className="border border-brand-charcoal/5 rounded-3xl bg-brand-bg p-12 text-center text-xs text-brand-charcoal/40 italic">
+                      No size exchange requests recorded.
                     </div>
                   )}
                 </div>
