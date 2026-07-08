@@ -83,7 +83,12 @@ function InnerViewer({ flavor, spinRef }: { flavor: "cream" | "brown"; spinRef: 
       <ambientLight intensity={1.5} />
       <directionalLight position={[5, 10, 5]} intensity={1.5} />
       <directionalLight position={[-5, 5, -5]} intensity={0.5} />
-      <OrbitControls enableZoom={false} enablePan={false} />
+      <OrbitControls 
+        enableZoom={false} 
+        enablePan={false} 
+        minPolarAngle={Math.PI / 2} 
+        maxPolarAngle={Math.PI / 2}
+      />
       <RotatingGroup flavor={flavor} spinRef={spinRef}>
         <ShirtModel flavor={flavor} />
       </RotatingGroup>
