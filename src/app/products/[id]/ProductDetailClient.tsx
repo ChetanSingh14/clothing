@@ -346,7 +346,7 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
                     <>
                       <div className="space-y-2">
                         <label className="text-xs font-semibold text-brand-charcoal uppercase tracking-wider block">
-                          Male Shirt Color
+                          Male T-Shirt Color
                         </label>
                         <div className="flex flex-wrap gap-3">
                           {(product.maleColors && product.maleColors.length > 0 ? product.maleColors : product.colors).map((color) => (
@@ -374,7 +374,7 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
                       </div>
                       <div className="space-y-2">
                         <label className="text-xs font-semibold text-brand-charcoal uppercase tracking-wider block">
-                          Female Shirt Color
+                          Female T-Shirt Color
                         </label>
                         <div className="flex flex-wrap gap-3">
                           {(product.femaleColors && product.femaleColors.length > 0 ? product.femaleColors : product.colors).map((color) => (
@@ -438,7 +438,7 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
                     <>
                       <div className="space-y-2">
                         <label className="text-xs font-semibold text-brand-charcoal uppercase tracking-wider block">
-                          Male Shirt Size
+                          Male T-Shirt Size
                         </label>
                         <div className="flex flex-wrap gap-2">
                           {(product.maleSizes && product.maleSizes.length > 0 ? product.maleSizes : product.sizes).map((size) => (
@@ -459,7 +459,7 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
                       </div>
                       <div className="space-y-2">
                         <label className="text-xs font-semibold text-brand-charcoal uppercase tracking-wider block">
-                          Female Shirt Size
+                          Female T-Shirt Size
                         </label>
                         <div className="flex flex-wrap gap-2">
                           {(product.femaleSizes && product.femaleSizes.length > 0 ? product.femaleSizes : product.sizes).map((size) => (
