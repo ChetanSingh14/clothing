@@ -11,13 +11,90 @@ interface Message {
   text: string;
 }
 
+// Inline Markdown Parser to format chatbot answers cleanly as styled JSX
+function parseMarkdown(text: string) {
+  const lines = text.split("\n");
+  const elements: React.ReactNode[] = [];
+  
+  let currentList: React.ReactNode[] = [];
+  let listType: "bullet" | "ordered" | null = null;
+  let keyCounter = 0;
+
+  const flushList = () => {
+    if (currentList.length > 0) {
+      if (listType === "bullet") {
+        elements.push(
+          <ul key={`list-${keyCounter++}`} className="list-disc pl-4 my-1.5 space-y-1 text-brand-charcoal/80">
+            {currentList}
+          </ul>
+        );
+      } else if (listType === "ordered") {
+        elements.push(
+          <ol key={`list-${keyCounter++}`} className="list-decimal pl-4 my-1.5 space-y-1 text-brand-charcoal/80">
+            {currentList}
+          </ol>
+        );
+      }
+      currentList = [];
+      listType = null;
+    }
+  };
+
+  const parseInline = (lineText: string) => {
+    // Replace **bold** with strong elements
+    const parts = lineText.split(/\*\*([^*]+)\*\*/g);
+    return parts.map((part, index) => {
+      if (index % 2 === 1) {
+        return <strong key={index} className="font-semibold text-brand-charcoal">{part}</strong>;
+      }
+      return part;
+    });
+  };
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    
+    if (line.startsWith("* ") || line.startsWith("- ")) {
+      if (listType !== "bullet") {
+        flushList();
+        listType = "bullet";
+      }
+      const content = line.substring(2);
+      currentList.push(<li key={`li-${i}`}>{parseInline(content)}</li>);
+    } else if (/^\d+\.\s/.test(line)) {
+      if (listType !== "ordered") {
+        flushList();
+        listType = "ordered";
+      }
+      const content = line.replace(/^\d+\.\s/, "");
+      currentList.push(<li key={`li-${i}`}>{parseInline(content)}</li>);
+    } else {
+      flushList();
+      if (line !== "") {
+        elements.push(
+          <p key={`p-${i}`} className="my-1.5 font-light">
+            {parseInline(line)}
+          </p>
+        );
+      } else {
+        elements.push(<div key={`space-${i}`} className="h-1" />);
+      }
+    }
+  }
+  
+  flushList();
+  return elements;
+}
+
 export default function Chatbot() {
   const { user } = useAuthStore();
   const [isOpen, setIsOpen] = useState(false);
+
+  // Chat States
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "bot",
-      text: "Hi! Welcome to MDFK CLOTHING . How can I help you today? You can ask about our catalog, exchange policy, or log in to track your orders.",
+      text: "Hi! Welcome to MDFK CLOTHING. How can I help you today? You can ask about our catalog, exchange policy, custom design service, or log in to track your orders.",
     },
   ]);
   const [inputValue, setInputValue] = useState("");
@@ -27,8 +104,8 @@ export default function Chatbot() {
   const quickPrompts = [
     "What do you sell?",
     "Track my orders",
+    "Custom uploads info",
     "Exchange policy",
-    "Payment options",
   ];
 
   // Auto-scroll to bottom of messages
@@ -47,7 +124,6 @@ export default function Chatbot() {
     setIsLoading(true);
 
     try {
-      // Gather chat history (excluding system prompt helper)
       const chatHistory = messages.map((m) => ({
         role: m.role,
         text: m.text,
@@ -89,22 +165,22 @@ export default function Chatbot() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 30, scale: 0.95 }}
             transition={{ duration: 0.25, ease: "easeOut" }}
-            className="mb-4 w-[360px] max-w-[calc(100vw-2rem)] h-[480px] rounded-3xl bg-brand-bg border border-brand-charcoal/10 shadow-2xl flex flex-col overflow-hidden"
+            className="mb-4 w-[380px] max-w-[calc(100vw-2rem)] h-[520px] rounded-3xl bg-brand-bg border border-brand-charcoal/15 shadow-2xl flex flex-col overflow-hidden backdrop-blur-md bg-opacity-95"
           >
             {/* Header */}
-            <div className="bg-brand-charcoal p-4 text-brand-bg flex items-center justify-between">
+            <div className="bg-brand-charcoal p-4 text-brand-bg flex items-center justify-between shadow-md">
               <div className="flex items-center space-x-2.5">
-                <div className="p-1.5 bg-brand-green rounded-xl flex items-center justify-center">
-                  <Bot className="h-4 w-4 text-brand-bg" />
+                <div className="p-1.5 bg-brand-green rounded-xl flex items-center justify-center shadow-inner">
+                  <Bot className="h-4.5 w-4.5 text-brand-bg" />
                 </div>
                 <div>
-                  <h4 className="text-xs font-semibold tracking-wider uppercase flex items-center">
+                  <h4 className="text-xs font-bold tracking-widest uppercase flex items-center font-serif text-brand-gray">
                     MDFK Assistant
-                    <Sparkles className="h-3 w-3 ml-1 text-brand-bg/60" />
+                    <Sparkles className="h-3 w-3 ml-1 text-brand-green" />
                   </h4>
                   <div className="flex items-center space-x-1.5 mt-0.5">
                     <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                    <span className="text-[10px] text-brand-bg/60">We're online</span>
+                    <span className="text-[10px] text-brand-bg/60 font-light">Online & Ready</span>
                   </div>
                 </div>
               </div>
@@ -116,8 +192,28 @@ export default function Chatbot() {
               </button>
             </div>
 
+            {/* Custom Design Promo Banner / Info Section */}
+            <div className="bg-brand-gray/40 border-b border-brand-charcoal/5 px-4 py-3 flex items-center justify-between gap-3 backdrop-blur-sm">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-brand-green flex-shrink-0 animate-pulse" />
+                <div className="min-w-0">
+                  <h5 className="text-[10px] font-bold text-brand-charcoal tracking-wide uppercase">Custom Streetwear Prints</h5>
+                  <p className="text-[9px] text-brand-charcoal/60 leading-normal font-light">
+                    Have a custom graphic design? Upload it on our custom design page! (MOQ 3 tees)
+                  </p>
+                </div>
+              </div>
+              <a
+                href="/custom-design"
+                onClick={() => setIsOpen(false)}
+                className="px-3 py-1.5 bg-brand-charcoal hover:bg-brand-charcoal/90 text-brand-bg text-[9px] font-bold uppercase rounded-lg shadow-sm whitespace-nowrap transition-colors"
+              >
+                Upload Design
+              </a>
+            </div>
+
             {/* Chat Body */}
-            <div className="flex-grow p-4 overflow-y-auto space-y-3 flex flex-col">
+            <div className="flex-grow p-4 overflow-y-auto space-y-3.5 flex flex-col custom-scrollbar bg-brand-bg/50">
               {messages.map((msg, index) => (
                 <div
                   key={index}
@@ -126,26 +222,26 @@ export default function Chatbot() {
                   }`}
                 >
                   <div
-                    className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-xs leading-relaxed ${
+                    className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-xs leading-relaxed shadow-sm ${
                       msg.role === "user"
-                        ? "bg-brand-charcoal text-brand-bg rounded-tr-none"
-                        : "bg-brand-gray/60 text-brand-charcoal border border-brand-charcoal/5 rounded-tl-none"
+                        ? "bg-brand-charcoal text-brand-bg rounded-tr-none font-medium"
+                        : "bg-brand-gray/50 text-brand-charcoal border border-brand-charcoal/5 rounded-tl-none"
                     }`}
                   >
-                    {msg.text.split("\n").map((line, i) => (
-                      <p key={i} className={i > 0 ? "mt-1.5" : ""}>
-                        {line}
-                      </p>
-                    ))}
+                    {msg.role === "user" ? (
+                      <p>{msg.text}</p>
+                    ) : (
+                      parseMarkdown(msg.text)
+                    )}
                   </div>
                 </div>
               ))}
 
               {isLoading && (
                 <div className="flex justify-start">
-                  <div className="bg-brand-gray/60 text-brand-charcoal rounded-2xl rounded-tl-none px-4 py-3 text-xs border border-brand-charcoal/5 flex items-center space-x-1.5">
+                  <div className="bg-brand-gray/50 text-brand-charcoal rounded-2xl rounded-tl-none px-4 py-3 text-xs border border-brand-charcoal/5 flex items-center space-x-2 shadow-sm">
                     <Loader2 className="h-3.5 w-3.5 animate-spin text-brand-green" />
-                    <span className="text-brand-charcoal/60">Thinking...</span>
+                    <span className="text-brand-charcoal/50 font-light">Reviewing orders...</span>
                   </div>
                 </div>
               )}
@@ -154,12 +250,12 @@ export default function Chatbot() {
 
             {/* Quick Suggestions (Shown when input is empty & not loading) */}
             {inputValue === "" && !isLoading && (
-              <div className="px-4 pb-2 flex flex-wrap gap-1.5">
+              <div className="px-4 pb-2.5 flex flex-wrap gap-1.5 bg-brand-bg/50">
                 {quickPrompts.map((prompt) => (
                   <button
                     key={prompt}
                     onClick={() => handleSendMessage(prompt)}
-                    className="px-3 py-1.5 bg-brand-bg hover:bg-brand-gray text-[10px] font-semibold text-brand-charcoal/70 border border-brand-charcoal/10 rounded-full transition-colors cursor-pointer"
+                    className="px-3 py-1.5 bg-brand-bg/80 hover:bg-brand-gray text-[10px] font-semibold text-brand-charcoal/70 border border-brand-charcoal/10 rounded-full transition-colors cursor-pointer shadow-sm"
                   >
                     {prompt}
                   </button>
@@ -173,7 +269,7 @@ export default function Chatbot() {
                 e.preventDefault();
                 handleSendMessage(inputValue);
               }}
-              className="p-3 border-t border-brand-charcoal/5 bg-brand-bg/85 backdrop-blur flex gap-2"
+              className="p-3.5 border-t border-brand-charcoal/5 bg-brand-bg/90 backdrop-blur flex gap-2"
             >
               <input
                 type="text"
@@ -181,12 +277,12 @@ export default function Chatbot() {
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 disabled={isLoading}
-                className="flex-grow rounded-xl border border-brand-charcoal/10 bg-brand-bg px-3.5 py-2.5 text-xs focus:border-brand-green focus:outline-none disabled:opacity-50"
+                className="flex-grow rounded-xl border border-brand-charcoal/10 bg-brand-bg px-3.5 py-2.5 text-xs focus:border-brand-green focus:outline-none focus:ring-1 focus:ring-brand-green disabled:opacity-50 transition-all font-light"
               />
               <button
                 type="submit"
                 disabled={isLoading || !inputValue.trim()}
-                className="p-2.5 bg-brand-charcoal hover:bg-brand-charcoal/90 text-brand-bg rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center"
+                className="p-2.5 bg-brand-charcoal hover:bg-brand-charcoal/90 text-brand-bg rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center shadow-md"
               >
                 <Send className="h-3.5 w-3.5" />
               </button>
