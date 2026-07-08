@@ -42,7 +42,8 @@ export default function AdminDashboardPage() {
     adminUpdateUser,
     updateOrderStatus,
     nimbusShipOrder,
-    nimbusCancelOrder
+    nimbusCancelOrder,
+    nimbusTrackOrder
   } = useAdminStore();
   
   const { products, fetchProducts } = useProductStore();
@@ -558,6 +559,21 @@ export default function AdminDashboardPage() {
         useAlertStore.getState().showAlert(res.message || "Failed to cancel shipment");
       }
     });
+  };
+
+  const handleNimbusTrack = async (orderId: number) => {
+    const res = await nimbusTrackOrder(orderId);
+    if (res.success && res.data) {
+      const d = res.data;
+      const history = d.history || [];
+      const latestStatus = history.length > 0 ? history[history.length - 1] : null;
+      const statusText = latestStatus
+        ? `${latestStatus.status_body || latestStatus.event_type || "Unknown"} (${latestStatus.event_time || latestStatus.timestamp || ""})\nLocation: ${latestStatus.event_location || latestStatus.location || "N/A"}`
+        : `Status: ${d.current_status || d.status || "In Transit"}`;
+      useAlertStore.getState().showAlert(`📦 Tracking for AWB ${d.awb || ""}\n\n${statusText}`);
+    } else {
+      useAlertStore.getState().showAlert(res.message || "Failed to get tracking info");
+    }
   };
 
   const handleDeleteReview = async (id: number) => {
@@ -1534,6 +1550,14 @@ export default function AdminDashboardPage() {
                                 className="text-xs bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700 cursor-pointer"
                               >
                                 Ship with Nimbuspost
+                              </button>
+                            )}
+                            {ord.nimbuspostAwb && ord.status !== 'CANCELLED' && (
+                              <button
+                                onClick={() => handleNimbusTrack(ord.id)}
+                                className="text-[10px] text-blue-500 underline cursor-pointer"
+                              >
+                                Track Shipment
                               </button>
                             )}
                             {ord.nimbuspostAwb && ord.status !== 'CANCELLED' && (

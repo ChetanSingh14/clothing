@@ -154,7 +154,7 @@ export const useCartStore = create<CartState>((set, get) => ({
     const { items, getSubtotal, clearCart, appliedOffer } = get();
     if (items.length === 0) return false;
 
-    const { shippingCharges, codCharges, rtoCharges, ...cleanDetails } = details;
+    const { shippingCharges, codCharges, rtoCharges, courierId, ...cleanDetails } = details;
 
     try {
       const res = await apiFetch("/orders", {
@@ -168,6 +168,7 @@ export const useCartStore = create<CartState>((set, get) => ({
           shippingCharges: shippingCharges || 0,
           codCharges: codCharges || 0,
           rtoCharges: rtoCharges || 0,
+          courierId: courierId || null,
         }),
       });
       if (res.success) {

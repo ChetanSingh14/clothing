@@ -39,6 +39,7 @@ interface AdminState {
   updateOrderStatus: (id: number, status: string) => Promise<boolean>;
   nimbusShipOrder: (id: number) => Promise<{ success: boolean; message?: string }>;
   nimbusCancelOrder: (id: number) => Promise<{ success: boolean; message?: string }>;
+  nimbusTrackOrder: (id: number) => Promise<{ success: boolean; data?: any; message?: string }>;
 }
 
 export const useAdminStore = create<AdminState>((set, get) => ({
@@ -259,6 +260,18 @@ export const useAdminStore = create<AdminState>((set, get) => ({
     } catch (err: any) {
       set({ error: err.message || "Failed to cancel shipment", loading: false });
       return { success: false, message: err.message || "Failed to cancel shipment" };
+    }
+  },
+
+  nimbusTrackOrder: async (id) => {
+    try {
+      const res = await apiFetch(`/orders/${id}/nimbus-track`);
+      if (res.success) {
+        return { success: true, data: res.data };
+      }
+      return { success: false, message: res.message || "Failed to track" };
+    } catch (err: any) {
+      return { success: false, message: err.message || "Failed to track shipment" };
     }
   },
 }));

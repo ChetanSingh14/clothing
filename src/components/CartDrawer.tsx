@@ -12,7 +12,7 @@ import { formatColor } from "@/utils/color";
 import { useState, useEffect } from "react";
 
 export default function CartDrawer() {
-  const { items, isOpen, setIsOpen, updateQuantity, removeItem, getSubtotal, getCartTotal, clearCart, checkout, appliedOffer, offerLoading, offerError, checkOfferStatus } = useCartStore();
+  const { items, isOpen, setIsOpen, updateQuantity, removeItem, getSubtotal, getCartTotal, getCartCount, clearCart, checkout, appliedOffer, offerLoading, offerError, checkOfferStatus } = useCartStore();
   const { user, fetchMe, sendPhoneOtp, verifyPhoneOtp } = useAuthStore();
   const [paymentMethod, setPaymentMethod] = useState("COD");
   const [checkoutStep, setCheckoutStep] = useState<"cart" | "address">("cart");
@@ -27,6 +27,7 @@ export default function CartDrawer() {
   const [shippingFee, setShippingFee] = useState<number>(50);
   const [codFee, setCodFee] = useState<number>(50);
   const [rtoFee, setRtoFee] = useState<number>(50);
+  const [courierId, setCourierId] = useState<string | null>(null);
   const [shippingLoading, setShippingLoading] = useState(false);
 
   const [addressDetails, setAddressDetails] = useState({
@@ -52,16 +53,18 @@ export default function CartDrawer() {
       const { apiFetch } = await import("@/utils/api");
       const res = await apiFetch("/orders/calculate-shipping", {
         method: "POST",
-        body: JSON.stringify({ pincode: pin, paymentMethod: payMethod, orderAmount: amount }),
+        body: JSON.stringify({ pincode: pin, paymentMethod: payMethod, orderAmount: amount, totalQuantity: getCartCount() }),
       });
       if (res.success && typeof res.shippingFee === "number") {
         setShippingFee(res.shippingFee);
         setCodFee(res.codFee ?? 0);
         setRtoFee(res.rtoFee ?? res.shippingFee);
+        setCourierId(res.courierId ? String(res.courierId) : null);
       } else {
         setShippingFee(50);
         setCodFee(payMethod === "COD" ? 50 : 0);
         setRtoFee(50);
+        setCourierId(null);
       }
     } catch (error) {
       console.error("Error calculating shipping:", error);
@@ -129,7 +132,7 @@ export default function CartDrawer() {
       }
     }
 
-    const success = await checkout(paymentMethod, { ...addressDetails, shippingCharges: shippingFee, codCharges: codFee, rtoCharges: rtoFee });
+    const success = await checkout(paymentMethod, { ...addressDetails, shippingCharges: shippingFee, codCharges: codFee, rtoCharges: rtoFee, courierId });
     setIsCheckingOut(false);
     if (success) {
       useAlertStore.getState().showAlert("Thank you for your order! Your garments are recorded in the system and being prepared for dispatch.");
