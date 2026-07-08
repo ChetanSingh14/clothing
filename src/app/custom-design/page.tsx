@@ -103,7 +103,7 @@ export default function CustomDesignPage() {
     try {
       const payload = {
         ...formData,
-        designImageUrl: uploadedImages.join(","),
+        designImageUrl: uploadedImages,
         quantity: Number(formData.quantity)
       };
 
