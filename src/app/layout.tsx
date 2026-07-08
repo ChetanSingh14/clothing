@@ -17,6 +17,7 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://www.mdfkclothing.com"),
   title: "MDFK CLOTHING CO. - Printed Streetwear Tees",
   description: "Discover bold graphic tees crafted for Gen Z, featuring exclusive prints and premium cotton blends.",
   icons: {
@@ -32,8 +33,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" data-scroll-behavior="smooth" className={`${playfairDisplay.variable} ${plusJakartaSans.variable} h-full antialiased overflow-x-hidden`}>
-      <body className="min-h-full bg-brand-bg text-brand-charcoal font-sans antialiased overflow-x-hidden">
+    <html lang="en" data-scroll-behavior="smooth" className={`${playfairDisplay.variable} ${plusJakartaSans.variable} min-h-screen antialiased overflow-x-hidden`}>
+      <body className="min-h-screen bg-brand-bg text-brand-charcoal font-sans antialiased overflow-x-hidden">
         {children}
         <Chatbot />
         <AlertModal />

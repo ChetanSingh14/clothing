@@ -1,7 +1,7 @@
 "use client";
 
 import { Canvas, useFrame } from "@react-three/fiber";
-import { useGLTF, Environment, Decal, useTexture, Stage } from "@react-three/drei";
+import { useGLTF, Environment, Decal, useTexture, Stage, OrbitControls } from "@react-three/drei";
 import { Suspense, useRef, useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import * as THREE from "three";
@@ -66,30 +66,11 @@ function ShirtModel({ flavor }: { flavor: "cream" | "brown" }) {
 
 function RotatingGroup({ flavor, spinRef, children }: { flavor: "cream" | "brown"; spinRef: React.MutableRefObject<number>; children: React.ReactNode }) {
   const groupRef = useRef<THREE.Group>(null);
-  const mouse = useRef({ x: 0, y: 0 });
-  const currentMouse = useRef({ x: 0, y: 0 });
-
-  // Track window mousemove
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      mouse.current.x = (e.clientX / window.innerWidth) - 0.5;
-      mouse.current.y = (e.clientY / window.innerHeight) - 0.5;
-    };
-    window.addEventListener("mousemove", handleMouseMove);
-    return () => window.removeEventListener("mousemove", handleMouseMove);
-  }, []);
 
   useFrame(() => {
     if (groupRef.current) {
-      // Lerp mouse coordinates for buttery smooth parallax
-      currentMouse.current.x += (mouse.current.x - currentMouse.current.x) * 0.05;
-      currentMouse.current.y += (mouse.current.y - currentMouse.current.y) * 0.05;
-
-      // Rotate group:
-      // Y-axis (azimuth): mouse parallax + spin
-      groupRef.current.rotation.y = currentMouse.current.x * (40 * Math.PI / 180) + spinRef.current;
-      // X-axis (polar): mouse parallax
-      groupRef.current.rotation.x = currentMouse.current.y * (20 * Math.PI / 180);
+      // Rotate group for flavor switch animation
+      groupRef.current.rotation.y = spinRef.current;
     }
   });
 
@@ -102,6 +83,12 @@ function InnerViewer({ flavor, spinRef }: { flavor: "cream" | "brown"; spinRef: 
       <ambientLight intensity={1.5} />
       <directionalLight position={[5, 10, 5]} intensity={1.5} />
       <directionalLight position={[-5, 5, -5]} intensity={0.5} />
+      <OrbitControls 
+        enableZoom={false} 
+        enablePan={false} 
+        minPolarAngle={Math.PI / 2} 
+        maxPolarAngle={Math.PI / 2}
+      />
       <RotatingGroup flavor={flavor} spinRef={spinRef}>
         <ShirtModel flavor={flavor} />
       </RotatingGroup>

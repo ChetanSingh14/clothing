@@ -22,7 +22,7 @@ interface TimelineEvent {
 const timelineData: TimelineEvent[] = [
   {
     year: "Founding",
-    title: "THREE FRIENDS",
+    title: "FOUR FRIENDS",
     tagline: "A shared passion for creativity.",
     desc: "MDFK Clothing Co. was born out of a shared passion between three friends. We wanted to build a platform for bold self-expression and premium clothing.",
     image: "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=800&auto=format&fit=crop",

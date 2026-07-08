@@ -378,8 +378,8 @@
 }
 
 .main-product-3d {
-    width: 120vw;
-    height: 120vh;
+    width: 100vw;
+    height: 100vh;
     outline: none;
     --progress-bar-color: transparent;
     --poster-color: transparent;
@@ -388,7 +388,8 @@
     top: 40%;
     left: 50%;
     transform: translate(-50%, -50%) rotate(15deg);
-    pointer-events: none;
+    pointer-events: auto;
+    touch-action: pan-y;
     background: transparent !important;
     background-color: transparent !important;
 }
@@ -416,6 +417,7 @@
     gap: 1.5rem;
     align-items: flex-end;
     pointer-events: auto;
+    touch-action: pan-y;
 }
 
 .carousel-cards {
@@ -439,6 +441,7 @@
     position: relative;
     backdrop-filter: blur(10px);
     text-align: center;
+    touch-action: pan-y;
 }
 
 .flavor-card:hover {
@@ -584,7 +587,8 @@
         top: 40%;
         left: 50%;
         transform: translate(-50%, -50%) rotate(5deg);
-        pointer-events: none !important;
+        pointer-events: auto !important;
+        touch-action: pan-y !important;
     }
 
     .hero-right {

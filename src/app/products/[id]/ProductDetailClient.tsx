@@ -50,9 +50,15 @@ const getColorImages = (color: string, defaultImages: string[]) => {
     if (parts.length > 1) {
       try {
         const imgColor = decodeURIComponent(parts[1]);
-        return imgColor === color || imgColor === color.replace('#', '');
+        return imgColor === color || 
+               imgColor === color.replace('#', '') ||
+               imgColor.endsWith(color) ||
+               imgColor.endsWith(color.replace('#', '')) ||
+               imgColor.includes(color) ||
+               imgColor.includes(color.replace('#', ''));
       } catch (e) {
-        return parts[1] === color;
+        const rawColor = parts[1];
+        return rawColor === color || rawColor.endsWith(color) || rawColor.includes(color);
       }
     }
     return false;
@@ -61,7 +67,7 @@ const getColorImages = (color: string, defaultImages: string[]) => {
   let imagesToUse = backendColorImages.length > 0 ? backendColorImages : undefined;
   if (!imagesToUse) {
     const baseImages = defaultImages.filter(img => !img.includes('#color='));
-    imagesToUse = MOCK_COLOR_IMAGES[color] || (baseImages.length > 0 ? baseImages : MOCK_COLOR_IMAGES.default);
+    imagesToUse = baseImages.length > 0 ? baseImages : (MOCK_COLOR_IMAGES[color] || MOCK_COLOR_IMAGES.default);
   }
   if (imagesToUse.length === 0 && defaultImages.length > 0) imagesToUse = defaultImages;
 
@@ -340,7 +346,7 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
                     <>
                       <div className="space-y-2">
                         <label className="text-xs font-semibold text-brand-charcoal uppercase tracking-wider block">
-                          Male Shirt Color
+                          Male T-Shirt Color
                         </label>
                         <div className="flex flex-wrap gap-3">
                           {(product.maleColors && product.maleColors.length > 0 ? product.maleColors : product.colors).map((color) => (
@@ -368,7 +374,7 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
                       </div>
                       <div className="space-y-2">
                         <label className="text-xs font-semibold text-brand-charcoal uppercase tracking-wider block">
-                          Female Shirt Color
+                          Female T-Shirt Color
                         </label>
                         <div className="flex flex-wrap gap-3">
                           {(product.femaleColors && product.femaleColors.length > 0 ? product.femaleColors : product.colors).map((color) => (
@@ -432,7 +438,7 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
                     <>
                       <div className="space-y-2">
                         <label className="text-xs font-semibold text-brand-charcoal uppercase tracking-wider block">
-                          Male Shirt Size
+                          Male T-Shirt Size
                         </label>
                         <div className="flex flex-wrap gap-2">
                           {(product.maleSizes && product.maleSizes.length > 0 ? product.maleSizes : product.sizes).map((size) => (
@@ -453,7 +459,7 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
                       </div>
                       <div className="space-y-2">
                         <label className="text-xs font-semibold text-brand-charcoal uppercase tracking-wider block">
-                          Female Shirt Size
+                          Female T-Shirt Size
                         </label>
                         <div className="flex flex-wrap gap-2">
                           {(product.femaleSizes && product.femaleSizes.length > 0 ? product.femaleSizes : product.sizes).map((size) => (

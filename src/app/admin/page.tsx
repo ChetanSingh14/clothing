@@ -10,7 +10,7 @@ import { useProductStore } from "@/store/useProductStore";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { useAlertStore } from "@/store/useAlertStore";
 import { shallow } from "zustand/shallow";
-import { Plus, Trash2, Tag, Star, Package, Users, Layers, UploadCloud, Loader2, RefreshCw, BarChart2, UserCheck, Shield, ShoppingBag, DollarSign, Calendar, Edit, Settings, Eye, X, Image as ImageIcon } from "lucide-react";
+import { Plus, Trash2, Tag, Star, Package, Users, Layers, UploadCloud, Loader2, RefreshCw, BarChart2, UserCheck, Shield, ShoppingBag, DollarSign, Calendar, Edit, Settings, Eye, X, Image as ImageIcon, Paintbrush } from "lucide-react";
 import { motion } from "framer-motion";
 import { apiFetch } from "@/utils/api";
 import { useRouter } from "next/navigation";
@@ -98,12 +98,38 @@ export default function AdminDashboardPage() {
   
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadingModel, setUploadingModel] = useState(false);
+  const [uploadingGallery, setUploadingGallery] = useState(false);
   const [formSuccess, setFormSuccess] = useState(false);
   const [newCategoryInput, setNewCategoryInput] = useState("");
 
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [lightboxImages, setLightboxImages] = useState<string[]>([]);
+
+  // Custom Orders States
+  const [customOrders, setCustomOrders] = useState<any[]>([]);
+
+  const fetchCustomOrders = async () => {
+    try {
+      const res = await apiFetch("/custom-orders/admin");
+      if (res.success) setCustomOrders(res.data);
+    } catch (err) {
+      console.error("Failed to fetch custom orders", err);
+    }
+  };
+
+  const handleCustomOrderStatusUpdate = async (orderId: number, status: string) => {
+    try {
+      await apiFetch(`/custom-orders/admin/${orderId}/status`, {
+        method: "PUT",
+        body: JSON.stringify({ status })
+      });
+      useAlertStore.getState().showAlert(`Custom order #${orderId} status updated.`);
+      fetchCustomOrders();
+    } catch (err: any) {
+      useAlertStore.getState().showAlert(err.message || "Failed to update custom order status");
+    }
+  };
 
   // Hero Gallery States
   const [galleryImages, setGalleryImages] = useState<any[]>([]);
@@ -237,6 +263,9 @@ export default function AdminDashboardPage() {
     if (activeTab === "cinematic") {
       fetchCinematicImages();
     }
+    if (activeTab === "custom-orders") {
+      fetchCustomOrders();
+    }
   }, [activeTab]);
 
   useEffect(() => {
@@ -300,6 +329,32 @@ export default function AdminDashboardPage() {
     reader.readAsDataURL(file);
   };
 
+  const handleGalleryImagesUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploadingGallery(true);
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const reader = new FileReader();
+      const uploadPromise = new Promise<string | null>((resolve) => {
+        reader.onloadend = async () => {
+          const base64Data = reader.result as string;
+          const url = await uploadProductImage(base64Data);
+          resolve(url);
+        };
+        reader.readAsDataURL(file);
+      });
+      const url = await uploadPromise;
+      if (url) {
+        setImages(prev => [...prev, url]);
+      } else {
+        useAlertStore.getState().showAlert(`Failed to upload ${file.name}`);
+      }
+    }
+    setUploadingGallery(false);
+  };
+
   const handleModelFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -356,11 +411,17 @@ export default function AdminDashboardPage() {
     
     const imagesToSubmit = [uploadedImageUrl];
     
-    Object.entries(colorImages).forEach(([color, urls]) => {
-      urls.forEach(url => {
-        imagesToSubmit.push(`${url}#color=${encodeURIComponent(color)}`);
+    if (category.toLowerCase().includes("couple")) {
+      images.forEach((url) => {
+        imagesToSubmit.push(url);
       });
-    });
+    } else {
+      Object.entries(colorImages).forEach(([color, urls]) => {
+        urls.forEach(url => {
+          imagesToSubmit.push(`${url}#color=${encodeURIComponent(color)}`);
+        });
+      });
+    }
 
     if (uploadedModelUrl) {
       imagesToSubmit.push(uploadedModelUrl);
@@ -372,7 +433,9 @@ export default function AdminDashboardPage() {
       price: Number(price),
       category,
       images: imagesToSubmit,
-      colors,
+      colors: category.toLowerCase().includes("couple") 
+        ? Array.from(new Set([...maleColors, ...femaleColors]))
+        : colors,
       sizes: selectedSizes,
       maleColors: category.toLowerCase().includes("couple") ? maleColors : [],
       femaleColors: category.toLowerCase().includes("couple") ? femaleColors : [],
@@ -397,6 +460,7 @@ export default function AdminDashboardPage() {
       setUploadedImageUrl("");
       setUploadedModelUrl("");
       setColorImages({});
+      setImages([]);
       setFormSuccess(true);
       await fetchProducts(); // reload products listing
       await fetchStats(); // reload stats
@@ -423,25 +487,34 @@ export default function AdminDashboardPage() {
       setUploadedImageUrl(prod.images[0]); // Primary image
       
       const parsedColorImages: Record<string, string[]> = {};
+      const parsedGalleryImages: string[] = [];
       let modelFound = "";
+      
+      const isCouple = prod.category?.toLowerCase().includes("couple");
       
       prod.images.slice(1).forEach((img: string) => {
         if (img.endsWith(".glb") || img.endsWith(".gltf")) {
           modelFound = img;
-        } else if (img.includes("#color=")) {
-          const [url, hash] = img.split("#color=");
-          const color = decodeURIComponent(hash);
-          if (!parsedColorImages[color]) parsedColorImages[color] = [];
-          parsedColorImages[color].push(url);
+        } else {
+          if (img.includes("#color=")) {
+            const [url, hash] = img.split("#color=");
+            const color = decodeURIComponent(hash);
+            if (!parsedColorImages[color]) parsedColorImages[color] = [];
+            parsedColorImages[color].push(url);
+          } else {
+            parsedGalleryImages.push(img);
+          }
         }
       });
       
       setColorImages(parsedColorImages);
+      setImages(parsedGalleryImages);
       setUploadedModelUrl(modelFound);
     } else {
       setUploadedImageUrl("");
       setUploadedModelUrl("");
       setColorImages({});
+      setImages([]);
     }
     
     // Smooth scroll to top
@@ -545,6 +618,7 @@ export default function AdminDashboardPage() {
                 { id: "products", label: "Products Inventory", icon: Package },
                 { id: "reviews", label: "Reviews Manager", icon: Star },
                 { id: "orders", label: "Sales & Orders", icon: ShoppingBag },
+                { id: "custom-orders", label: "Custom Orders", icon: Paintbrush },
                 { id: "users", label: "Customer Accounts", icon: Users },
                 { id: "gallery", label: "Hero Gallery", icon: ImageIcon },
                 { id: "cinematic", label: "Cinematic Hero", icon: Layers },
@@ -1093,68 +1167,133 @@ export default function AdminDashboardPage() {
                         </div>
                       )}
                     </div>
-
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <label className="font-semibold uppercase tracking-wider text-brand-charcoal/60">
+                          Product Gallery Media (Up to 15 items)
+                        </label>
+                          <div className="relative">
+                            <button
+                              type="button"
+                              className="text-[10px] bg-brand-charcoal text-brand-bg px-3 py-1.5 rounded-lg font-semibold hover:bg-brand-charcoal/80 cursor-pointer"
+                            >
+                              {uploadingGallery ? "Uploading..." : "Upload Media"}
+                            </button>
+                            <input
+                              type="file"
+                              multiple
+                              accept="image/*,video/mp4,video/webm,video/x-m4v,video/quicktime"
+                              disabled={uploadingGallery}
+                              onChange={handleGalleryImagesUpload}
+                              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-3 mt-2 mb-6">
+                          {images.length > 0 ? (
+                            <div className="flex flex-wrap gap-2 bg-brand-charcoal/5 p-3 rounded-xl border border-brand-charcoal/10">
+                              {images.map((url, imgIdx) => (
+                                <div 
+                                  key={imgIdx} 
+                                  className="relative h-16 w-12 bg-brand-gray rounded-md overflow-hidden border border-brand-charcoal/10 cursor-pointer group"
+                                >
+                                  <MediaRenderer src={url} alt={`Gallery ${imgIdx}`} className="object-cover h-full w-full" onClick={() => openLightbox(images, imgIdx)} />
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setImages(prev => prev.filter((_, i) => i !== imgIdx));
+                                    }}
+                                    className="absolute top-0 right-0 bg-red-500/90 text-white rounded-bl-md p-[2px] opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                                  >
+                                    <X size={10} />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="text-center py-6 border border-dashed border-brand-charcoal/20 rounded-xl text-brand-charcoal/50 text-[10px] uppercase font-bold">
+                              No gallery media uploaded yet.
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     <div>
                       <label className="font-semibold uppercase tracking-wider text-brand-charcoal/60">
                         Color-Specific Media (Up to 8 per color)
                       </label>
                       <div className="space-y-3 mt-2 mb-6">
-                        {colorsInput.split(",").map(c => c.trim()).filter(c => c !== "").map((color, idx) => {
-                          const uploadedImages = colorImages[color] || [];
-                          const uploadedCount = uploadedImages.length;
-                          return (
-                            <div key={idx} className="flex flex-col gap-3 bg-brand-charcoal/5 p-3 rounded-xl border border-brand-charcoal/10">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                  <span className="h-6 w-6 rounded-full border border-brand-charcoal/20" style={{ backgroundColor: color }}></span>
-                                  <span className="text-xs font-semibold text-brand-charcoal">{color}</span>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                  <span className="text-[10px] text-brand-charcoal/50 font-bold uppercase">{uploadedCount}/8 items</span>
-                                  {uploadedCount < 8 && (
-                                    <div className="relative">
-                                      <button type="button" className="text-[10px] bg-brand-charcoal text-brand-bg px-3 py-1.5 rounded-lg font-semibold hover:bg-brand-charcoal/80 cursor-pointer">
-                                        {uploadingColor === color ? "Uploading..." : "Upload"}
-                                      </button>
-                                      <input
-                                        type="file"
-                                        accept="image/*,video/mp4,video/webm,video/x-m4v,video/quicktime"
-                                        disabled={uploadingColor !== null}
-                                        onChange={(e) => handleColorImageFileChange(e, color)}
-                                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                                      />
+                        {(() => {
+                          const isCouple = category?.toLowerCase().includes("couple");
+                          let activeSlots: { gender: string, color: string, key: string }[] = [];
+                          
+                          if (isCouple) {
+                            const maleSlots = maleColorsInput.split(",").map(c => c.trim()).filter(Boolean).map(color => ({ gender: "Male", color, key: `Male:${color}` }));
+                            const femaleSlots = femaleColorsInput.split(",").map(c => c.trim()).filter(Boolean).map(color => ({ gender: "Female", color, key: `Female:${color}` }));
+                            activeSlots = [...maleSlots, ...femaleSlots];
+                          } else {
+                            activeSlots = colorsInput.split(",").map(c => c.trim()).filter(Boolean).map(color => ({ gender: "", color, key: color }));
+                          }
+                          
+                          return activeSlots.map((slot, idx) => {
+                              const uploadedImages = colorImages[slot.key] || [];
+                              const uploadedCount = uploadedImages.length;
+                              return (
+                                <div key={idx} className="flex flex-col gap-3 bg-brand-charcoal/5 p-3 rounded-xl border border-brand-charcoal/10">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                      <span className="h-6 w-6 rounded-full border border-brand-charcoal/20" style={{ backgroundColor: slot.color }}></span>
+                                      <span className="text-xs font-semibold text-brand-charcoal">
+                                        {slot.gender ? `${slot.gender} - ` : ""}{slot.color}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                      <span className="text-[10px] text-brand-charcoal/50 font-bold uppercase">{uploadedCount}/8 items</span>
+                                      {uploadedCount < 8 && (
+                                        <div className="relative">
+                                          <button type="button" className="text-[10px] bg-brand-charcoal text-brand-bg px-3 py-1.5 rounded-lg font-semibold hover:bg-brand-charcoal/80 cursor-pointer">
+                                            {uploadingColor === slot.key ? "Uploading..." : "Upload"}
+                                          </button>
+                                          <input
+                                            type="file"
+                                            accept="image/*,video/mp4,video/webm,video/x-m4v,video/quicktime"
+                                            disabled={uploadingColor !== null}
+                                            onChange={(e) => handleColorImageFileChange(e, slot.key)}
+                                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                                          />
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                  {uploadedImages.length > 0 && (
+                                    <div className="flex gap-2">
+                                      {uploadedImages.map((url, imgIdx) => (
+                                        <div 
+                                          key={imgIdx} 
+                                          className="relative h-12 w-10 bg-brand-gray rounded-md overflow-hidden border border-brand-charcoal/10 cursor-pointer group"
+                                        >
+                                          <MediaRenderer src={url} alt={`Preview ${imgIdx}`} className="object-cover h-full w-full" onClick={() => openLightbox(uploadedImages, imgIdx)} />
+                                          <button
+                                            type="button"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setColorImages(prev => ({
+                                                ...prev,
+                                                [slot.key]: prev[slot.key].filter((_, i) => i !== imgIdx)
+                                              }));
+                                            }}
+                                            className="absolute top-0 right-0 bg-red-500/90 text-white rounded-bl-md p-[2px] opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                                          >
+                                            <X size={10} />
+                                          </button>
+                                        </div>
+                                      ))}
                                     </div>
                                   )}
                                 </div>
-                              </div>
-                              {uploadedImages.length > 0 && (
-                                <div className="flex gap-2">
-                                  {uploadedImages.map((url, imgIdx) => (
-                                    <div 
-                                      key={imgIdx} 
-                                      className="relative h-12 w-10 bg-brand-gray rounded-md overflow-hidden border border-brand-charcoal/10 cursor-pointer group"
-                                    >
-                                      <MediaRenderer src={url} alt={`Preview ${imgIdx}`} className="object-cover h-full w-full" onClick={() => openLightbox(uploadedImages, imgIdx)} />
-                                      <button
-                                        type="button"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setColorImages(prev => ({
-                                            ...prev,
-                                            [color]: prev[color].filter((_, i) => i !== imgIdx)
-                                          }));
-                                        }}
-                                        className="absolute top-0 right-0 bg-red-500/90 text-white rounded-bl-md p-[2px] opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
-                                      >
-                                        <X size={10} />
-                                      </button>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
+                              );
+                            });
+                          })()}
                       </div>
                     </div>
 
@@ -1475,6 +1614,90 @@ export default function AdminDashboardPage() {
                     <div className="border border-brand-charcoal/5 rounded-3xl bg-brand-bg p-12 text-center text-xs text-brand-charcoal/40 italic">
                       No customer orders recorded.
                     </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* -------------------- TAB CONTENT: CUSTOM ORDERS -------------------- */}
+            {activeTab === "custom-orders" && (
+              <div className="space-y-6">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-xl font-semibold tracking-tight text-brand-charcoal font-serif">
+                    Custom Design Orders
+                  </h2>
+                  <span className="text-xs bg-brand-charcoal text-white px-3 py-1 rounded-full font-bold">
+                    {customOrders.length} custom order(s)
+                  </span>
+                </div>
+                
+                <div className="space-y-6">
+                  {customOrders.length === 0 ? (
+                    <p className="text-brand-charcoal/50 text-sm">No custom orders found.</p>
+                  ) : (
+                    customOrders.map((ord: any) => (
+                       <div key={ord.id} className="border border-brand-charcoal/5 rounded-3xl bg-brand-bg p-6 shadow-xs flex flex-col md:flex-row gap-6">
+                         <div className="md:w-1/3">
+                            <div className="grid grid-cols-2 gap-2">
+                              {ord.designImageUrl?.split(',').filter(Boolean).map((imgUrl: string, idx: number) => (
+                                <div key={idx} className="w-full aspect-square bg-brand-gray rounded-xl overflow-hidden border border-brand-charcoal/10 relative group flex items-center justify-center">
+                                  <img src={imgUrl} alt={`Custom Design ${idx + 1}`} className="object-contain w-full h-full p-1" />
+                                  <span className="absolute bottom-1 left-1 text-[8px] bg-brand-charcoal/70 text-brand-bg px-1.5 py-0.5 rounded-md font-semibold font-sans">
+                                    {idx === 0 ? "Front" : idx === 1 ? "Back" : "Logo"}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                         </div>
+                        <div className="md:w-2/3 space-y-4">
+                           <div className="flex justify-between items-start">
+                             <div>
+                               <h3 className="font-bold text-lg">Order #{ord.id}</h3>
+                               <p className="text-xs text-brand-charcoal/60 mt-1">Submitted: {new Date(ord.createdAt).toLocaleDateString()}</p>
+                             </div>
+                             <select 
+                               value={ord.status || "PENDING"}
+                               onChange={(e) => handleCustomOrderStatusUpdate(ord.id, e.target.value)}
+                               className={`text-[10px] font-bold px-2 py-0.5 rounded border uppercase tracking-wide outline-none cursor-pointer ${
+                                 ord.status === "DELIVERED" || ord.status === "PROCESSED" ? "bg-green-100 text-green-800 border-green-200" :
+                                 ord.status === "CANCELLED" || ord.status === "REJECTED" ? "bg-red-100 text-red-800 border-red-200" :
+                                 "bg-amber-100 text-amber-800 border-amber-200"
+                               }`}
+                             >
+                               <option value="PENDING">PENDING</option>
+                               <option value="APPROVED">APPROVED</option>
+                               <option value="REJECTED">REJECTED</option>
+                               <option value="PROCESSED">PROCESSED</option>
+                               <option value="DELIVERED">DELIVERED</option>
+                             </select>
+                           </div>
+                           
+                           <div className="grid grid-cols-2 gap-4 text-sm bg-white p-4 rounded-xl border border-brand-charcoal/5">
+                             <div>
+                               <span className="block text-[10px] uppercase font-bold text-brand-charcoal/50">Customer</span>
+                               <p className="font-semibold">{ord.fullName}</p>
+                               <p className="text-xs">{ord.email}</p>
+                               <p className="text-xs">{ord.phone}</p>
+                             </div>
+                             <div>
+                               <span className="block text-[10px] uppercase font-bold text-brand-charcoal/50">Preferences</span>
+                               <p className="font-semibold">{ord.color} - Size {ord.size}</p>
+                               <p className="text-xs">Qty: {ord.quantity}</p>
+                             </div>
+                           </div>
+
+                           <div className="bg-white p-4 rounded-xl border border-brand-charcoal/5 text-sm">
+                             <span className="block text-[10px] uppercase font-bold text-brand-charcoal/50">Design Notes</span>
+                             <p className="mt-1">{ord.designNotes || "No additional notes provided."}</p>
+                           </div>
+
+                           <div className="bg-white p-4 rounded-xl border border-brand-charcoal/5 text-sm">
+                             <span className="block text-[10px] uppercase font-bold text-brand-charcoal/50">Shipping Address</span>
+                             <p className="mt-1 text-xs">{ord.address}, {ord.landmark && `${ord.landmark},`} {ord.city}, {ord.state} - {ord.pincode}</p>
+                           </div>
+                        </div>
+                      </div>
+                    ))
                   )}
                 </div>
               </div>

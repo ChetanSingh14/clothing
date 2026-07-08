@@ -47,7 +47,7 @@ export default function Header({ onAuthClick }: HeaderProps) {
 
         {/* Center: Navigation Links */}
         <nav className="hidden md:flex items-center space-x-8">
-          {["Home", "Product", "About Us", "Contact"].map((link) => (
+          {["Home", "Product", "Custom Design", "About Us", "Contact"].map((link) => (
             <Link
               key={link}
               href={
@@ -59,6 +59,8 @@ export default function Header({ onAuthClick }: HeaderProps) {
                   ? "/about"
                   : link === "Product"
                   ? "/products"
+                  : link === "Custom Design"
+                  ? "/custom-design"
                   : `/#${link.toLowerCase().replace(" ", "-")}`
               }
               className="text-xs font-bold tracking-widest text-brand-charcoal/70 transition-all hover:text-brand-charcoal uppercase"
@@ -161,7 +163,7 @@ export default function Header({ onAuthClick }: HeaderProps) {
             transition={{ duration: 0.3, ease: "easeInOut" }}
             className="md:hidden border-t border-brand-charcoal/5 bg-brand-bg/95 backdrop-blur-md px-6 py-4 flex flex-col space-y-4"
           >
-            {["Home", "Product", "About Us", "Contact"].map((link) => (
+            {["Home", "Product", "Custom Design", "About Us", "Contact"].map((link) => (
               <Link
                 key={link}
                 href={
@@ -173,6 +175,8 @@ export default function Header({ onAuthClick }: HeaderProps) {
                     ? "/about"
                     : link === "Product"
                     ? "/products"
+                    : link === "Custom Design"
+                    ? "/custom-design"
                     : `/#${link.toLowerCase().replace(" ", "-")}`
                 }
                 onClick={() => setIsMobileMenuOpen(false)}
