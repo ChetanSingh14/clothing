@@ -151,26 +151,26 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.95, opacity: 0, y: 15 }}
             transition={{ type: "spring", duration: 0.5 }}
-            className="relative w-full max-w-md overflow-hidden rounded-3xl bg-brand-bg p-8 shadow-2xl border border-brand-charcoal/5 z-10"
+            className="relative w-full max-w-md max-h-[90vh] overflow-y-auto rounded-3xl bg-brand-bg p-6 sm:p-8 shadow-2xl border border-brand-charcoal/5 z-10 scrollbar-none"
           >
             {/* Close Button */}
             <button
               onClick={onClose}
-              className="absolute top-6 right-6 text-brand-charcoal/40 hover:text-brand-charcoal p-1.5 rounded-full hover:bg-brand-charcoal/5 transition-all duration-200 cursor-pointer"
+              className="absolute top-4 right-4 text-brand-charcoal/40 hover:text-brand-charcoal p-1.5 rounded-full hover:bg-brand-charcoal/5 transition-all duration-200 cursor-pointer"
             >
               <X className="h-5 w-5" />
             </button>
 
             {/* Header info */}
-            <div className="flex items-center gap-2 bg-brand-tan/10 text-brand-tan-dark px-3 py-1 rounded-full text-xs font-semibold w-fit mb-4">
+            <div className="flex items-center gap-2 bg-brand-tan/10 text-brand-tan-dark px-3 py-1 rounded-full text-xs font-semibold w-fit mb-3">
               <Sparkles className="h-3.5 w-3.5" />
               <span className="uppercase tracking-widest text-[9px]">{companyName} club</span>
             </div>
 
-            <h2 className="text-3xl font-bold font-serif text-brand-charcoal tracking-tight">
+            <h2 className="text-2xl sm:text-3xl font-bold font-serif text-brand-charcoal tracking-tight">
               {isLogin ? "Welcome Back" : otpSent ? "Verify Email" : "Create Account"}
             </h2>
-            <p className="mt-2 text-sm text-brand-charcoal/50 font-light">
+            <p className="mt-1 text-xs sm:text-sm text-brand-charcoal/50 font-light">
               {isLogin 
                 ? "Log in to access your wishlist and shopping bag." 
                 : otpSent 
@@ -179,11 +179,11 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
             </p>
 
             {/* Form */}
-            <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+            <form onSubmit={handleSubmit} className="mt-4 sm:mt-6 space-y-3.5">
               {!isLogin && (
                 <>
                   <div>
-                    <label className="text-xs font-semibold uppercase tracking-wider text-brand-charcoal/60" htmlFor="name">
+                    <label className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-brand-charcoal/60" htmlFor="name">
                       Full Name
                     </label>
                     <input
@@ -194,14 +194,14 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       placeholder="Enter full name"
-                      className="mt-1.5 w-full rounded-2xl border border-brand-charcoal/10 bg-brand-bg px-4 py-3 text-sm focus:border-brand-green focus:outline-none transition-all duration-200 disabled:opacity-60"
+                      className="mt-1 w-full rounded-2xl border border-brand-charcoal/10 bg-brand-bg px-4 py-2.5 text-sm focus:border-brand-green focus:outline-none transition-all duration-200 disabled:opacity-60"
                     />
                   </div>
                 </>
               )}
 
               <div>
-                <label className="text-xs font-semibold uppercase tracking-wider text-brand-charcoal/60" htmlFor="email">
+                <label className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-brand-charcoal/60" htmlFor="email">
                   Email Address
                 </label>
                 <input
@@ -212,14 +212,14 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@company.com"
-                  className="mt-1.5 w-full rounded-2xl border border-brand-charcoal/10 bg-brand-bg px-4 py-3 text-sm focus:border-brand-green focus:outline-none transition-all duration-200 disabled:opacity-60"
+                  className="mt-1 w-full rounded-2xl border border-brand-charcoal/10 bg-brand-bg px-4 py-2.5 text-sm focus:border-brand-green focus:outline-none transition-all duration-200 disabled:opacity-60"
                 />
               </div>
 
               {!isLogin && otpSent && (
                 <div>
                   <div className="flex justify-between items-center">
-                    <label className="text-xs font-semibold uppercase tracking-wider text-brand-charcoal/60" htmlFor="otp">
+                    <label className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-brand-charcoal/60" htmlFor="otp">
                       Verification Code (OTP)
                     </label>
                     <button
@@ -237,14 +237,14 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
                     value={otp}
                     onChange={(e) => setOtp(e.target.value)}
                     placeholder="Enter 6-digit OTP"
-                    className="mt-1.5 w-full rounded-2xl border border-brand-charcoal/10 bg-brand-bg px-4 py-3 text-sm focus:border-brand-green focus:outline-none transition-all duration-200"
+                    className="mt-1 w-full rounded-2xl border border-brand-charcoal/10 bg-brand-bg px-4 py-2.5 text-sm focus:border-brand-green focus:outline-none transition-all duration-200"
                   />
                 </div>
               )}
 
               {isLogin || !otpSent ? (
                 <div>
-                  <label className="text-xs font-semibold uppercase tracking-wider text-brand-charcoal/60" htmlFor="password">
+                  <label className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-brand-charcoal/60" htmlFor="password">
                     Password
                   </label>
                   <input
@@ -254,14 +254,14 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="mt-1.5 w-full rounded-2xl border border-brand-charcoal/10 bg-brand-bg px-4 py-3 text-sm focus:border-brand-green focus:outline-none transition-all duration-200"
+                    className="mt-1 w-full rounded-2xl border border-brand-charcoal/10 bg-brand-bg px-4 py-2.5 text-sm focus:border-brand-green focus:outline-none transition-all duration-200"
                   />
                 </div>
               ) : null}
 
               {/* Error messages */}
               {error && (
-                <div className="flex gap-2.5 items-center bg-rose-50 border border-rose-200 text-rose-600 rounded-2xl p-3.5 text-xs font-medium">
+                <div className="flex gap-2.5 items-center bg-rose-50 border border-rose-200 text-rose-600 rounded-2xl p-3 px-3.5 text-xs font-medium">
                   <AlertCircle className="h-4.5 w-4.5 flex-shrink-0" />
                   <span>{error}</span>
                 </div>

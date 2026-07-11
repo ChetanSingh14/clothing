@@ -1,13 +1,12 @@
 import { io, Socket } from "socket.io-client";
 import { useAuthStore } from "@/store/useAuthStore";
+import { API_URL } from "./api";
 
 let socket: Socket | null = null;
 let isLoggingOut = false;
 
-// Determine socket server URL based on API URL
-const SOCKET_URL = process.env.NEXT_PUBLIC_API_URL 
-  ? process.env.NEXT_PUBLIC_API_URL.replace("/api/v1", "") 
-  : "http://localhost:4000";
+// Determine socket server URL dynamically based on API URL
+const SOCKET_URL = API_URL.replace("/api/v1", "");
 
 export const getSocket = (): Socket | null => {
   if (typeof window === "undefined") return null;
