@@ -46,6 +46,7 @@ interface AdminState {
   nimbusShipExchangeOrder: (id: number) => Promise<{ success: boolean; message?: string }>;
   nimbusCancelExchangeOrder: (id: number) => Promise<{ success: boolean; message?: string }>;
   nimbusTrackExchangeOrder: (id: number) => Promise<{ success: boolean; data?: any; message?: string }>;
+  adminCreateOrder: (data: any) => Promise<{ success: boolean; message?: string }>;
 }
 
 export const useAdminStore = create<AdminState>((set, get) => ({
@@ -358,6 +359,26 @@ export const useAdminStore = create<AdminState>((set, get) => ({
       return { success: false, message: res.message || "Failed to track exchange" };
     } catch (err: any) {
       return { success: false, message: err.message || "Failed to track exchange shipment" };
+    }
+  },
+
+  adminCreateOrder: async (data) => {
+    set({ loading: true, error: null });
+    try {
+      const res = await apiFetch("/orders/admin/create", {
+        method: "POST",
+        body: JSON.stringify(data),
+      });
+      if (res.success) {
+        set({ loading: false });
+        await get().fetchOrders();
+        await get().fetchStats();
+        return { success: true, message: res.message || "Order created successfully" };
+      }
+      return { success: false, message: res.message || "Failed to create order" };
+    } catch (err: any) {
+      set({ error: err.message || "Failed to create order", loading: false });
+      return { success: false, message: err.message || "Failed to create order" };
     }
   },
 }));

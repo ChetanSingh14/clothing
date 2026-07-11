@@ -10,7 +10,7 @@ import { useProductStore } from "@/store/useProductStore";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { useAlertStore } from "@/store/useAlertStore";
 import { shallow } from "zustand/shallow";
-import { Plus, Trash2, Tag, Star, Package, Users, Layers, UploadCloud, Loader2, RefreshCw, BarChart2, UserCheck, Shield, ShoppingBag, DollarSign, Calendar, Edit, Settings, Eye, X, Image as ImageIcon, Paintbrush } from "lucide-react";
+import { Plus, Trash2, Tag, Star, Package, Users, Layers, UploadCloud, Loader2, RefreshCw, BarChart2, UserCheck, Shield, ShoppingBag, DollarSign, Calendar, Edit, Settings, Eye, X, Image as ImageIcon, Paintbrush, Search, Filter, ChevronDown, User } from "lucide-react";
 import { motion } from "framer-motion";
 import { apiFetch } from "@/utils/api";
 import { useRouter } from "next/navigation";
@@ -49,7 +49,8 @@ export default function AdminDashboardPage() {
     updateExchangeOrderStatus,
     nimbusShipExchangeOrder,
     nimbusCancelExchangeOrder,
-    nimbusTrackExchangeOrder
+    nimbusTrackExchangeOrder,
+    adminCreateOrder
   } = useAdminStore();
   
   const { products, fetchProducts } = useProductStore();
@@ -115,6 +116,34 @@ export default function AdminDashboardPage() {
 
   // Custom Orders States
   const [customOrders, setCustomOrders] = useState<any[]>([]);
+
+  // Order Status Filter
+  const [orderStatusFilter, setOrderStatusFilter] = useState("ALL");
+
+  // Create Order Modal States
+  const [isCreateOrderOpen, setIsCreateOrderOpen] = useState(false);
+  const [coIsCustomUser, setCoIsCustomUser] = useState(false);
+  const [coUserSearch, setCoUserSearch] = useState("");
+  const [coSelectedUserId, setCoSelectedUserId] = useState<number | null>(null);
+  const [coSelectedUserLabel, setCoSelectedUserLabel] = useState("");
+  const [coShowUserDropdown, setCoShowUserDropdown] = useState(false);
+  const [coCustomName, setCoCustomName] = useState("");
+  const [coCustomEmail, setCoCustomEmail] = useState("");
+  const [coCustomPhone, setCoCustomPhone] = useState("");
+  const [coItems, setCoItems] = useState('[{"title":"","price":0,"quantity":1,"size":"M","color":"#000","image":""}]');
+  const [coTotalAmount, setCoTotalAmount] = useState("");
+  const [coPaymentMethod, setCoPaymentMethod] = useState("COD");
+  const [coShippingCharges, setCoShippingCharges] = useState("");
+  const [coCodCharges, setCoCodCharges] = useState("");
+  const [coFullName, setCoFullName] = useState("");
+  const [coPhone, setCoPhone] = useState("");
+  const [coAddress, setCoAddress] = useState("");
+  const [coLandmark, setCoLandmark] = useState("");
+  const [coPincode, setCoPincode] = useState("");
+  const [coState, setCoState] = useState("");
+  const [coCity, setCoCity] = useState("");
+  const [coStatus, setCoStatus] = useState("BOOKED");
+  const [coSubmitting, setCoSubmitting] = useState(false);
 
   const fetchCustomOrders = async () => {
     try {
@@ -646,6 +675,90 @@ export default function AdminDashboardPage() {
     await fetchExchangeOrders();
     await fetchReviews();
   };
+
+  const filteredOrders = orderStatusFilter === "ALL"
+    ? orders
+    : orders.filter((o: any) => o.status === orderStatusFilter);
+
+  const resetCreateOrderForm = () => {
+    setCoIsCustomUser(false);
+    setCoUserSearch("");
+    setCoSelectedUserId(null);
+    setCoSelectedUserLabel("");
+    setCoShowUserDropdown(false);
+    setCoCustomName("");
+    setCoCustomEmail("");
+    setCoCustomPhone("");
+    setCoItems('[{"title":"","price":0,"quantity":1,"size":"M","color":"#000","image":""}]');
+    setCoTotalAmount("");
+    setCoPaymentMethod("COD");
+    setCoShippingCharges("");
+    setCoCodCharges("");
+    setCoFullName("");
+    setCoPhone("");
+    setCoAddress("");
+    setCoLandmark("");
+    setCoPincode("");
+    setCoState("");
+    setCoCity("");
+    setCoStatus("BOOKED");
+  };
+
+  const handleCreateOrderSubmit = async () => {
+    setCoSubmitting(true);
+    try {
+      let parsedItems: any[] = [];
+      try {
+        parsedItems = JSON.parse(coItems);
+      } catch {
+        useAlertStore.getState().showAlert("Invalid items JSON format.");
+        setCoSubmitting(false);
+        return;
+      }
+
+      const payload: any = {
+        items: parsedItems,
+        totalAmount: coTotalAmount ? Number(coTotalAmount) : 0,
+        paymentMethod: coPaymentMethod,
+        shippingCharges: coShippingCharges ? Number(coShippingCharges) : 0,
+        codCharges: coCodCharges ? Number(coCodCharges) : 0,
+        status: coStatus,
+        fullName: coFullName || undefined,
+        phone: coPhone || undefined,
+        address: coAddress || undefined,
+        landmark: coLandmark || undefined,
+        pincode: coPincode || undefined,
+        state: coState || undefined,
+        city: coCity || undefined,
+      };
+
+      if (!coIsCustomUser && coSelectedUserId) {
+        payload.userId = coSelectedUserId;
+      } else if (coIsCustomUser) {
+        payload.fullName = coCustomName || coFullName || undefined;
+        payload.email = coCustomEmail || undefined;
+        payload.phone = coCustomPhone || coPhone || undefined;
+      }
+
+      const res = await adminCreateOrder(payload);
+      if (res.success) {
+        useAlertStore.getState().showAlert(res.message || "Order created!");
+        resetCreateOrderForm();
+        setIsCreateOrderOpen(false);
+      } else {
+        useAlertStore.getState().showAlert(res.message || "Failed to create order.");
+      }
+    } catch (err: any) {
+      useAlertStore.getState().showAlert(err.message || "Error creating order.");
+    } finally {
+      setCoSubmitting(false);
+    }
+  };
+
+  const coFilteredUsers = users.filter((u: any) => {
+    const q = coUserSearch.toLowerCase();
+    return u.name?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q);
+  });
 
   return (
     <div className="min-h-screen bg-brand-bg flex flex-col justify-between selection:bg-brand-green selection:text-brand-bg">
@@ -1539,17 +1652,59 @@ export default function AdminDashboardPage() {
             {/* -------------------- TAB CONTENT: ORDERS -------------------- */}
             {activeTab === "orders" && (
               <div className="space-y-6">
-                <div className="flex justify-between items-center">
-                  <h2 className="text-xl font-semibold tracking-tight text-brand-charcoal font-serif">
-                    Sales Order Logs
-                  </h2>
-                  <span className="text-xs bg-purple-50 text-purple-700 px-3 py-1 rounded-full font-bold border border-purple-200">
-                    {orders.length} order(s) processed
-                  </span>
+                {/* Header Row */}
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <div>
+                    <h2 className="text-xl font-semibold tracking-tight text-brand-charcoal font-serif">
+                      Sales Order Logs
+                    </h2>
+                    <span className="text-xs text-brand-charcoal/40 mt-1 block">
+                      {filteredOrders.length} of {orders.length} order(s) shown
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => { resetCreateOrderForm(); setIsCreateOrderOpen(true); }}
+                    className="flex items-center gap-1.5 rounded-xl bg-brand-charcoal text-brand-bg px-4 py-2.5 text-xs font-semibold hover:bg-brand-charcoal/90 transition-all cursor-pointer shadow-xs"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    Create Order
+                  </button>
                 </div>
 
+                {/* Status Filter Pills */}
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { key: "ALL", label: "All", color: "bg-brand-charcoal/5 text-brand-charcoal border-brand-charcoal/10" },
+                    { key: "BOOKED", label: "Booked", color: "bg-yellow-50 text-yellow-700 border-yellow-200" },
+                    { key: "SHIPPED", label: "Shipped", color: "bg-blue-50 text-blue-600 border-blue-200" },
+                    { key: "DELIVERED", label: "Delivered", color: "bg-brand-green/10 text-brand-green border-brand-green/20" },
+                    { key: "CANCELLED", label: "Cancelled", color: "bg-red-50 text-red-600 border-red-200" },
+                    { key: "RETURN_PENDING", label: "Return Pending", color: "bg-orange-50 text-orange-600 border-orange-200" },
+                  ].map((pill) => {
+                    const isActive = orderStatusFilter === pill.key;
+                    const count = pill.key === "ALL" ? orders.length : orders.filter((o: any) => o.status === pill.key).length;
+                    return (
+                      <button
+                        key={pill.key}
+                        onClick={() => setOrderStatusFilter(pill.key)}
+                        className={`text-[11px] font-bold px-3.5 py-1.5 rounded-full border transition-all cursor-pointer flex items-center gap-1.5 ${
+                          isActive
+                            ? `${pill.color} ring-2 ring-offset-1 ring-brand-charcoal/15 shadow-xs`
+                            : "bg-brand-bg text-brand-charcoal/40 border-brand-charcoal/10 hover:text-brand-charcoal/70"
+                        }`}
+                      >
+                        {pill.label}
+                        <span className={`text-[9px] rounded-full px-1.5 py-0.5 font-bold ${isActive ? "bg-white/50" : "bg-brand-charcoal/5"}`}>
+                          {count}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Order List */}
                 <div className="space-y-6">
-                  {orders.map((ord) => (
+                  {filteredOrders.map((ord: any) => (
                     <div key={ord.id} className="border border-brand-charcoal/5 rounded-3xl bg-brand-bg p-6 shadow-xs relative overflow-hidden">
                       {/* Header bar of order card */}
                       <div className="flex flex-col sm:flex-row justify-between border-b border-brand-charcoal/5 pb-4 mb-4 text-xs gap-3">
@@ -1689,12 +1844,230 @@ export default function AdminDashboardPage() {
                       </div>
                     </div>
                   ))}
-                  {orders.length === 0 && (
+                  {filteredOrders.length === 0 && (
                     <div className="border border-brand-charcoal/5 rounded-3xl bg-brand-bg p-12 text-center text-xs text-brand-charcoal/40 italic">
-                      No customer orders recorded.
+                      {orderStatusFilter === "ALL" ? "No customer orders recorded." : `No ${orderStatusFilter.toLowerCase().replace("_", " ")} orders found.`}
                     </div>
                   )}
                 </div>
+
+                {/* ===== CREATE ORDER MODAL ===== */}
+                {isCreateOrderOpen && (
+                  <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                    {/* Backdrop */}
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="absolute inset-0 bg-brand-charcoal/40 backdrop-blur-sm"
+                      onClick={() => setIsCreateOrderOpen(false)}
+                    />
+                    {/* Modal Container */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 30, scale: 0.97 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 30, scale: 0.97 }}
+                      transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                      className="relative bg-brand-bg rounded-3xl border border-brand-charcoal/10 shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto z-10"
+                    >
+                      {/* Modal Header */}
+                      <div className="sticky top-0 bg-brand-bg/95 backdrop-blur-md border-b border-brand-charcoal/5 px-6 py-4 rounded-t-3xl flex items-center justify-between z-10">
+                        <div>
+                          <h3 className="text-lg font-semibold font-serif text-brand-charcoal">Create Order</h3>
+                          <p className="text-[10px] text-brand-charcoal/40 mt-0.5">All fields are optional. Fill in what you need.</p>
+                        </div>
+                        <button
+                          onClick={() => setIsCreateOrderOpen(false)}
+                          className="h-8 w-8 rounded-full bg-brand-charcoal/5 flex items-center justify-center text-brand-charcoal/50 hover:bg-brand-charcoal/10 cursor-pointer"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+
+                      {/* Modal Body */}
+                      <div className="p-6 space-y-6">
+                        {/* ── User Selection ── */}
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <label className="text-xs font-bold uppercase tracking-wider text-brand-charcoal/50 flex items-center gap-1.5">
+                              <User className="h-3.5 w-3.5" />
+                              Assign User
+                            </label>
+                            <label className="flex items-center gap-2 text-[11px] text-brand-charcoal/60 cursor-pointer select-none">
+                              <input
+                                type="checkbox"
+                                checked={coIsCustomUser}
+                                onChange={(e) => {
+                                  setCoIsCustomUser(e.target.checked);
+                                  if (e.target.checked) {
+                                    setCoSelectedUserId(null);
+                                    setCoSelectedUserLabel("");
+                                  }
+                                }}
+                                className="rounded border-brand-charcoal/20 accent-brand-charcoal"
+                              />
+                              Custom User
+                            </label>
+                          </div>
+
+                          {!coIsCustomUser ? (
+                            <div className="relative">
+                              {/* Search Input */}
+                              <div className="relative">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-brand-charcoal/30" />
+                                <input
+                                  type="text"
+                                  placeholder={coSelectedUserLabel || "Search by name or email..."}
+                                  value={coUserSearch}
+                                  onChange={(e) => { setCoUserSearch(e.target.value); setCoShowUserDropdown(true); }}
+                                  onFocus={() => setCoShowUserDropdown(true)}
+                                  className={`w-full pl-9 pr-4 py-2.5 text-xs rounded-xl border border-brand-charcoal/10 bg-brand-bg focus:border-brand-charcoal/30 focus:ring-1 focus:ring-brand-charcoal/10 outline-none transition-all ${coSelectedUserLabel ? "text-brand-charcoal font-semibold" : ""}`}
+                                />
+                                {coSelectedUserLabel && (
+                                  <button
+                                    onClick={() => { setCoSelectedUserId(null); setCoSelectedUserLabel(""); setCoUserSearch(""); }}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-brand-charcoal/30 hover:text-brand-charcoal/60 cursor-pointer"
+                                  >
+                                    <X className="h-3.5 w-3.5" />
+                                  </button>
+                                )}
+                              </div>
+
+                              {/* Dropdown */}
+                              {coShowUserDropdown && (
+                                <div className="absolute z-50 mt-1 w-full bg-brand-bg border border-brand-charcoal/10 rounded-xl shadow-xl max-h-48 overflow-y-auto">
+                                  {coFilteredUsers.length === 0 ? (
+                                    <div className="px-4 py-3 text-xs text-brand-charcoal/40 italic">No users found</div>
+                                  ) : (
+                                    coFilteredUsers.slice(0, 20).map((u: any) => (
+                                      <button
+                                        key={u.id}
+                                        onClick={() => {
+                                          setCoSelectedUserId(u.id);
+                                          setCoSelectedUserLabel(`${u.name} (${u.email})`);
+                                          setCoUserSearch("");
+                                          setCoShowUserDropdown(false);
+                                        }}
+                                        className={`w-full text-left px-4 py-2.5 text-xs hover:bg-brand-charcoal/5 cursor-pointer flex items-center gap-3 transition-colors ${coSelectedUserId === u.id ? "bg-brand-green/5" : ""}`}
+                                      >
+                                        <div className="h-7 w-7 rounded-full bg-brand-green/10 text-brand-green font-bold flex items-center justify-center text-[10px] flex-shrink-0">
+                                          {u.name?.charAt(0)?.toUpperCase()}
+                                        </div>
+                                        <div className="min-w-0">
+                                          <div className="font-semibold text-brand-charcoal truncate">{u.name}</div>
+                                          <div className="text-[10px] text-brand-charcoal/40 truncate">{u.email}</div>
+                                        </div>
+                                      </button>
+                                    ))
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                              <input type="text" placeholder="Name" value={coCustomName} onChange={(e) => setCoCustomName(e.target.value)}
+                                className="w-full px-3 py-2.5 text-xs rounded-xl border border-brand-charcoal/10 bg-brand-bg focus:border-brand-charcoal/30 outline-none" />
+                              <input type="email" placeholder="Email" value={coCustomEmail} onChange={(e) => setCoCustomEmail(e.target.value)}
+                                className="w-full px-3 py-2.5 text-xs rounded-xl border border-brand-charcoal/10 bg-brand-bg focus:border-brand-charcoal/30 outline-none" />
+                              <input type="tel" placeholder="Phone" value={coCustomPhone} onChange={(e) => setCoCustomPhone(e.target.value)}
+                                className="w-full px-3 py-2.5 text-xs rounded-xl border border-brand-charcoal/10 bg-brand-bg focus:border-brand-charcoal/30 outline-none" />
+                            </div>
+                          )}
+                        </div>
+
+                        {/* ── Order Details ── */}
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                          <div>
+                            <label className="text-[10px] font-bold uppercase tracking-wider text-brand-charcoal/40 block mb-1">Total (₹)</label>
+                            <input type="number" placeholder="0" value={coTotalAmount} onChange={(e) => setCoTotalAmount(e.target.value)}
+                              className="w-full px-3 py-2.5 text-xs rounded-xl border border-brand-charcoal/10 bg-brand-bg focus:border-brand-charcoal/30 outline-none" />
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-bold uppercase tracking-wider text-brand-charcoal/40 block mb-1">Shipping (₹)</label>
+                            <input type="number" placeholder="0" value={coShippingCharges} onChange={(e) => setCoShippingCharges(e.target.value)}
+                              className="w-full px-3 py-2.5 text-xs rounded-xl border border-brand-charcoal/10 bg-brand-bg focus:border-brand-charcoal/30 outline-none" />
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-bold uppercase tracking-wider text-brand-charcoal/40 block mb-1">COD Charges</label>
+                            <input type="number" placeholder="0" value={coCodCharges} onChange={(e) => setCoCodCharges(e.target.value)}
+                              className="w-full px-3 py-2.5 text-xs rounded-xl border border-brand-charcoal/10 bg-brand-bg focus:border-brand-charcoal/30 outline-none" />
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-bold uppercase tracking-wider text-brand-charcoal/40 block mb-1">Payment</label>
+                            <select value={coPaymentMethod} onChange={(e) => setCoPaymentMethod(e.target.value)}
+                              className="w-full px-3 py-2.5 text-xs rounded-xl border border-brand-charcoal/10 bg-brand-bg focus:border-brand-charcoal/30 outline-none cursor-pointer">
+                              <option value="COD">COD</option>
+                              <option value="PREPAID">Prepaid</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        {/* Status */}
+                        <div>
+                          <label className="text-[10px] font-bold uppercase tracking-wider text-brand-charcoal/40 block mb-1">Order Status</label>
+                          <select value={coStatus} onChange={(e) => setCoStatus(e.target.value)}
+                            className="w-full px-3 py-2.5 text-xs rounded-xl border border-brand-charcoal/10 bg-brand-bg focus:border-brand-charcoal/30 outline-none cursor-pointer">
+                            <option value="BOOKED">Booked</option>
+                            <option value="SHIPPED">Shipped</option>
+                            <option value="DELIVERED">Delivered</option>
+                            <option value="CANCELLED">Cancelled</option>
+                          </select>
+                        </div>
+
+                        {/* ── Shipping Address ── */}
+                        <div className="space-y-3">
+                          <label className="text-xs font-bold uppercase tracking-wider text-brand-charcoal/50">Shipping Address</label>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <input type="text" placeholder="Full Name" value={coFullName} onChange={(e) => setCoFullName(e.target.value)}
+                              className="w-full px-3 py-2.5 text-xs rounded-xl border border-brand-charcoal/10 bg-brand-bg focus:border-brand-charcoal/30 outline-none" />
+                            <input type="tel" placeholder="Phone" value={coPhone} onChange={(e) => setCoPhone(e.target.value)}
+                              className="w-full px-3 py-2.5 text-xs rounded-xl border border-brand-charcoal/10 bg-brand-bg focus:border-brand-charcoal/30 outline-none" />
+                          </div>
+                          <textarea placeholder="Address" value={coAddress} onChange={(e) => setCoAddress(e.target.value)} rows={2}
+                            className="w-full px-3 py-2.5 text-xs rounded-xl border border-brand-charcoal/10 bg-brand-bg focus:border-brand-charcoal/30 outline-none resize-none" />
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            <input type="text" placeholder="Landmark" value={coLandmark} onChange={(e) => setCoLandmark(e.target.value)}
+                              className="w-full px-3 py-2.5 text-xs rounded-xl border border-brand-charcoal/10 bg-brand-bg focus:border-brand-charcoal/30 outline-none" />
+                            <input type="text" placeholder="Pincode" value={coPincode} onChange={(e) => setCoPincode(e.target.value)}
+                              className="w-full px-3 py-2.5 text-xs rounded-xl border border-brand-charcoal/10 bg-brand-bg focus:border-brand-charcoal/30 outline-none" />
+                            <input type="text" placeholder="City" value={coCity} onChange={(e) => setCoCity(e.target.value)}
+                              className="w-full px-3 py-2.5 text-xs rounded-xl border border-brand-charcoal/10 bg-brand-bg focus:border-brand-charcoal/30 outline-none" />
+                            <input type="text" placeholder="State" value={coState} onChange={(e) => setCoState(e.target.value)}
+                              className="w-full px-3 py-2.5 text-xs rounded-xl border border-brand-charcoal/10 bg-brand-bg focus:border-brand-charcoal/30 outline-none" />
+                          </div>
+                        </div>
+
+                        {/* ── Items JSON ── */}
+                        <div>
+                          <label className="text-xs font-bold uppercase tracking-wider text-brand-charcoal/50 block mb-1">Items (JSON Array)</label>
+                          <textarea value={coItems} onChange={(e) => setCoItems(e.target.value)} rows={4}
+                            className="w-full px-3 py-2.5 text-xs rounded-xl border border-brand-charcoal/10 bg-brand-bg focus:border-brand-charcoal/30 outline-none resize-none font-mono" />
+                          <p className="text-[9px] text-brand-charcoal/30 mt-1">
+                            Format: [{`{"title":"...", "price":0, "quantity":1, "size":"M", "color":"#000", "image":"..."}`}]
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Modal Footer */}
+                      <div className="sticky bottom-0 bg-brand-bg/95 backdrop-blur-md border-t border-brand-charcoal/5 px-6 py-4 rounded-b-3xl flex items-center justify-end gap-3">
+                        <button
+                          onClick={() => setIsCreateOrderOpen(false)}
+                          className="px-4 py-2.5 text-xs font-semibold text-brand-charcoal/60 hover:text-brand-charcoal rounded-xl border border-brand-charcoal/10 hover:bg-brand-charcoal/5 cursor-pointer transition-all"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={handleCreateOrderSubmit}
+                          disabled={coSubmitting}
+                          className="px-5 py-2.5 text-xs font-semibold bg-brand-charcoal text-brand-bg rounded-xl hover:bg-brand-charcoal/90 cursor-pointer transition-all shadow-xs disabled:opacity-50 flex items-center gap-1.5"
+                        >
+                          {coSubmitting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
+                          {coSubmitting ? "Creating..." : "Create Order"}
+                        </button>
+                      </div>
+                    </motion.div>
+                  </div>
+                )}
               </div>
             )}
 
