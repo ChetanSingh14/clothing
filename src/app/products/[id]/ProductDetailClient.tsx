@@ -9,7 +9,7 @@ import AuthModal from "@/components/AuthModal";
 import { useProductStore, ProductItem } from "@/store/useProductStore";
 import { useCartStore } from "@/store/useCartStore";
 import { useAuthStore } from "@/store/useAuthStore";
-import { ArrowLeft, Star, Plus, Minus, Loader2, Check, Heart, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowLeft, Star, Plus, Minus, Loader2, Check, Heart, ChevronDown, ChevronUp, Ruler, X } from "lucide-react";
 import MediaRenderer from "@/components/MediaRenderer";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -82,6 +82,16 @@ const getColorImages = (color: string, defaultImages: string[]) => {
   return imagesToUse;
 };
 
+const OVERSIZE_SIZE_CHART = {
+  sizes: ["S", "M", "L", "XL", "XXL"],
+  rows: [
+    { label: "Chest", values: [42, 44, 46, 48, 50] },
+    { label: "Length", values: [27.5, 28, 28.5, 29, 29.5] },
+    { label: "Shoulder", values: [20, 21, 22, 23, 24] },
+    { label: "Sleeve Length", values: [8.5, 9, 9.5, 10, 10.5] }
+  ]
+};
+
 interface ProductDetailClientProps {
   initialProduct: ProductItem;
 }
@@ -144,6 +154,8 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
   
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [isSizeChartOpen, setIsSizeChartOpen] = useState(false);
+  const [sizeUnit, setSizeUnit] = useState<"in" | "cm">("in");
 
   const openLightbox = (index: number) => {
     setLightboxIndex(index);
@@ -437,9 +449,19 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
                   {product.category?.toLowerCase().includes("couple") ? (
                     <>
                       <div className="space-y-2">
-                        <label className="text-xs font-semibold text-brand-charcoal uppercase tracking-wider block">
-                          Male T-Shirt Size
-                        </label>
+                        <div className="flex justify-between items-center mb-1">
+                          <label className="text-xs font-semibold text-brand-charcoal uppercase tracking-wider block">
+                            Male T-Shirt Size
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => setIsSizeChartOpen(true)}
+                            className="text-xs font-bold text-brand-brown hover:text-brand-brown-dark transition-colors flex items-center gap-1 cursor-pointer underline underline-offset-4"
+                          >
+                            <Ruler className="h-3 w-3" />
+                            Size Guide
+                          </button>
+                        </div>
                         <div className="flex flex-wrap gap-2">
                           {(product.maleSizes && product.maleSizes.length > 0 ? product.maleSizes : product.sizes).map((size) => (
                             <button
@@ -458,9 +480,19 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <label className="text-xs font-semibold text-brand-charcoal uppercase tracking-wider block">
-                          Female T-Shirt Size
-                        </label>
+                        <div className="flex justify-between items-center mb-1">
+                          <label className="text-xs font-semibold text-brand-charcoal uppercase tracking-wider block">
+                            Female T-Shirt Size
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => setIsSizeChartOpen(true)}
+                            className="text-xs font-bold text-brand-brown hover:text-brand-brown-dark transition-colors flex items-center gap-1 cursor-pointer underline underline-offset-4"
+                          >
+                            <Ruler className="h-3 w-3" />
+                            Size Guide
+                          </button>
+                        </div>
                         <div className="flex flex-wrap gap-2">
                           {(product.femaleSizes && product.femaleSizes.length > 0 ? product.femaleSizes : product.sizes).map((size) => (
                             <button
@@ -481,9 +513,19 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
                     </>
                   ) : (
                     <>
-                      <label className="text-sm font-semibold text-brand-charcoal uppercase tracking-wider block mb-2">
-                        Size
-                      </label>
+                      <div className="flex justify-between items-center mb-2">
+                        <label className="text-sm font-semibold text-brand-charcoal uppercase tracking-wider block">
+                          Size
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => setIsSizeChartOpen(true)}
+                          className="text-xs font-bold text-brand-brown hover:text-brand-brown-dark transition-colors flex items-center gap-1 cursor-pointer underline underline-offset-4 animate-pulse hover:animate-none"
+                        >
+                          <Ruler className="h-3.5 w-3.5" />
+                          Size Guide
+                        </button>
+                      </div>
                       <div className="flex flex-wrap gap-2.5">
                         {product.sizes.map((size) => (
                           <button
@@ -734,6 +776,206 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
         onClose={() => setIsAuthModalOpen(false)}
         onSuccess={() => {}}
       />
+
+      {/* Interactive Size Chart Modal */}
+      <AnimatePresence>
+        {isSizeChartOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsSizeChartOpen(false)}
+              className="absolute inset-0 bg-brand-charcoal/40 backdrop-blur-sm"
+            />
+
+            {/* Modal Container */}
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 15 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 15 }}
+              transition={{ type: "spring", duration: 0.5 }}
+              className="relative w-full max-w-2xl overflow-hidden rounded-3xl bg-brand-bg p-6 md:p-8 shadow-2xl border border-brand-charcoal/5 z-10"
+            >
+              {/* Close Button */}
+              <button
+                onClick={() => setIsSizeChartOpen(false)}
+                className="absolute top-6 right-6 text-brand-charcoal/40 hover:text-brand-charcoal p-1.5 rounded-full hover:bg-brand-charcoal/5 transition-all duration-200 cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+
+              {/* Title & Badge */}
+              <div className="flex items-center gap-2 bg-brand-tan/10 text-brand-tan-dark px-3 py-1 rounded-full text-xs font-semibold w-fit mb-4">
+                <Ruler className="h-3.5 w-3.5" />
+                <span className="uppercase tracking-widest text-[9px]">Garment measurements</span>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+                <div>
+                  <h2 className="text-3xl font-bold font-serif text-brand-charcoal tracking-tight">
+                    Oversize Size Chart
+                  </h2>
+                  <p className="mt-1 text-xs text-brand-charcoal/50 font-light">
+                    Garment specifications. Click size headers to apply size selection directly.
+                  </p>
+                </div>
+
+                {/* Unit Switcher */}
+                <div className="flex bg-brand-gray/30 p-1 rounded-xl self-start sm:self-auto border border-brand-charcoal/5">
+                  <button
+                    type="button"
+                    onClick={() => setSizeUnit("in")}
+                    className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                      sizeUnit === "in"
+                        ? "bg-brand-brown text-brand-bg shadow-sm"
+                        : "text-brand-charcoal/60 hover:text-brand-charcoal"
+                    }`}
+                  >
+                    Inches
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSizeUnit("cm")}
+                    className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                      sizeUnit === "cm"
+                        ? "bg-brand-brown text-brand-bg shadow-sm"
+                        : "text-brand-charcoal/60 hover:text-brand-charcoal"
+                    }`}
+                  >
+                    Centimeters
+                  </button>
+                </div>
+              </div>
+
+              {/* Size Chart Table */}
+              <div className="overflow-x-auto border border-brand-charcoal/10 rounded-2xl bg-brand-gray/10 mb-6">
+                <table className="w-full text-left border-collapse text-sm">
+                  <thead>
+                    <tr className="border-b border-brand-charcoal/10 bg-brand-brown text-brand-bg">
+                      <th className="p-3 font-serif font-bold text-xs uppercase tracking-wider">Metric</th>
+                      {OVERSIZE_SIZE_CHART.sizes.map((size) => {
+                        const isCurrentSelected = 
+                          selectedSize === size || maleSize === size || femaleSize === size;
+                        return (
+                          <th
+                            key={size}
+                            onClick={() => {
+                              if (product.category?.toLowerCase().includes("couple")) {
+                                setMaleSize(size);
+                                setFemaleSize(size);
+                              } else {
+                                setSelectedSize(size);
+                              }
+                            }}
+                            className={`p-3 text-center cursor-pointer transition-all relative font-bold text-xs uppercase tracking-wider hover:bg-brand-brown-dark/95 ${
+                              isCurrentSelected ? "bg-brand-green text-brand-bg font-extrabold scale-[1.03] shadow-md" : ""
+                            }`}
+                          >
+                            {size}
+                            {isCurrentSelected && (
+                              <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-brand-bg" />
+                            )}
+                          </th>
+                        );
+                      })}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {OVERSIZE_SIZE_CHART.rows.map((row, idx) => (
+                      <tr 
+                        key={row.label} 
+                        className={`border-b border-brand-charcoal/5 last:border-0 hover:bg-brand-gray/30 transition-colors ${
+                          idx % 2 === 0 ? "bg-transparent" : "bg-brand-gray/10"
+                        }`}
+                      >
+                        <td className="p-3.5 font-semibold text-brand-charcoal text-xs md:text-sm capitalize">
+                          {row.label}
+                        </td>
+                        {row.values.map((val, colIdx) => {
+                          const size = OVERSIZE_SIZE_CHART.sizes[colIdx];
+                          const isCurrentSelected = 
+                            selectedSize === size || maleSize === size || femaleSize === size;
+                          
+                          // Format value based on unit
+                          const displayVal = sizeUnit === "in" 
+                            ? `${val}"` 
+                            : `${(val * 2.54).toFixed(1)} cm`;
+
+                          return (
+                            <td
+                              key={colIdx}
+                              onClick={() => {
+                                if (product.category?.toLowerCase().includes("couple")) {
+                                  setMaleSize(size);
+                                  setFemaleSize(size);
+                                } else {
+                                  setSelectedSize(size);
+                                }
+                              }}
+                              className={`p-3.5 text-center cursor-pointer transition-all text-xs md:text-sm ${
+                                isCurrentSelected 
+                                  ? "bg-brand-green/10 font-bold text-brand-green-dark border-x border-brand-green/20" 
+                                  : "text-brand-charcoal/80"
+                              }`}
+                            >
+                              {displayVal}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* How to Measure Section */}
+              <div className="bg-brand-tan/5 border border-brand-tan/20 rounded-2xl p-4 md:p-5">
+                <h3 className="text-sm font-bold font-serif text-brand-charcoal mb-3 flex items-center gap-1.5">
+                  <span>How to Measure</span>
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                  <div className="space-y-1.5">
+                    <div>
+                      <span className="font-semibold text-brand-brown">Chest:</span>
+                      <p className="text-brand-charcoal/60 leading-normal">
+                        Measure around the fullest part of your chest, keeping the measuring tape horizontal.
+                      </p>
+                    </div>
+                    <div>
+                      <span className="font-semibold text-brand-brown">Length:</span>
+                      <p className="text-brand-charcoal/60 leading-normal">
+                        Measure from the highest point of the shoulder down to the bottom hem of the shirt.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <div>
+                      <span className="font-semibold text-brand-brown">Shoulder:</span>
+                      <p className="text-brand-charcoal/60 leading-normal">
+                        Measure straight across the back from one shoulder joint edge to the other.
+                      </p>
+                    </div>
+                    <div>
+                      <span className="font-semibold text-brand-brown">Sleeve Length:</span>
+                      <p className="text-brand-charcoal/60 leading-normal">
+                        Measure from the shoulder seam down to the end of the sleeve/cuff.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-4 pt-3 border-t border-brand-charcoal/5 flex items-center justify-between text-[11px] text-brand-charcoal/50 italic font-light">
+                  <span>* Values listed correspond to the actual clothing item measurements.</span>
+                  {(selectedSize || maleSize || femaleSize) && (
+                    <span>Active Selection: <strong className="text-brand-green font-bold">{selectedSize || maleSize || femaleSize}</strong></span>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       <CartDrawer />
 
