@@ -155,16 +155,24 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: async () => {
+        // Prevent re-entrant logout calls that cause infinite reload loops
+        const { token: currentToken } = get();
+        if (!currentToken && !get().user) return; // Already logged out, skip
+
+        // Clear state FIRST to prevent any further API calls or socket events from re-triggering
+        useCartStore.getState().clearCart();
+        set({ user: null, token: null, error: null });
+
+        // Attempt backend logout (fire-and-forget, don't block)
         try {
           await apiFetch("/auth/logout", { method: "POST" });
         } catch (err) {
-          console.error("Logout backend request failed:", err);
-        } finally {
-          useCartStore.getState().clearCart();
-          set({ user: null, token: null, error: null });
-          if (typeof window !== "undefined") {
-            window.location.href = "/";
-          }
+          // Expected to fail if token is already invalid — that's fine
+        }
+
+        // Redirect only if not already on homepage
+        if (typeof window !== "undefined" && window.location.pathname !== "/") {
+          window.location.href = "/";
         }
       },
 
@@ -197,3 +205,40 @@ export const useAuthStore = create<AuthState>()(
     }
   )
 );
+
+if (typeof window !== "undefined") {
+  let currentToken: string | null = null;
+  let syncScheduled = false;
+  
+  const syncSocket = (token: string | null) => {
+    if (syncScheduled) return;
+    syncScheduled = true;
+
+    // Use requestIdleCallback / setTimeout to debounce and avoid hot-path re-renders
+    setTimeout(() => {
+      syncScheduled = false;
+      import("@/utils/socket").then(({ getSocket, disconnectSocket }) => {
+        if (token) {
+          getSocket();
+        } else {
+          disconnectSocket();
+        }
+      });
+    }, 100);
+  };
+
+  // Run once on startup after Zustand has recovered the persisted store
+  setTimeout(() => {
+    const token = useAuthStore.getState().token;
+    currentToken = token;
+    if (token) syncSocket(token);
+  }, 500);
+
+  // Subscribe to token changes only
+  useAuthStore.subscribe((state) => {
+    if (state.token !== currentToken) {
+      currentToken = state.token;
+      syncSocket(state.token);
+    }
+  });
+}
