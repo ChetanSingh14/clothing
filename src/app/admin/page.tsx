@@ -10,7 +10,7 @@ import { useProductStore } from "@/store/useProductStore";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { useAlertStore } from "@/store/useAlertStore";
 import { shallow } from "zustand/shallow";
-import { Plus, Trash2, Tag, Star, Package, Users, Layers, UploadCloud, Loader2, RefreshCw, BarChart2, UserCheck, Shield, ShoppingBag, DollarSign, Calendar, Edit, Settings, Eye, X, Image as ImageIcon, Paintbrush, Search, Filter, ChevronDown, User } from "lucide-react";
+import { Plus, Trash2, Tag, Star, Package, Users, Layers, UploadCloud, Loader2, RefreshCw, BarChart2, UserCheck, Shield, ShoppingBag, DollarSign, Calendar, Edit, Settings, Eye, X, Image as ImageIcon, Paintbrush, Search, Filter, ChevronDown, User, Printer } from "lucide-react";
 import { motion } from "framer-motion";
 import { apiFetch } from "@/utils/api";
 import { useRouter } from "next/navigation";
@@ -50,7 +50,9 @@ export default function AdminDashboardPage() {
     nimbusShipExchangeOrder,
     nimbusCancelExchangeOrder,
     nimbusTrackExchangeOrder,
-    adminCreateOrder
+    adminCreateOrder,
+    updateAdminOrder,
+    deleteAdminOrder
   } = useAdminStore();
   
   const { products, fetchProducts } = useProductStore();
@@ -101,6 +103,8 @@ export default function AdminDashboardPage() {
   const [selectedSizes, setSelectedSizes] = useState<string[]>(["S", "M", "L"]);
   const [selectedMaleSizes, setSelectedMaleSizes] = useState<string[]>(["M", "L", "XL"]);
   const [selectedFemaleSizes, setSelectedFemaleSizes] = useState<string[]>(["S", "M", "L"]);
+  const [enableMaleSection, setEnableMaleSection] = useState(true);
+  const [enableFemaleSection, setEnableFemaleSection] = useState(true);
   const [uploadedImageUrl, setUploadedImageUrl] = useState("");
   const [uploadedModelUrl, setUploadedModelUrl] = useState("");
   
@@ -144,6 +148,50 @@ export default function AdminDashboardPage() {
   const [coCity, setCoCity] = useState("");
   const [coStatus, setCoStatus] = useState("BOOKED");
   const [coSubmitting, setCoSubmitting] = useState(false);
+
+  // Edit Order Modal States
+  const [isEditOrderOpen, setIsEditOrderOpen] = useState(false);
+  const [eoOrderId, setEoOrderId] = useState<number | null>(null);
+  const [eoFullName, setEoFullName] = useState("");
+  const [eoPhone, setEoPhone] = useState("");
+  const [eoEmail, setEoEmail] = useState("");
+  const [eoAddress, setEoAddress] = useState("");
+  const [eoLandmark, setEoLandmark] = useState("");
+  const [eoPincode, setEoPincode] = useState("");
+  const [eoCity, setEoCity] = useState("");
+  const [eoState, setEoState] = useState("");
+  const [eoTotalAmount, setEoTotalAmount] = useState("");
+  const [eoShippingCharges, setEoShippingCharges] = useState("");
+  const [eoCodCharges, setEoCodCharges] = useState("");
+  const [eoPaymentMethod, setEoPaymentMethod] = useState("COD");
+  const [eoStatus, setEoStatus] = useState("BOOKED");
+  const [eoItems, setEoItems] = useState("");
+  const [eoSubmitting, setEoSubmitting] = useState(false);
+
+  // Invoice Editor Modal States
+  const [isInvoiceOpen, setIsInvoiceOpen] = useState(false);
+  const [invOrderId, setInvOrderId] = useState<number | null>(null);
+  const [invFullName, setInvFullName] = useState("");
+  const [invAddressDetails, setInvAddressDetails] = useState("");
+  const [invDate, setInvDate] = useState("");
+  const [invPaymentMethod, setInvPaymentMethod] = useState("");
+  const [invItems, setInvItems] = useState<any[]>([]);
+  const [invShippingCharges, setInvShippingCharges] = useState(0);
+  const [invCodCharges, setInvCodCharges] = useState(0);
+  const [invTotalAmount, setInvTotalAmount] = useState(0);
+  const [invCompanyName, setInvCompanyName] = useState("");
+  const [invDiscount, setInvDiscount] = useState(0);
+  const [invDeduction, setInvDeduction] = useState(0);
+  const [invDeductionLabel, setInvDeductionLabel] = useState("Other Deductions");
+
+  useEffect(() => {
+    if (isInvoiceOpen) {
+      const subtotal = invItems.reduce((acc, item) => acc + (Number(item.price || 0) * Number(item.quantity || 1)), 0);
+      const calculatedTotal = subtotal + invShippingCharges + invCodCharges - invDiscount - invDeduction;
+      setInvTotalAmount(Math.max(0, calculatedTotal));
+    }
+  }, [invItems, invShippingCharges, invCodCharges, invDiscount, invDeduction, isInvoiceOpen]);
+
 
   const fetchCustomOrders = async () => {
     try {
@@ -473,13 +521,16 @@ export default function AdminDashboardPage() {
       category,
       images: imagesToSubmit,
       colors: category.toLowerCase().includes("couple") 
-        ? Array.from(new Set([...maleColors, ...femaleColors]))
+        ? Array.from(new Set([
+            ...(enableMaleSection ? maleColors : []),
+            ...(enableFemaleSection ? femaleColors : [])
+          ]))
         : colors,
       sizes: selectedSizes,
-      maleColors: category.toLowerCase().includes("couple") ? maleColors : [],
-      femaleColors: category.toLowerCase().includes("couple") ? femaleColors : [],
-      maleSizes: category.toLowerCase().includes("couple") ? selectedMaleSizes : [],
-      femaleSizes: category.toLowerCase().includes("couple") ? selectedFemaleSizes : [],
+      maleColors: (category.toLowerCase().includes("couple") && enableMaleSection) ? maleColors : [],
+      femaleColors: (category.toLowerCase().includes("couple") && enableFemaleSection) ? femaleColors : [],
+      maleSizes: (category.toLowerCase().includes("couple") && enableMaleSection) ? selectedMaleSizes : [],
+      femaleSizes: (category.toLowerCase().includes("couple") && enableFemaleSection) ? selectedFemaleSizes : [],
     };
 
     let success = false;
@@ -500,6 +551,8 @@ export default function AdminDashboardPage() {
       setUploadedModelUrl("");
       setColorImages({});
       setImages([]);
+      setEnableMaleSection(true);
+      setEnableFemaleSection(true);
       setFormSuccess(true);
       await fetchProducts(); // reload products listing
       await fetchStats(); // reload stats
@@ -520,6 +573,16 @@ export default function AdminDashboardPage() {
     setSelectedSizes(prod.sizes || ["S", "M", "L"]);
     setSelectedMaleSizes(prod.maleSizes || ["M", "L", "XL"]);
     setSelectedFemaleSizes(prod.femaleSizes || ["S", "M", "L"]);
+    
+    const hasMale = Array.isArray(prod.maleColors) && prod.maleColors.length > 0;
+    const hasFemale = Array.isArray(prod.femaleColors) && prod.femaleColors.length > 0;
+    if (prod.category?.toLowerCase().includes("couple")) {
+      setEnableMaleSection(hasMale || (!hasMale && !hasFemale));
+      setEnableFemaleSection(hasFemale || (!hasMale && !hasFemale));
+    } else {
+      setEnableMaleSection(true);
+      setEnableFemaleSection(true);
+    }
     
     // Parse images array
     if (prod.images && prod.images.length > 0) {
@@ -759,6 +822,115 @@ export default function AdminDashboardPage() {
     const q = coUserSearch.toLowerCase();
     return u.name?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q);
   });
+
+  const handleEditOrderClick = (ord: any) => {
+    setEoOrderId(ord.id);
+    setEoFullName(ord.fullName || ord.user?.name || "");
+    setEoPhone(ord.phone || "");
+    setEoEmail(ord.email || ord.user?.email || "");
+    setEoAddress(ord.address || "");
+    setEoLandmark(ord.landmark || "");
+    setEoPincode(ord.pincode || "");
+    setEoCity(ord.city || "");
+    setEoState(ord.state || "");
+    setEoTotalAmount(ord.totalAmount?.toString() || "");
+    setEoShippingCharges(ord.shippingCharges?.toString() || "0");
+    setEoCodCharges(ord.codCharges?.toString() || "0");
+    setEoPaymentMethod(ord.paymentMethod || "COD");
+    setEoStatus(ord.status || "BOOKED");
+    setEoItems(JSON.stringify(ord.items || [], null, 2));
+    setIsEditOrderOpen(true);
+  };
+
+  const handleEditOrderSubmit = async () => {
+    if (!eoOrderId) return;
+    setEoSubmitting(true);
+    try {
+      let parsedItems = [];
+      try {
+        parsedItems = JSON.parse(eoItems);
+      } catch {
+        useAlertStore.getState().showAlert("Invalid items JSON format.");
+        setEoSubmitting(false);
+        return;
+      }
+
+      const payload = {
+        fullName: eoFullName,
+        phone: eoPhone,
+        email: eoEmail,
+        address: eoAddress,
+        landmark: eoLandmark,
+        pincode: eoPincode,
+        city: eoCity,
+        state: eoState,
+        totalAmount: Number(eoTotalAmount),
+        shippingCharges: Number(eoShippingCharges),
+        codCharges: Number(eoCodCharges),
+        paymentMethod: eoPaymentMethod,
+        status: eoStatus,
+        items: parsedItems
+      };
+
+      const res = await updateAdminOrder(eoOrderId, payload);
+      if (res.success) {
+        useAlertStore.getState().showAlert(res.message || "Order updated successfully!");
+        setIsEditOrderOpen(false);
+      } else {
+        useAlertStore.getState().showAlert(res.message || "Failed to update order.");
+      }
+    } catch (err: any) {
+      useAlertStore.getState().showAlert(err.message || "Error updating order.");
+    } finally {
+      setEoSubmitting(false);
+    }
+  };
+
+  const handleDeleteOrderClick = (orderId: number) => {
+    useAlertStore.getState().showConfirm("Are you sure you want to permanently delete this order?", async () => {
+      try {
+        const res = await deleteAdminOrder(orderId);
+        if (res.success) {
+          useAlertStore.getState().showAlert(res.message || "Order deleted successfully.");
+        } else {
+          useAlertStore.getState().showAlert(res.message || "Failed to delete order.");
+        }
+      } catch (err: any) {
+        useAlertStore.getState().showAlert(err.message || "Error deleting order.");
+      }
+    });
+  };
+
+  const handleInvoiceClick = (ord: any) => {
+    setInvOrderId(ord.id);
+    setInvFullName(ord.fullName || ord.user?.name || "Customer");
+    setInvAddressDetails(`${ord.address || ""}, ${ord.landmark ? ord.landmark + ", " : ""}${ord.city || ""}, ${ord.state || ""} - ${ord.pincode || ""}`);
+    
+    const formattedDate = new Date(ord.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+    setInvDate(formattedDate);
+    setInvPaymentMethod(ord.paymentMethod || "COD");
+    
+    // items lists
+    const ordItems = Array.isArray(ord.items) ? ord.items : [];
+    setInvItems(ordItems);
+    
+    const shipping = ord.shippingCharges || 0;
+    const cod = ord.codCharges || 0;
+    setInvShippingCharges(shipping);
+    setInvCodCharges(cod);
+    setInvTotalAmount(ord.totalAmount || 0);
+    setInvCompanyName(companyName || "MDFK CLOTHING CO.");
+
+    // Compute automatic pre-applied discount if subtotal + shipping + cod is greater than the total amount
+    const subtotal = ordItems.reduce((acc: number, item: any) => acc + (Number(item.price || 0) * Number(item.quantity || 1)), 0);
+    const expectedRawTotal = subtotal + shipping + cod;
+    const preAppliedDiscount = expectedRawTotal > ord.totalAmount ? (expectedRawTotal - ord.totalAmount) : 0;
+    
+    setInvDiscount(preAppliedDiscount);
+    setInvDeduction(0);
+    setInvDeductionLabel("Other Deductions");
+    setIsInvoiceOpen(true);
+  };
 
   return (
     <div className="min-h-screen bg-brand-bg flex flex-col justify-between selection:bg-brand-green selection:text-brand-bg">
@@ -1088,155 +1260,187 @@ export default function AdminDashboardPage() {
 
                     {category?.toLowerCase().includes("couple") ? (
                       <>
-                        {/* Male Colors */}
-                        <div>
-                          <div className="flex items-center justify-between">
-                            <label className="font-semibold uppercase tracking-wider text-brand-charcoal/60">
-                              Male Colors Hex Codes (Comma separated)
-                            </label>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setColorPickerTarget('male');
-                                setIsColorPickerOpen(true);
-                              }}
-                              className="text-[10px] font-bold uppercase tracking-wider text-brand-green hover:text-brand-green/80 flex items-center gap-1 bg-brand-green/10 px-2 py-1 rounded-md"
-                            >
-                              <Plus className="h-3 w-3" />
-                              Pick Colors
-                            </button>
-                          </div>
-
-                          {maleColorsInput.trim() !== "" && (
-                            <div className="mt-2 mb-2 flex flex-wrap gap-2">
-                              {maleColorsInput.split(",").map(c => c.trim()).filter(Boolean).map((hex, i) => (
-                                <div key={i} className="flex items-center gap-1.5 bg-brand-bg px-2.5 py-1.5 rounded-full border border-brand-charcoal/10 shadow-sm">
-                                  <div className="w-3.5 h-3.5 rounded-full shadow-sm border border-brand-charcoal/10" style={{ backgroundColor: hex }} />
-                                  <span className="text-[10px] font-mono text-brand-charcoal uppercase">{hex}</span>
-                                  <button 
-                                    type="button" 
-                                    onClick={() => {
-                                      const currentColors = maleColorsInput.split(",").map(c => c.trim()).filter(Boolean);
-                                      currentColors.splice(i, 1);
-                                      setMaleColorsInput(currentColors.join(", "));
-                                    }}
-                                    className="ml-1 text-brand-charcoal/40 hover:text-red-500 transition-colors"
-                                  >
-                                    <X className="h-3 w-3" />
-                                  </button>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-
-                          <input
-                            type="text"
-                            value={maleColorsInput}
-                            onChange={(e) => setMaleColorsInput(e.target.value)}
-                            placeholder="#000000, #333333 (Or use the picker)"
-                            className="mt-1.5 w-full rounded-xl border border-brand-charcoal/10 bg-brand-bg px-3.5 py-3 text-xs focus:border-brand-green focus:outline-none"
-                          />
+                        {/* Gender Toggles */}
+                        <div className="bg-brand-gray/30 p-4 rounded-2xl border border-brand-charcoal/5 flex flex-col sm:flex-row gap-6 mb-2">
+                          <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-brand-charcoal">
+                            <input
+                              type="checkbox"
+                              checked={enableMaleSection}
+                              onChange={(e) => setEnableMaleSection(e.target.checked)}
+                              className="accent-brand-green h-4 w-4 rounded cursor-pointer"
+                            />
+                            <span>Include Male Selection (Sizes/Colors)</span>
+                          </label>
+                          <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-brand-charcoal">
+                            <input
+                              type="checkbox"
+                              checked={enableFemaleSection}
+                              onChange={(e) => setEnableFemaleSection(e.target.checked)}
+                              className="accent-brand-green h-4 w-4 rounded cursor-pointer"
+                            />
+                            <span>Include Female Selection (Sizes/Colors)</span>
+                          </label>
                         </div>
+
+                        {/* Male Colors */}
+                        {enableMaleSection && (
+                          <div>
+                            <div className="flex items-center justify-between">
+                              <label className="font-semibold uppercase tracking-wider text-brand-charcoal/60">
+                                Male Colors Hex Codes (Comma separated)
+                              </label>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setColorPickerTarget('male');
+                                  setIsColorPickerOpen(true);
+                                }}
+                                className="text-[10px] font-bold uppercase tracking-wider text-brand-green hover:text-brand-green/80 flex items-center gap-1 bg-brand-green/10 px-2 py-1 rounded-md"
+                              >
+                                <Plus className="h-3 w-3" />
+                                Pick Colors
+                              </button>
+                            </div>
+
+                            {maleColorsInput.trim() !== "" && (
+                              <div className="mt-2 mb-2 flex flex-wrap gap-2">
+                                {maleColorsInput.split(",").map(c => c.trim()).filter(Boolean).map((hex, i) => (
+                                  <div key={i} className="flex items-center gap-1.5 bg-brand-bg px-2.5 py-1.5 rounded-full border border-brand-charcoal/10 shadow-sm">
+                                    <div className="w-3.5 h-3.5 rounded-full shadow-sm border border-brand-charcoal/10" style={{ backgroundColor: hex }} />
+                                    <span className="text-[10px] font-mono text-brand-charcoal uppercase">{hex}</span>
+                                    <button 
+                                      type="button" 
+                                      onClick={() => {
+                                        const currentColors = maleColorsInput.split(",").map(c => c.trim()).filter(Boolean);
+                                        currentColors.splice(i, 1);
+                                        setMaleColorsInput(currentColors.join(", "));
+                                      }}
+                                      className="ml-1 text-brand-charcoal/40 hover:text-red-500 transition-colors"
+                                    >
+                                      <X className="h-3 w-3" />
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+
+                            <input
+                              type="text"
+                              value={maleColorsInput}
+                              onChange={(e) => setMaleColorsInput(e.target.value)}
+                              placeholder="#000000, #333333 (Or use the picker)"
+                              className="mt-1.5 w-full rounded-xl border border-brand-charcoal/10 bg-brand-bg px-3.5 py-3 text-xs focus:border-brand-green focus:outline-none"
+                            />
+                          </div>
+                        )}
 
                         {/* Female Colors */}
-                        <div>
-                          <div className="flex items-center justify-between">
-                            <label className="font-semibold uppercase tracking-wider text-brand-charcoal/60">
-                              Female Colors Hex Codes (Comma separated)
-                            </label>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setColorPickerTarget('female');
-                                setIsColorPickerOpen(true);
-                              }}
-                              className="text-[10px] font-bold uppercase tracking-wider text-brand-green hover:text-brand-green/80 flex items-center gap-1 bg-brand-green/10 px-2 py-1 rounded-md"
-                            >
-                              <Plus className="h-3 w-3" />
-                              Pick Colors
-                            </button>
-                          </div>
-
-                          {femaleColorsInput.trim() !== "" && (
-                            <div className="mt-2 mb-2 flex flex-wrap gap-2">
-                              {femaleColorsInput.split(",").map(c => c.trim()).filter(Boolean).map((hex, i) => (
-                                <div key={i} className="flex items-center gap-1.5 bg-brand-bg px-2.5 py-1.5 rounded-full border border-brand-charcoal/10 shadow-sm">
-                                  <div className="w-3.5 h-3.5 rounded-full shadow-sm border border-brand-charcoal/10" style={{ backgroundColor: hex }} />
-                                  <span className="text-[10px] font-mono text-brand-charcoal uppercase">{hex}</span>
-                                  <button 
-                                    type="button" 
-                                    onClick={() => {
-                                      const currentColors = femaleColorsInput.split(",").map(c => c.trim()).filter(Boolean);
-                                      currentColors.splice(i, 1);
-                                      setFemaleColorsInput(currentColors.join(", "));
-                                    }}
-                                    className="ml-1 text-brand-charcoal/40 hover:text-red-500 transition-colors"
-                                  >
-                                    <X className="h-3 w-3" />
-                                  </button>
-                                </div>
-                              ))}
+                        {enableFemaleSection && (
+                          <div>
+                            <div className="flex items-center justify-between">
+                              <label className="font-semibold uppercase tracking-wider text-brand-charcoal/60">
+                                Female Colors Hex Codes (Comma separated)
+                              </label>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setColorPickerTarget('female');
+                                  setIsColorPickerOpen(true);
+                                }}
+                                className="text-[10px] font-bold uppercase tracking-wider text-brand-green hover:text-brand-green/80 flex items-center gap-1 bg-brand-green/10 px-2 py-1 rounded-md"
+                              >
+                                <Plus className="h-3 w-3" />
+                                Pick Colors
+                              </button>
                             </div>
-                          )}
 
-                          <input
-                            type="text"
-                            value={femaleColorsInput}
-                            onChange={(e) => setFemaleColorsInput(e.target.value)}
-                            placeholder="#FFC0CB, #FFFFFF (Or use the picker)"
-                            className="mt-1.5 w-full rounded-xl border border-brand-charcoal/10 bg-brand-bg px-3.5 py-3 text-xs focus:border-brand-green focus:outline-none"
-                          />
-                        </div>
+                            {femaleColorsInput.trim() !== "" && (
+                              <div className="mt-2 mb-2 flex flex-wrap gap-2">
+                                {femaleColorsInput.split(",").map(c => c.trim()).filter(Boolean).map((hex, i) => (
+                                  <div key={i} className="flex items-center gap-1.5 bg-brand-bg px-2.5 py-1.5 rounded-full border border-brand-charcoal/10 shadow-sm">
+                                    <div className="w-3.5 h-3.5 rounded-full shadow-sm border border-brand-charcoal/10" style={{ backgroundColor: hex }} />
+                                    <span className="text-[10px] font-mono text-brand-charcoal uppercase">{hex}</span>
+                                    <button 
+                                      type="button" 
+                                      onClick={() => {
+                                        const currentColors = femaleColorsInput.split(",").map(c => c.trim()).filter(Boolean);
+                                        currentColors.splice(i, 1);
+                                        setFemaleColorsInput(currentColors.join(", "));
+                                      }}
+                                      className="ml-1 text-brand-charcoal/40 hover:text-red-500 transition-colors"
+                                    >
+                                      <X className="h-3 w-3" />
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+
+                            <input
+                              type="text"
+                              value={femaleColorsInput}
+                              onChange={(e) => setFemaleColorsInput(e.target.value)}
+                              placeholder="#FFC0CB, #FFFFFF (Or use the picker)"
+                              className="mt-1.5 w-full rounded-xl border border-brand-charcoal/10 bg-brand-bg px-3.5 py-3 text-xs focus:border-brand-green focus:outline-none"
+                            />
+                          </div>
+                        )}
+
                         {/* Male Sizes */}
-                        <div>
-                          <label className="font-semibold uppercase tracking-wider text-brand-charcoal/60">
-                            Available Male Sizes
-                          </label>
-                          <div className="flex flex-wrap gap-1.5 mt-2">
-                            {availableSizesList.map((size) => {
-                              const isChecked = selectedMaleSizes.includes(size);
-                              return (
-                                <button
-                                  type="button"
-                                  key={size}
-                                  onClick={() => handleMaleSizeToggle(size)}
-                                  className={`h-7 min-w-8 px-1.5 rounded-lg border text-[10px] font-bold uppercase transition-all cursor-pointer ${
-                                    isChecked
-                                      ? "bg-brand-charcoal border-brand-charcoal text-brand-bg"
-                                      : "border-brand-charcoal/10 bg-brand-bg text-brand-charcoal/60 hover:border-brand-charcoal"
-                                  }`}
-                                >
-                                  {size}
-                                </button>
-                              );
-                            })}
+                        {enableMaleSection && (
+                          <div>
+                            <label className="font-semibold uppercase tracking-wider text-brand-charcoal/60">
+                              Available Male Sizes
+                            </label>
+                            <div className="flex flex-wrap gap-1.5 mt-2">
+                              {availableSizesList.map((size) => {
+                                const isChecked = selectedMaleSizes.includes(size);
+                                return (
+                                  <button
+                                    type="button"
+                                    key={size}
+                                    onClick={() => handleMaleSizeToggle(size)}
+                                    className={`h-7 min-w-8 px-1.5 rounded-lg border text-[10px] font-bold uppercase transition-all cursor-pointer ${
+                                      isChecked
+                                        ? "bg-brand-charcoal border-brand-charcoal text-brand-bg"
+                                        : "border-brand-charcoal/10 bg-brand-bg text-brand-charcoal/60 hover:border-brand-charcoal"
+                                    }`}
+                                  >
+                                    {size}
+                                  </button>
+                                );
+                              })}
+                            </div>
                           </div>
-                        </div>
+                        )}
+
                         {/* Female Sizes */}
-                        <div>
-                          <label className="font-semibold uppercase tracking-wider text-brand-charcoal/60">
-                            Available Female Sizes
-                          </label>
-                          <div className="flex flex-wrap gap-1.5 mt-2">
-                            {availableSizesList.map((size) => {
-                              const isChecked = selectedFemaleSizes.includes(size);
-                              return (
-                                <button
-                                  type="button"
-                                  key={size}
-                                  onClick={() => handleFemaleSizeToggle(size)}
-                                  className={`h-7 min-w-8 px-1.5 rounded-lg border text-[10px] font-bold uppercase transition-all cursor-pointer ${
-                                    isChecked
-                                      ? "bg-brand-charcoal border-brand-charcoal text-brand-bg"
-                                      : "border-brand-charcoal/10 bg-brand-bg text-brand-charcoal/60 hover:border-brand-charcoal"
-                                  }`}
-                                >
-                                  {size}
-                                </button>
-                              );
-                            })}
+                        {enableFemaleSection && (
+                          <div>
+                            <label className="font-semibold uppercase tracking-wider text-brand-charcoal/60">
+                              Available Female Sizes
+                            </label>
+                            <div className="flex flex-wrap gap-1.5 mt-2">
+                              {availableSizesList.map((size) => {
+                                const isChecked = selectedFemaleSizes.includes(size);
+                                return (
+                                  <button
+                                    type="button"
+                                    key={size}
+                                    onClick={() => handleFemaleSizeToggle(size)}
+                                    className={`h-7 min-w-8 px-1.5 rounded-lg border text-[10px] font-bold uppercase transition-all cursor-pointer ${
+                                      isChecked
+                                        ? "bg-brand-charcoal border-brand-charcoal text-brand-bg"
+                                        : "border-brand-charcoal/10 bg-brand-bg text-brand-charcoal/60 hover:border-brand-charcoal"
+                                    }`}
+                                  >
+                                    {size}
+                                  </button>
+                                );
+                              })}
+                            </div>
                           </div>
-                        </div>
+                        )}
                       </>
                     ) : (
                       <>
@@ -1711,6 +1915,13 @@ export default function AdminDashboardPage() {
                         <div>
                           <div className="font-bold text-brand-charcoal text-sm flex items-center gap-2">
                             <span>Order #{ord.id}</span>
+                            <button
+                              onClick={() => handleDeleteOrderClick(ord.id)}
+                              className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1 rounded-full transition-all cursor-pointer inline-flex items-center justify-center"
+                              title="Delete Order"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
                             <select 
                               value={ord.status || "BOOKED"}
                               onChange={(e) => handleOrderStatusUpdate(ord.id, e.target.value)}
@@ -1745,13 +1956,32 @@ export default function AdminDashboardPage() {
                           <span className="text-[10px] font-bold uppercase tracking-wider text-brand-charcoal/40">Buyer profile</span>
                           <div className="font-semibold text-brand-charcoal">{ord.user.name}</div>
                           <div className="text-[10px] text-brand-charcoal/50 mb-2">{ord.user.email}</div>
-                          <button
-                            onClick={() => setSelectedOrder(ord)}
-                            className="text-xs bg-brand-charcoal text-brand-bg px-3 py-1.5 rounded-lg font-semibold hover:bg-brand-charcoal/90 transition-all cursor-pointer inline-flex items-center gap-1 mt-auto"
-                          >
-                            <Eye className="h-3 w-3" />
-                            View Full Details
-                          </button>
+                          
+                          <div className="flex gap-2 mt-auto flex-wrap justify-end">
+                            {ord.status === "DELIVERED" && (
+                              <button
+                                onClick={() => handleInvoiceClick(ord)}
+                                className="text-xs bg-brand-green text-brand-bg px-3 py-1.5 rounded-lg font-semibold hover:bg-brand-green/90 transition-all cursor-pointer inline-flex items-center gap-1"
+                              >
+                                <Printer className="h-3 w-3" />
+                                Invoice Editor
+                              </button>
+                            )}
+                            <button
+                              onClick={() => handleEditOrderClick(ord)}
+                              className="text-xs border border-brand-charcoal/20 text-brand-charcoal px-3 py-1.5 rounded-lg font-semibold hover:bg-brand-charcoal/5 transition-all cursor-pointer inline-flex items-center gap-1"
+                            >
+                              <Edit className="h-3 w-3" />
+                              Edit Info
+                            </button>
+                            <button
+                              onClick={() => setSelectedOrder(ord)}
+                              className="text-xs bg-brand-charcoal text-brand-bg px-3 py-1.5 rounded-lg font-semibold hover:bg-brand-charcoal/90 transition-all cursor-pointer inline-flex items-center gap-1"
+                            >
+                              <Eye className="h-3 w-3" />
+                              View Details
+                            </button>
+                          </div>
                           
                           <div className="mt-2 flex gap-2 justify-end">
                             {!ord.nimbuspostAwb && ord.status === 'BOOKED' && (
@@ -2068,6 +2298,689 @@ export default function AdminDashboardPage() {
                     </motion.div>
                   </div>
                 )}
+
+                {/* ===== EDIT ORDER MODAL ===== */}
+                {isEditOrderOpen && eoOrderId && (
+                  <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                    {/* Backdrop */}
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="absolute inset-0 bg-brand-charcoal/40 backdrop-blur-sm"
+                      onClick={() => setIsEditOrderOpen(false)}
+                    />
+                    {/* Modal Container */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 30, scale: 0.97 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 30, scale: 0.97 }}
+                      transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                      className="relative bg-brand-bg rounded-3xl border border-brand-charcoal/10 shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto z-10"
+                    >
+                      {/* Modal Header */}
+                      <div className="sticky top-0 bg-brand-bg/95 backdrop-blur-md border-b border-brand-charcoal/5 px-6 py-4 rounded-t-3xl flex items-center justify-between z-10">
+                        <div>
+                          <h3 className="text-lg font-semibold font-serif text-brand-charcoal">Edit Order #{eoOrderId}</h3>
+                          <p className="text-[10px] text-brand-charcoal/40 mt-0.5">Modify any shipping, payment, or line items.</p>
+                        </div>
+                        <button
+                          onClick={() => setIsEditOrderOpen(false)}
+                          className="h-8 w-8 rounded-full bg-brand-charcoal/5 flex items-center justify-center text-brand-charcoal/50 hover:bg-brand-charcoal/10 cursor-pointer"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+
+                      {/* Modal Body */}
+                      <div className="p-6 space-y-6">
+                        {/* Customer billing details */}
+                        <div className="space-y-3">
+                          <label className="text-xs font-bold uppercase tracking-wider text-brand-charcoal/50">Customer Contact</label>
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <input type="text" placeholder="Name" value={eoFullName} onChange={(e) => setEoFullName(e.target.value)}
+                              className="w-full px-3 py-2.5 text-xs rounded-xl border border-brand-charcoal/10 bg-brand-bg focus:border-brand-charcoal/30 outline-none" />
+                            <input type="email" placeholder="Email" value={eoEmail} onChange={(e) => setEoEmail(e.target.value)}
+                              className="w-full px-3 py-2.5 text-xs rounded-xl border border-brand-charcoal/10 bg-brand-bg focus:border-brand-charcoal/30 outline-none" />
+                            <input type="tel" placeholder="Phone" value={eoPhone} onChange={(e) => setEoPhone(e.target.value)}
+                              className="w-full px-3 py-2.5 text-xs rounded-xl border border-brand-charcoal/10 bg-brand-bg focus:border-brand-charcoal/30 outline-none" />
+                          </div>
+                        </div>
+
+                        {/* Charges and details */}
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                          <div>
+                            <label className="text-[10px] font-bold uppercase tracking-wider text-brand-charcoal/40 block mb-1">Total Amount (₹)</label>
+                            <input type="number" placeholder="0" value={eoTotalAmount} onChange={(e) => setEoTotalAmount(e.target.value)}
+                              className="w-full px-3 py-2.5 text-xs rounded-xl border border-brand-charcoal/10 bg-brand-bg focus:border-brand-charcoal/30 outline-none" />
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-bold uppercase tracking-wider text-brand-charcoal/40 block mb-1">Shipping Fee (₹)</label>
+                            <input type="number" placeholder="0" value={eoShippingCharges} onChange={(e) => setEoShippingCharges(e.target.value)}
+                              className="w-full px-3 py-2.5 text-xs rounded-xl border border-brand-charcoal/10 bg-brand-bg focus:border-brand-charcoal/30 outline-none" />
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-bold uppercase tracking-wider text-brand-charcoal/40 block mb-1">COD Fee (₹)</label>
+                            <input type="number" placeholder="0" value={eoCodCharges} onChange={(e) => setEoCodCharges(e.target.value)}
+                              className="w-full px-3 py-2.5 text-xs rounded-xl border border-brand-charcoal/10 bg-brand-bg focus:border-brand-charcoal/30 outline-none" />
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-bold uppercase tracking-wider text-brand-charcoal/40 block mb-1">Payment Method</label>
+                            <select value={eoPaymentMethod} onChange={(e) => setEoPaymentMethod(e.target.value)}
+                              className="w-full px-3 py-2.5 text-xs rounded-xl border border-brand-charcoal/10 bg-brand-bg focus:border-brand-charcoal/30 outline-none cursor-pointer">
+                              <option value="COD">COD</option>
+                              <option value="PREPAID">Prepaid</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        {/* Status */}
+                        <div>
+                          <label className="text-[10px] font-bold uppercase tracking-wider text-brand-charcoal/40 block mb-1">Order Status</label>
+                          <select value={eoStatus} onChange={(e) => setEoStatus(e.target.value)}
+                            className="w-full px-3 py-2.5 text-xs rounded-xl border border-brand-charcoal/10 bg-brand-bg focus:border-brand-charcoal/30 outline-none cursor-pointer">
+                            <option value="BOOKED">Booked</option>
+                            <option value="SHIPPED">Shipped</option>
+                            <option value="DELIVERED">Delivered</option>
+                            <option value="CANCELLED">Cancelled</option>
+                          </select>
+                        </div>
+
+                        {/* Shipping Address */}
+                        <div className="space-y-3">
+                          <label className="text-xs font-bold uppercase tracking-wider text-brand-charcoal/50">Shipping Details</label>
+                          <textarea placeholder="Address" value={eoAddress} onChange={(e) => setEoAddress(e.target.value)} rows={2}
+                            className="w-full px-3 py-2.5 text-xs rounded-xl border border-brand-charcoal/10 bg-brand-bg focus:border-brand-charcoal/30 outline-none resize-none" />
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            <input type="text" placeholder="Landmark" value={eoLandmark} onChange={(e) => setEoLandmark(e.target.value)}
+                              className="w-full px-3 py-2.5 text-xs rounded-xl border border-brand-charcoal/10 bg-brand-bg focus:border-brand-charcoal/30 outline-none" />
+                            <input type="text" placeholder="Pincode" value={eoPincode} onChange={(e) => setEoPincode(e.target.value)}
+                              className="w-full px-3 py-2.5 text-xs rounded-xl border border-brand-charcoal/10 bg-brand-bg focus:border-brand-charcoal/30 outline-none" />
+                            <input type="text" placeholder="City" value={eoCity} onChange={(e) => setEoCity(e.target.value)}
+                              className="w-full px-3 py-2.5 text-xs rounded-xl border border-brand-charcoal/10 bg-brand-bg focus:border-brand-charcoal/30 outline-none" />
+                            <input type="text" placeholder="State" value={eoState} onChange={(e) => setEoState(e.target.value)}
+                              className="w-full px-3 py-2.5 text-xs rounded-xl border border-brand-charcoal/10 bg-brand-bg focus:border-brand-charcoal/30 outline-none" />
+                          </div>
+                        </div>
+
+                        {/* Items Array JSON */}
+                        <div>
+                          <label className="text-xs font-bold uppercase tracking-wider text-brand-charcoal/50 block mb-1">Purchased Garments (JSON)</label>
+                          <textarea value={eoItems} onChange={(e) => setEoItems(e.target.value)} rows={5}
+                            className="w-full px-3 py-2.5 text-xs rounded-xl border border-brand-charcoal/10 bg-brand-bg focus:border-brand-charcoal/30 outline-none resize-none font-mono" />
+                          <p className="text-[9px] text-brand-charcoal/30 mt-1">
+                            Format: [{`{"title":"...", "price":0, "quantity":1, "size":"M", "color":"#000", "image":"..."}`}]
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Modal Footer */}
+                      <div className="sticky bottom-0 bg-brand-bg/95 backdrop-blur-md border-t border-brand-charcoal/5 px-6 py-4 rounded-b-3xl flex items-center justify-end gap-3">
+                        <button
+                          onClick={() => setIsEditOrderOpen(false)}
+                          className="px-4 py-2.5 text-xs font-semibold text-brand-charcoal/60 hover:text-brand-charcoal rounded-xl border border-brand-charcoal/10 hover:bg-brand-charcoal/5 cursor-pointer transition-all"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={handleEditOrderSubmit}
+                          disabled={eoSubmitting}
+                          className="px-5 py-2.5 text-xs font-semibold bg-brand-charcoal text-brand-bg rounded-xl hover:bg-brand-charcoal/90 cursor-pointer transition-all shadow-xs disabled:opacity-50 flex items-center gap-1.5"
+                        >
+                          {eoSubmitting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+                          {eoSubmitting ? "Saving..." : "Save Changes"}
+                        </button>
+                      </div>
+                    </motion.div>
+                  </div>
+                )}
+
+                {/* ===== INVOICE EDITOR & DOWNLOAD MODAL ===== */}
+                {isInvoiceOpen && invOrderId && (
+                  <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                    {/* Backdrop */}
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="absolute inset-0 bg-brand-charcoal/40 backdrop-blur-sm"
+                      onClick={() => setIsInvoiceOpen(false)}
+                    />
+                    {/* Modal Container */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 30, scale: 0.97 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 30, scale: 0.97 }}
+                      transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                      className="relative bg-brand-bg rounded-3xl border border-brand-charcoal/10 shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto z-10"
+                    >
+                      {/* Modal Header */}
+                      <div className="sticky top-0 bg-brand-bg/95 backdrop-blur-md border-b border-brand-charcoal/5 px-6 py-4 rounded-t-3xl flex items-center justify-between z-10">
+                        <div>
+                          <h3 className="text-lg font-semibold font-serif text-brand-charcoal">Tax Invoice Editor</h3>
+                          <p className="text-[10px] text-brand-charcoal/40 mt-0.5">Customize client fields, date, or items below, then click Print.</p>
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => {
+                              const printContent = document.getElementById("invoice-print-area")?.innerHTML;
+                              const printWindow = window.open("", "_blank");
+                              if (printWindow) {
+                                printWindow.document.write(`
+                                  <html>
+                                    <head>
+                                      <title>Invoice_Order_${invOrderId}</title>
+                                      <style>
+                                        body {
+                                          background: #ffffff;
+                                          color: #000000;
+                                          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                                          margin: 40px;
+                                          padding: 0;
+                                          -webkit-print-color-adjust: exact;
+                                          print-color-adjust: exact;
+                                        }
+                                        .invoice-container { max-width: 800px; margin: 0 auto; }
+                                        .header-row { display: flex; justify-content: space-between; border-bottom: 2px solid #222; padding-bottom: 20px; margin-bottom: 20px; }
+                                        .logo-section h2 { margin: 0; font-size: 26px; font-weight: 900; letter-spacing: 2px; }
+                                        .logo-section p { margin: 4px 0 0 0; font-size: 11px; color: #555; text-transform: uppercase; }
+                                        .invoice-section { text-align: right; }
+                                        .invoice-section h1 { margin: 0; font-size: 24px; font-weight: 900; letter-spacing: 3px; color: #111; }
+                                        .invoice-section p { margin: 5px 0 0 0; font-size: 12px; color: #444; }
+                                        .billing-row { display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding-bottom: 20px; margin-bottom: 25px; }
+                                        .bill-to { width: 50%; font-size: 13px; line-height: 1.5; }
+                                        .bill-to h4 { margin: 0 0 6px 0; font-size: 11px; text-transform: uppercase; color: #666; letter-spacing: 1px; }
+                                        .meta-details { width: 40%; text-align: right; font-size: 13px; line-height: 1.5; }
+                                        .meta-details h4 { margin: 0 0 4px 0; font-size: 11px; text-transform: uppercase; color: #666; letter-spacing: 1px; }
+                                        .meta-details p { margin: 0 0 12px 0; }
+                                        table { width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 25px; }
+                                        th { font-size: 11px; text-transform: uppercase; color: #555; border-bottom: 2px solid #222; padding: 10px 5px; text-align: left; letter-spacing: 1px; }
+                                        td { padding: 12px 5px; border-bottom: 1px solid #eee; font-size: 13px; }
+                                        .text-right { text-align: right; }
+                                        .text-center { text-align: center; }
+                                        .totals-wrapper { display: flex; justify-content: flex-end; margin-top: 15px; }
+                                        .totals-table { width: 280px; margin: 0; }
+                                        .totals-table td { padding: 6px 0; border: none; font-size: 13px; }
+                                        .totals-table tr.grand-total td { border-top: 2px solid #222; font-weight: bold; font-size: 15px; padding-top: 12px; }
+                                        .footer { margin-top: 50px; text-align: center; font-size: 11px; color: #888; border-top: 1px solid #eee; padding-top: 20px; }
+                                      </style>
+                                    </head>
+                                    <body onload="window.print();">
+                                      <div class="invoice-container">
+                                        <div class="header-row">
+                                          <div class="logo-section">
+                                            <h2>${invCompanyName}</h2>
+                                            <p style="margin:2px 0 0 0;font-size:10px;color:#777;text-transform:none;">Operated by MADE DIFFERENT FK</p>
+                                            <p style="margin:4px 0 0 0;">Official Tax Statement</p>
+                                          </div>
+                                          <div class="invoice-section">
+                                            <h1>INVOICE</h1>
+                                            <p>Order Reference: #${invOrderId}</p>
+                                          </div>
+                                        </div>
+                                        <div class="billing-row">
+                                          <div class="bill-to">
+                                            <h4>Billed To</h4>
+                                            <strong>${invFullName}</strong><br>
+                                            ${invAddressDetails.replace(/\n/g, "<br>")}
+                                          </div>
+                                          <div class="meta-details">
+                                            <h4>Invoice Date</h4>
+                                            <p>${invDate}</p>
+                                            <h4>Payment Type</h4>
+                                            <p>${invPaymentMethod}</p>
+                                          </div>
+                                        </div>
+                                        <table>
+                                          <thead>
+                                            <tr>
+                                              <th>Garment Description</th>
+                                              <th class="text-center">Qty</th>
+                                              <th class="text-right">Price</th>
+                                              <th class="text-right">Total</th>
+                                            </tr>
+                                          </thead>
+                                          <tbody>
+                                            ${invItems.map(item => `
+                                              <tr>
+                                                <td>
+                                                  <strong>${item.title || "Garment Line Item"}</strong><br>
+                                                  <span style="font-size:11px;color:#666;">Size: ${item.size || "N/A"} | Color: ${item.color || "N/A"}</span>
+                                                </td>
+                                                <td class="text-center">${item.quantity || 1}</td>
+                                                <td class="text-right">₹${Number(item.price || 0).toFixed(2)}</td>
+                                                <td class="text-right">₹${(Number(item.price || 0) * Number(item.quantity || 1)).toFixed(2)}</td>
+                                              </tr>
+                                            `).join("")}
+                                          </tbody>
+                                        </table>
+                                        <div class="totals-wrapper">
+                                          <table class="totals-table">
+                                            <tr>
+                                              <td>Subtotal</td>
+                                              <td class="text-right">₹${invItems.reduce((acc, item) => acc + (Number(item.price || 0) * Number(item.quantity || 1)), 0).toFixed(2)}</td>
+                                            </tr>
+                                            <tr>
+                                              <td>Shipping Fee</td>
+                                              <td class="text-right">₹${Number(invShippingCharges).toFixed(2)}</td>
+                                            </tr>
+                                            ${invCodCharges > 0 ? `
+                                              <tr>
+                                                <td>COD Charges</td>
+                                                <td class="text-right">₹${Number(invCodCharges).toFixed(2)}</td>
+                                              </tr>
+                                            ` : ""}
+                                            ${invDiscount > 0 ? `
+                                              <tr>
+                                                <td>Discount</td>
+                                                <td class="text-right">-₹${Number(invDiscount).toFixed(2)}</td>
+                                              </tr>
+                                            ` : ""}
+                                            ${invDeduction > 0 ? `
+                                              <tr>
+                                                <td>${invDeductionLabel || "Other Deductions"}</td>
+                                                <td class="text-right">-₹${Number(invDeduction).toFixed(2)}</td>
+                                              </tr>
+                                            ` : ""}
+                                            <tr class="grand-total">
+                                              <td>Total Paid</td>
+                                              <td class="text-right">₹${Number(invTotalAmount).toFixed(2)}</td>
+                                            </tr>
+                                          </table>
+                                        </div>
+                                        <div class="footer">
+                                          <p>Thank you for purchasing from ${invCompanyName}!</p>
+                                          <p style="margin:5px 0 0 0;font-size:10px;color:#888;">MDFK is operated by MADE DIFFERENT FK</p>
+                                          <p>© 2026 ${invCompanyName}. All Rights Reserved.</p>
+                                        </div>
+                                      </div>
+                                    </body>
+                                  </html>
+                                `);
+                                printWindow.document.close();
+                              }
+                            }}
+                            className="bg-brand-charcoal text-brand-bg px-4 py-2 text-xs font-semibold rounded-xl hover:bg-brand-charcoal/90 flex items-center gap-1 cursor-pointer"
+                          >
+                            <Printer className="h-3.5 w-3.5" />
+                            Print / PDF
+                          </button>
+                          <button
+                            onClick={() => setIsInvoiceOpen(false)}
+                            className="h-8 w-8 rounded-full bg-brand-charcoal/5 flex items-center justify-center text-brand-charcoal/50 hover:bg-brand-charcoal/10 cursor-pointer"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Modal Body */}
+                      <div className="p-6 space-y-6">
+                        {/* Interactive Edit Fields */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-brand-gray/30 p-4 rounded-2xl border border-brand-charcoal/5">
+                          <div className="space-y-3">
+                            <h4 className="text-[10px] font-bold uppercase tracking-wider text-brand-charcoal/40">Invoice Settings & Client Details</h4>
+                            <div>
+                              <label className="text-[9px] text-brand-charcoal/50 block mb-0.5">Company Name</label>
+                              <input type="text" value={invCompanyName} onChange={(e) => setInvCompanyName(e.target.value)}
+                                className="w-full px-3 py-1.5 text-xs rounded-lg border border-brand-charcoal/10 bg-brand-bg outline-none" />
+                            </div>
+                            <div>
+                              <label className="text-[9px] text-brand-charcoal/50 block mb-0.5">Billing Client Name</label>
+                              <input type="text" value={invFullName} onChange={(e) => setInvFullName(e.target.value)}
+                                className="w-full px-3 py-1.5 text-xs rounded-lg border border-brand-charcoal/10 bg-brand-bg outline-none" />
+                            </div>
+                            <div>
+                              <label className="text-[9px] text-brand-charcoal/50 block mb-0.5">Billing Address Text</label>
+                              <textarea value={invAddressDetails} onChange={(e) => setInvAddressDetails(e.target.value)} rows={2}
+                                className="w-full px-3 py-1.5 text-xs rounded-lg border border-brand-charcoal/10 bg-brand-bg outline-none resize-none" />
+                            </div>
+                          </div>
+
+                          <div className="space-y-3">
+                            <h4 className="text-[10px] font-bold uppercase tracking-wider text-brand-charcoal/40">Invoice Meta & Charges</h4>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <label className="text-[9px] text-brand-charcoal/50 block mb-0.5">Invoice Date</label>
+                                <input type="text" value={invDate} onChange={(e) => setInvDate(e.target.value)}
+                                  className="w-full px-3 py-1.5 text-xs rounded-lg border border-brand-charcoal/10 bg-brand-bg outline-none" />
+                              </div>
+                              <div>
+                                <label className="text-[9px] text-brand-charcoal/50 block mb-0.5">Payment Type</label>
+                                <input type="text" value={invPaymentMethod} onChange={(e) => setInvPaymentMethod(e.target.value)}
+                                  className="w-full px-3 py-1.5 text-xs rounded-lg border border-brand-charcoal/10 bg-brand-bg outline-none" />
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-3 gap-2">
+                              <div>
+                                <label className="text-[9px] text-brand-charcoal/50 block mb-0.5">Shipping (₹)</label>
+                                <input type="number" value={invShippingCharges} onChange={(e) => setInvShippingCharges(Number(e.target.value))}
+                                  className="w-full px-2 py-1.5 text-xs rounded-lg border border-brand-charcoal/10 bg-brand-bg outline-none" />
+                              </div>
+                              <div>
+                                <label className="text-[9px] text-brand-charcoal/50 block mb-0.5">COD Charges</label>
+                                <input type="number" value={invCodCharges} onChange={(e) => setInvCodCharges(Number(e.target.value))}
+                                  className="w-full px-2 py-1.5 text-xs rounded-lg border border-brand-charcoal/10 bg-brand-bg outline-none" />
+                              </div>
+                              <div>
+                                <label className="text-[9px] text-brand-charcoal/50 block mb-0.5">Total Paid (₹)</label>
+                                <input type="number" value={invTotalAmount} onChange={(e) => setInvTotalAmount(Number(e.target.value))}
+                                  className="w-full px-2 py-1.5 text-xs rounded-lg border border-brand-charcoal/10 bg-brand-bg outline-none font-bold text-brand-charcoal" />
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <label className="text-[9px] text-brand-charcoal/50 block mb-0.5">Discount (₹)</label>
+                                <input type="number" value={invDiscount} onChange={(e) => setInvDiscount(Number(e.target.value))}
+                                  className="w-full px-3 py-1.5 text-xs rounded-lg border border-brand-charcoal/10 bg-brand-bg outline-none" />
+                              </div>
+                              <div>
+                                <label className="text-[9px] text-brand-charcoal/50 block mb-0.5">Deduction (₹)</label>
+                                <input type="number" value={invDeduction} onChange={(e) => setInvDeduction(Number(e.target.value))}
+                                  className="w-full px-3 py-1.5 text-xs rounded-lg border border-brand-charcoal/10 bg-brand-bg outline-none" />
+                              </div>
+                            </div>
+                            <div>
+                              <label className="text-[9px] text-brand-charcoal/50 block mb-0.5">Deduction Label</label>
+                              <input type="text" value={invDeductionLabel} onChange={(e) => setInvDeductionLabel(e.target.value)}
+                                className="w-full px-3 py-1.5 text-xs rounded-lg border border-brand-charcoal/10 bg-brand-bg outline-none" />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Interactive Items Table editor */}
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <h4 className="text-xs font-bold uppercase tracking-wider text-brand-charcoal/50">Modify Items List Rows</h4>
+                            <button
+                              onClick={() => {
+                                setInvItems([...invItems, { title: "New Custom Garment", price: 0, quantity: 1, size: "M", color: "#000" }]);
+                              }}
+                              className="text-[10px] bg-brand-charcoal/5 text-brand-charcoal border border-brand-charcoal/15 px-2.5 py-1 rounded-lg font-semibold hover:bg-brand-charcoal/10 cursor-pointer"
+                            >
+                              + Add Item Row
+                            </button>
+                          </div>
+                          
+                          <div className="border border-brand-charcoal/5 rounded-2xl overflow-hidden divide-y divide-brand-charcoal/5 bg-brand-bg text-xs">
+                            {invItems.map((item, index) => (
+                              <div key={index} className="p-3 grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
+                                <div className="sm:col-span-5">
+                                  <input
+                                    type="text"
+                                    value={item.title || ""}
+                                    onChange={(e) => {
+                                      const updated = [...invItems];
+                                      updated[index].title = e.target.value;
+                                      setInvItems(updated);
+                                    }}
+                                    placeholder="Garment title"
+                                    className="w-full px-2.5 py-1 text-xs border border-brand-charcoal/10 rounded bg-brand-bg outline-none"
+                                  />
+                                  <div className="grid grid-cols-2 gap-2 mt-1.5">
+                                    <input
+                                      type="text"
+                                      value={item.size || ""}
+                                      onChange={(e) => {
+                                        const updated = [...invItems];
+                                        updated[index].size = e.target.value;
+                                        setInvItems(updated);
+                                      }}
+                                      placeholder="Size"
+                                      className="px-2 py-0.5 text-[10px] border border-brand-charcoal/10 rounded bg-brand-bg outline-none"
+                                    />
+                                    <input
+                                      type="text"
+                                      value={item.color || ""}
+                                      onChange={(e) => {
+                                        const updated = [...invItems];
+                                        updated[index].color = e.target.value;
+                                        setInvItems(updated);
+                                      }}
+                                      placeholder="Color code"
+                                      className="px-2 py-0.5 text-[10px] border border-brand-charcoal/10 rounded bg-brand-bg outline-none"
+                                    />
+                                  </div>
+                                </div>
+                                
+                                <div className="sm:col-span-2">
+                                  <label className="text-[8px] text-brand-charcoal/40 block sm:hidden">Qty</label>
+                                  <input
+                                    type="number"
+                                    value={item.quantity || 1}
+                                    onChange={(e) => {
+                                      const updated = [...invItems];
+                                      updated[index].quantity = Number(e.target.value);
+                                      setInvItems(updated);
+                                    }}
+                                    className="w-full px-2 py-1 text-xs border border-brand-charcoal/10 rounded bg-brand-bg outline-none"
+                                  />
+                                </div>
+
+                                <div className="sm:col-span-3">
+                                  <label className="text-[8px] text-brand-charcoal/40 block sm:hidden">Rate (₹)</label>
+                                  <input
+                                    type="number"
+                                    value={item.price || 0}
+                                    onChange={(e) => {
+                                      const updated = [...invItems];
+                                      updated[index].price = Number(e.target.value);
+                                      setInvItems(updated);
+                                    }}
+                                    className="w-full px-2 py-1 text-xs border border-brand-charcoal/10 rounded bg-brand-bg outline-none"
+                                  />
+                                </div>
+
+                                <div className="sm:col-span-2 text-right">
+                                  <button
+                                    onClick={() => {
+                                      setInvItems(invItems.filter((_, idx) => idx !== index));
+                                    }}
+                                    className="text-[10px] text-red-500 hover:text-red-700 font-semibold cursor-pointer"
+                                  >
+                                    Remove
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Hidden preview structure copied to iframe during window print */}
+                        <div id="invoice-print-area" className="hidden">
+                          <div className="invoice-container">
+                            <div className="header-row">
+                              <div className="logo-section">
+                                <h2>{invCompanyName}</h2>
+                                <p>Official Tax Statement</p>
+                              </div>
+                              <div className="invoice-section">
+                                <h1>INVOICE</h1>
+                                <p>Order Reference: #{invOrderId}</p>
+                              </div>
+                            </div>
+
+                            <div className="billing-row">
+                              <div className="bill-to">
+                                <h4>Billed To</h4>
+                                <strong>{invFullName}</strong><br />
+                                {invAddressDetails.split("\n").map((line, i) => <span key={i}>{line}<br /></span>)}
+                              </div>
+                              <div className="meta-details">
+                                <h4>Invoice Date</h4>
+                                <p>{invDate}</p>
+                                <h4>Payment Type</h4>
+                                <p>{invPaymentMethod}</p>
+                              </div>
+                            </div>
+
+                            <table>
+                              <thead>
+                                <tr>
+                                  <th>Garment Description</th>
+                                  <th className="text-center">Qty</th>
+                                  <th className="text-right">Price</th>
+                                  <th className="text-right">Total</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {invItems.map((item, idx) => (
+                                  <tr key={idx}>
+                                    <td>
+                                      <strong>{item.title || "Garment Line Item"}</strong><br />
+                                      <span style={{ fontSize: "11px", color: "#666" }}>Size: {item.size || "N/A"} | Color: {item.color || "N/A"}</span>
+                                    </td>
+                                    <td className="text-center">{item.quantity || 1}</td>
+                                    <td className="text-right">₹{Number(item.price || 0).toFixed(2)}</td>
+                                    <td className="text-right">₹{(Number(item.price || 0) * Number(item.quantity || 1)).toFixed(2)}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+
+                            <div className="totals-wrapper">
+                              <table className="totals-table">
+                                <tbody>
+                                  <tr>
+                                    <td>Subtotal</td>
+                                    <td className="text-right">₹{invItems.reduce((acc, item) => acc + (Number(item.price || 0) * Number(item.quantity || 1)), 0).toFixed(2)}</td>
+                                  </tr>
+                                  <tr>
+                                    <td>Shipping Fee</td>
+                                    <td className="text-right">₹{Number(invShippingCharges).toFixed(2)}</td>
+                                  </tr>
+                                  {invCodCharges > 0 && (
+                                    <tr>
+                                      <td>COD Charges</td>
+                                      <td className="text-right">₹{Number(invCodCharges).toFixed(2)}</td>
+                                    </tr>
+                                  )}
+                                  {invDiscount > 0 && (
+                                    <tr>
+                                      <td>Discount</td>
+                                      <td className="text-right">-₹{Number(invDiscount).toFixed(2)}</td>
+                                    </tr>
+                                  )}
+                                  {invDeduction > 0 && (
+                                    <tr>
+                                      <td>{invDeductionLabel || "Other Deductions"}</td>
+                                      <td className="text-right">-₹{Number(invDeduction).toFixed(2)}</td>
+                                    </tr>
+                                  )}
+                                  <tr className="grand-total">
+                                    <td>Total Paid</td>
+                                    <td className="text-right">₹{Number(invTotalAmount).toFixed(2)}</td>
+                                  </tr>
+                                </tbody>
+                              </table>
+                            </div>
+
+                            <div className="footer">
+                              <p>Thank you for purchasing from {invCompanyName}!</p>
+                              <p>© 2026 {invCompanyName}. All Rights Reserved.</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Printable UI Mockup for view in the Modal */}
+                        <div className="border border-brand-charcoal/10 rounded-2xl bg-white p-6 sm:p-8 text-black shadow-xs font-sans text-xs">
+                          <div className="flex justify-between border-b-2 border-black pb-4 mb-4">
+                            <div>
+                              <h2 className="text-xl font-black tracking-wider text-black">{invCompanyName}</h2>
+                              <p className="text-[9px] text-gray-500 mt-0.5">operated by MADE DIFFERENT FK</p>
+                              <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-0.5">official tax invoice</p>
+                            </div>
+                            <div className="text-right">
+                              <h1 className="text-lg font-black tracking-widest text-black">INVOICE</h1>
+                              <p className="text-[10px] text-gray-600 mt-1 font-semibold">REF: #{invOrderId}</p>
+                            </div>
+                          </div>
+
+                          <div className="flex justify-between border-b border-gray-100 pb-4 mb-6">
+                            <div>
+                              <span className="text-[9px] uppercase tracking-wider text-gray-400 font-bold block mb-1">Billed To</span>
+                              <strong className="text-sm font-bold">{invFullName}</strong>
+                              <p className="text-gray-600 leading-relaxed mt-1 font-light whitespace-pre-line">{invAddressDetails}</p>
+                            </div>
+                            <div className="text-right">
+                              <span className="text-[9px] uppercase tracking-wider text-gray-400 font-bold block mb-1">Invoice Details</span>
+                              <strong className="block">{invDate}</strong>
+                              <span className="text-[10px] text-gray-500 block mt-1">{invPaymentMethod} Payment</span>
+                            </div>
+                          </div>
+
+                          <table className="w-full border-collapse mb-6">
+                            <thead>
+                              <tr className="border-b-2 border-black">
+                                <th className="text-left py-2 text-[9px] tracking-wider text-gray-500 font-bold">GARMENT DESCRIPTION</th>
+                                <th className="text-center py-2 text-[9px] tracking-wider text-gray-500 font-bold w-16">QTY</th>
+                                <th className="text-right py-2 text-[9px] tracking-wider text-gray-500 font-bold w-24">PRICE</th>
+                                <th className="text-right py-2 text-[9px] tracking-wider text-gray-500 font-bold w-24">TOTAL</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {invItems.map((item, idx) => (
+                                <tr key={idx} className="border-b border-gray-100">
+                                  <td className="py-3">
+                                    <strong className="text-gray-900 font-bold block">{item.title || "Garment Line Item"}</strong>
+                                    <span className="text-[10px] text-gray-500 mt-0.5 block">Size: {item.size || "N/A"} | Color: {item.color || "N/A"}</span>
+                                  </td>
+                                  <td className="text-center py-3">{item.quantity || 1}</td>
+                                  <td className="text-right py-3">₹{Number(item.price || 0).toFixed(2)}</td>
+                                  <td className="text-right py-3">₹{(Number(item.price || 0) * Number(item.quantity || 1)).toFixed(2)}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+
+                          <div className="flex justify-end">
+                            <table className="w-64 text-xs">
+                              <tbody>
+                                <tr>
+                                  <td className="py-1 border-none text-gray-500">Subtotal</td>
+                                  <td className="text-right py-1 border-none font-semibold">₹{invItems.reduce((acc, item) => acc + (Number(item.price || 0) * Number(item.quantity || 1)), 0).toFixed(2)}</td>
+                                </tr>
+                                <tr>
+                                  <td className="py-1 border-none text-gray-500">Shipping Fee</td>
+                                  <td className="text-right py-1 border-none font-semibold">₹{Number(invShippingCharges).toFixed(2)}</td>
+                                </tr>
+                                {invCodCharges > 0 && (
+                                  <tr>
+                                    <td className="py-1 border-none text-gray-500">COD Surcharge</td>
+                                    <td className="text-right py-1 border-none font-semibold">₹{Number(invCodCharges).toFixed(2)}</td>
+                                  </tr>
+                                )}
+                                {invDiscount > 0 && (
+                                  <tr>
+                                    <td className="py-1 border-none text-gray-500">Discount</td>
+                                    <td className="text-right py-1 border-none font-semibold text-brand-green">-₹{Number(invDiscount).toFixed(2)}</td>
+                                  </tr>
+                                )}
+                                {invDeduction > 0 && (
+                                  <tr>
+                                    <td className="py-1 border-none text-gray-500">{invDeductionLabel || "Other Deductions"}</td>
+                                    <td className="text-right py-1 border-none font-semibold text-red-500">-₹{Number(invDeduction).toFixed(2)}</td>
+                                  </tr>
+                                )}
+                                <tr className="border-t-2 border-black font-bold text-sm">
+                                  <td className="py-3 border-none">Total Paid</td>
+                                  <td className="text-right py-3 border-none font-black text-black">₹{Number(invTotalAmount).toFixed(2)}</td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </div>
+
+                          <div className="text-center border-t border-gray-100 pt-6 mt-6 text-[10px] text-gray-400 font-light">
+                            <p>Thank you for choosing {invCompanyName}!</p>
+                            <p className="mt-1 text-[9px] text-gray-400">MDFK is operated by MADE DIFFERENT FK</p>
+                            <p className="mt-1">© 2026 {invCompanyName} All rights reserved.</p>
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  </div>
+                )}
+
               </div>
             )}
 

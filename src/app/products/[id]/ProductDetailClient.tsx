@@ -112,14 +112,14 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
   const [maleColor, setMaleColor] = useState(() => {
     const isCouple = initialProduct.category?.toLowerCase().includes("couple");
     if (isCouple) {
-      return initialProduct.maleColors && initialProduct.maleColors.length > 0 ? initialProduct.maleColors[0] : (initialProduct.colors?.[0] || "");
+      return initialProduct.maleColors && initialProduct.maleColors.length > 0 ? initialProduct.maleColors[0] : "";
     }
     return "";
   });
   const [femaleColor, setFemaleColor] = useState(() => {
     const isCouple = initialProduct.category?.toLowerCase().includes("couple");
     if (isCouple) {
-      return initialProduct.femaleColors && initialProduct.femaleColors.length > 0 ? initialProduct.femaleColors[0] : (initialProduct.colors?.[0] || "");
+      return initialProduct.femaleColors && initialProduct.femaleColors.length > 0 ? initialProduct.femaleColors[0] : "";
     }
     return "";
   });
@@ -129,14 +129,14 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
   const [maleSize, setMaleSize] = useState(() => {
     const isCouple = initialProduct.category?.toLowerCase().includes("couple");
     if (isCouple) {
-      return initialProduct.maleSizes && initialProduct.maleSizes.length > 0 ? initialProduct.maleSizes[0] : (initialProduct.sizes?.[0] || "");
+      return initialProduct.maleSizes && initialProduct.maleSizes.length > 0 ? initialProduct.maleSizes[0] : "";
     }
     return "";
   });
   const [femaleSize, setFemaleSize] = useState(() => {
     const isCouple = initialProduct.category?.toLowerCase().includes("couple");
     if (isCouple) {
-      return initialProduct.femaleSizes && initialProduct.femaleSizes.length > 0 ? initialProduct.femaleSizes[0] : (initialProduct.sizes?.[0] || "");
+      return initialProduct.femaleSizes && initialProduct.femaleSizes.length > 0 ? initialProduct.femaleSizes[0] : "";
     }
     return "";
   });
@@ -196,16 +196,34 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
       return;
     }
     const isCoupleCategory = product.category?.toLowerCase().includes("couple");
-    const sizeToUse = isCoupleCategory
-      ? `M: ${maleSize}, F: ${femaleSize}`
-      : selectedSize;
-    const colorToUse = isCoupleCategory
-      ? `M: ${maleColor}, F: ${femaleColor}`
-      : selectedColor;
+    let sizeToUse = selectedSize;
+    let colorToUse = selectedColor;
 
-    if (isCoupleCategory && (!maleSize || !femaleSize || !maleColor || !femaleColor)) {
-      alert("Please select Male and Female sizes and colors.");
-      return;
+    if (isCoupleCategory) {
+      const hasMale = product.maleColors && product.maleColors.length > 0;
+      const hasFemale = product.femaleColors && product.femaleColors.length > 0;
+
+      if (hasMale && (!maleSize || !maleColor)) {
+        alert("Please select Male size and color.");
+        return;
+      }
+      if (hasFemale && (!femaleSize || !femaleColor)) {
+        alert("Please select Female size and color.");
+        return;
+      }
+
+      const sizeParts: string[] = [];
+      const colorParts: string[] = [];
+      if (hasMale) {
+        sizeParts.push(`M: ${maleSize}`);
+        colorParts.push(`M: ${maleColor}`);
+      }
+      if (hasFemale) {
+        sizeParts.push(`F: ${femaleSize}`);
+        colorParts.push(`F: ${femaleColor}`);
+      }
+      sizeToUse = sizeParts.join(", ");
+      colorToUse = colorParts.join(", ");
     }
 
     addItem({
@@ -356,62 +374,66 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
                 <div className="space-y-4">
                   {product.category?.toLowerCase().includes("couple") ? (
                     <>
-                      <div className="space-y-2">
-                        <label className="text-xs font-semibold text-brand-charcoal uppercase tracking-wider block">
-                          Male T-Shirt Color
-                        </label>
-                        <div className="flex flex-wrap gap-3">
-                          {(product.maleColors && product.maleColors.length > 0 ? product.maleColors : product.colors).map((color) => (
-                            <div key={`m-${color}`} className="flex flex-col items-center gap-1.5">
-                              <button
-                                onClick={() => {
-                                  setMaleColor(color);
-                                  setSelectedColor(color);
-                                }}
-                                className={`h-9 w-9 rounded-full border-2 transition-all cursor-pointer relative flex items-center justify-center shadow-sm ${
-                                  maleColor === color ? "border-brand-charcoal scale-110" : "border-brand-bg hover:scale-105"
-                                }`}
-                                style={{ backgroundColor: color }}
-                              >
-                                {maleColor === color && (
-                                  <Check className="h-4 w-4 text-white mix-blend-difference" />
-                                )}
-                              </button>
-                              <span className="text-[10px] font-medium text-brand-charcoal/60 capitalize">
-                                {color}
-                              </span>
-                            </div>
-                          ))}
+                      {product.maleColors && product.maleColors.length > 0 && (
+                        <div className="space-y-2">
+                          <label className="text-xs font-semibold text-brand-charcoal uppercase tracking-wider block">
+                            Male T-Shirt Color
+                          </label>
+                          <div className="flex flex-wrap gap-3">
+                            {product.maleColors.map((color) => (
+                              <div key={`m-${color}`} className="flex flex-col items-center gap-1.5">
+                                <button
+                                  onClick={() => {
+                                    setMaleColor(color);
+                                    setSelectedColor(color);
+                                  }}
+                                  className={`h-9 w-9 rounded-full border-2 transition-all cursor-pointer relative flex items-center justify-center shadow-sm ${
+                                    maleColor === color ? "border-brand-charcoal scale-110" : "border-brand-bg hover:scale-105"
+                                  }`}
+                                  style={{ backgroundColor: color }}
+                                >
+                                  {maleColor === color && (
+                                    <Check className="h-4 w-4 text-white mix-blend-difference" />
+                                  )}
+                                </button>
+                                <span className="text-[10px] font-medium text-brand-charcoal/60 capitalize">
+                                  {color}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-xs font-semibold text-brand-charcoal uppercase tracking-wider block">
-                          Female T-Shirt Color
-                        </label>
-                        <div className="flex flex-wrap gap-3">
-                          {(product.femaleColors && product.femaleColors.length > 0 ? product.femaleColors : product.colors).map((color) => (
-                            <div key={`f-${color}`} className="flex flex-col items-center gap-1.5">
-                              <button
-                                onClick={() => {
-                                  setFemaleColor(color);
-                                  setSelectedColor(color);
-                                }}
-                                className={`h-9 w-9 rounded-full border-2 transition-all cursor-pointer relative flex items-center justify-center shadow-sm ${
-                                  femaleColor === color ? "border-brand-charcoal scale-110" : "border-brand-bg hover:scale-105"
-                                }`}
-                                style={{ backgroundColor: color }}
-                              >
-                                {femaleColor === color && (
-                                  <Check className="h-4 w-4 text-white mix-blend-difference" />
-                                )}
-                              </button>
-                              <span className="text-[10px] font-medium text-brand-charcoal/60 capitalize">
-                                {color}
-                              </span>
-                            </div>
-                          ))}
+                      )}
+                      {product.femaleColors && product.femaleColors.length > 0 && (
+                        <div className="space-y-2">
+                          <label className="text-xs font-semibold text-brand-charcoal uppercase tracking-wider block">
+                            Female T-Shirt Color
+                          </label>
+                          <div className="flex flex-wrap gap-3">
+                            {product.femaleColors.map((color) => (
+                              <div key={`f-${color}`} className="flex flex-col items-center gap-1.5">
+                                <button
+                                  onClick={() => {
+                                    setFemaleColor(color);
+                                    setSelectedColor(color);
+                                  }}
+                                  className={`h-9 w-9 rounded-full border-2 transition-all cursor-pointer relative flex items-center justify-center shadow-sm ${
+                                    femaleColor === color ? "border-brand-charcoal scale-110" : "border-brand-bg hover:scale-105"
+                                  }`}
+                                  style={{ backgroundColor: color }}
+                                >
+                                  {femaleColor === color && (
+                                    <Check className="h-4 w-4 text-white mix-blend-difference" />
+                                  )}
+                                </button>
+                                <span className="text-[10px] font-medium text-brand-charcoal/60 capitalize">
+                                  {color}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </>
                   ) : (
                     <>
@@ -448,68 +470,72 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
                 <div className="space-y-4">
                   {product.category?.toLowerCase().includes("couple") ? (
                     <>
-                      <div className="space-y-2">
-                        <div className="flex justify-between items-center mb-1">
-                          <label className="text-xs font-semibold text-brand-charcoal uppercase tracking-wider block">
-                            Male T-Shirt Size
-                          </label>
-                          <button
-                            type="button"
-                            onClick={() => setIsSizeChartOpen(true)}
-                            className="text-xs font-bold text-brand-brown hover:text-brand-brown-dark transition-colors flex items-center gap-1 cursor-pointer underline underline-offset-4"
-                          >
-                            <Ruler className="h-3 w-3" />
-                            Size Guide
-                          </button>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          {(product.maleSizes && product.maleSizes.length > 0 ? product.maleSizes : product.sizes).map((size) => (
+                      {product.maleSizes && product.maleSizes.length > 0 && (
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center mb-1">
+                            <label className="text-xs font-semibold text-brand-charcoal uppercase tracking-wider block">
+                              Male T-Shirt Size
+                            </label>
                             <button
-                              key={size}
                               type="button"
-                              onClick={() => setMaleSize(size)}
-                              className={`min-w-[2.5rem] px-2.5 py-1 text-xs font-bold rounded-xl transition-all cursor-pointer uppercase ${
-                                maleSize === size
-                                  ? "bg-brand-charcoal text-brand-bg shadow-md"
-                                  : "bg-brand-bg text-brand-charcoal hover:bg-brand-charcoal/5 border border-brand-charcoal/10"
-                              }`}
+                              onClick={() => setIsSizeChartOpen(true)}
+                              className="text-xs font-bold text-brand-brown hover:text-brand-brown-dark transition-colors flex items-center gap-1 cursor-pointer underline underline-offset-4"
                             >
-                              {size}
+                              <Ruler className="h-3 w-3" />
+                              Size Guide
                             </button>
-                          ))}
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {product.maleSizes.map((size) => (
+                              <button
+                                key={size}
+                                type="button"
+                                onClick={() => setMaleSize(size)}
+                                className={`min-w-[2.5rem] px-2.5 py-1 text-xs font-bold rounded-xl transition-all cursor-pointer uppercase ${
+                                  maleSize === size
+                                    ? "bg-brand-charcoal text-brand-bg shadow-md"
+                                    : "bg-brand-bg text-brand-charcoal hover:bg-brand-charcoal/5 border border-brand-charcoal/10"
+                                }`}
+                              >
+                                {size}
+                              </button>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                      <div className="space-y-2">
-                        <div className="flex justify-between items-center mb-1">
-                          <label className="text-xs font-semibold text-brand-charcoal uppercase tracking-wider block">
-                            Female T-Shirt Size
-                          </label>
-                          <button
-                            type="button"
-                            onClick={() => setIsSizeChartOpen(true)}
-                            className="text-xs font-bold text-brand-brown hover:text-brand-brown-dark transition-colors flex items-center gap-1 cursor-pointer underline underline-offset-4"
-                          >
-                            <Ruler className="h-3 w-3" />
-                            Size Guide
-                          </button>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          {(product.femaleSizes && product.femaleSizes.length > 0 ? product.femaleSizes : product.sizes).map((size) => (
+                      )}
+                      {product.femaleSizes && product.femaleSizes.length > 0 && (
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center mb-1">
+                            <label className="text-xs font-semibold text-brand-charcoal uppercase tracking-wider block">
+                              Female T-Shirt Size
+                            </label>
                             <button
-                              key={size}
                               type="button"
-                              onClick={() => setFemaleSize(size)}
-                              className={`min-w-[2.5rem] px-2.5 py-1 text-xs font-bold rounded-xl transition-all cursor-pointer uppercase ${
-                                femaleSize === size
-                                  ? "bg-brand-charcoal text-brand-bg shadow-md"
-                                  : "bg-brand-bg text-brand-charcoal hover:bg-brand-charcoal/5 border border-brand-charcoal/10"
-                              }`}
+                              onClick={() => setIsSizeChartOpen(true)}
+                              className="text-xs font-bold text-brand-brown hover:text-brand-brown-dark transition-colors flex items-center gap-1 cursor-pointer underline underline-offset-4"
                             >
-                              {size}
+                              <Ruler className="h-3 w-3" />
+                              Size Guide
                             </button>
-                          ))}
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {product.femaleSizes.map((size) => (
+                              <button
+                                key={size}
+                                type="button"
+                                onClick={() => setFemaleSize(size)}
+                                className={`min-w-[2.5rem] px-2.5 py-1 text-xs font-bold rounded-xl transition-all cursor-pointer uppercase ${
+                                  femaleSize === size
+                                    ? "bg-brand-charcoal text-brand-bg shadow-md"
+                                    : "bg-brand-bg text-brand-charcoal hover:bg-brand-charcoal/5 border border-brand-charcoal/10"
+                                }`}
+                              >
+                                {size}
+                              </button>
+                            ))}
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </>
                   ) : (
                     <>

@@ -47,6 +47,8 @@ interface AdminState {
   nimbusCancelExchangeOrder: (id: number) => Promise<{ success: boolean; message?: string }>;
   nimbusTrackExchangeOrder: (id: number) => Promise<{ success: boolean; data?: any; message?: string }>;
   adminCreateOrder: (data: any) => Promise<{ success: boolean; message?: string }>;
+  updateAdminOrder: (id: number, data: any) => Promise<{ success: boolean; message?: string }>;
+  deleteAdminOrder: (id: number) => Promise<{ success: boolean; message?: string }>;
 }
 
 export const useAdminStore = create<AdminState>((set, get) => ({
@@ -379,6 +381,45 @@ export const useAdminStore = create<AdminState>((set, get) => ({
     } catch (err: any) {
       set({ error: err.message || "Failed to create order", loading: false });
       return { success: false, message: err.message || "Failed to create order" };
+    }
+  },
+
+  updateAdminOrder: async (id, data) => {
+    set({ loading: true, error: null });
+    try {
+      const res = await apiFetch(`/orders/admin/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(data),
+      });
+      if (res.success) {
+        set({ loading: false });
+        await get().fetchOrders();
+        await get().fetchStats();
+        return { success: true, message: res.message || "Order updated successfully" };
+      }
+      return { success: false, message: res.message || "Failed to update order" };
+    } catch (err: any) {
+      set({ error: err.message || "Failed to update order", loading: false });
+      return { success: false, message: err.message || "Failed to update order" };
+    }
+  },
+
+  deleteAdminOrder: async (id) => {
+    set({ loading: true, error: null });
+    try {
+      const res = await apiFetch(`/orders/admin/${id}`, {
+        method: "DELETE",
+      });
+      if (res.success) {
+        set({ loading: false });
+        await get().fetchOrders();
+        await get().fetchStats();
+        return { success: true, message: res.message || "Order deleted successfully" };
+      }
+      return { success: false, message: res.message || "Failed to delete order" };
+    } catch (err: any) {
+      set({ error: err.message || "Failed to delete order", loading: false });
+      return { success: false, message: err.message || "Failed to delete order" };
     }
   },
 }));
