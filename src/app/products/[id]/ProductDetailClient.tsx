@@ -140,6 +140,8 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
     }
     return "";
   });
+
+  const [hoveredSize, setHoveredSize] = useState<string | null>(null);
   
   // Accordion states
   const [isDescOpen, setIsDescOpen] = useState(true);
@@ -822,182 +824,300 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: 15 }}
               transition={{ type: "spring", duration: 0.5 }}
-              className="relative w-full max-w-2xl overflow-hidden rounded-3xl bg-brand-bg p-6 md:p-8 shadow-2xl border border-brand-charcoal/5 z-10"
+              className="relative w-full max-w-4xl overflow-hidden rounded-3xl bg-brand-bg p-6 md:p-8 shadow-2xl border border-brand-charcoal/5 z-10"
             >
-              {/* Close Button */}
-              <button
-                onClick={() => setIsSizeChartOpen(false)}
-                className="absolute top-6 right-6 text-brand-charcoal/40 hover:text-brand-charcoal p-1.5 rounded-full hover:bg-brand-charcoal/5 transition-all duration-200 cursor-pointer"
-              >
-                <X className="h-5 w-5" />
-              </button>
+              {(() => {
+                const scaleMap: Record<string, number> = {
+                  "S": 0.88,
+                  "M": 0.94,
+                  "L": 1.0,
+                  "XL": 1.06,
+                  "XXL": 1.12,
+                };
+                const activeChartSize = hoveredSize || selectedSize || maleSize || femaleSize || "M";
+                const activeSizeIndex = OVERSIZE_SIZE_CHART.sizes.indexOf(activeChartSize) !== -1 
+                  ? OVERSIZE_SIZE_CHART.sizes.indexOf(activeChartSize) 
+                  : 1;
 
-              {/* Title & Badge */}
-              <div className="flex items-center gap-2 bg-brand-tan/10 text-brand-tan-dark px-3 py-1 rounded-full text-xs font-semibold w-fit mb-4">
-                <Ruler className="h-3.5 w-3.5" />
-                <span className="uppercase tracking-widest text-[9px]">Garment measurements</span>
-              </div>
+                const getMeasurementVal = (rowIdx: number) => {
+                  const val = OVERSIZE_SIZE_CHART.rows[rowIdx].values[activeSizeIndex];
+                  return sizeUnit === "in" ? `${val}"` : `${(val * 2.54).toFixed(1)} cm`;
+                };
 
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-                <div>
-                  <h2 className="text-3xl font-bold font-serif text-brand-charcoal tracking-tight">
-                    Oversize Size Chart
-                  </h2>
-                  <p className="mt-1 text-xs text-brand-charcoal/50 font-light">
-                    Garment specifications. Click size headers to apply size selection directly.
-                  </p>
-                </div>
+                const chestVal = OVERSIZE_SIZE_CHART.rows[0].values[activeSizeIndex];
+                const displayChest = sizeUnit === "in" 
+                  ? `${chestVal}" (${chestVal / 2}" Flat)`
+                  : `${(chestVal * 2.54).toFixed(1)} cm (${((chestVal * 2.54) / 2).toFixed(1)} cm Flat)`;
 
-                {/* Unit Switcher */}
-                <div className="flex bg-brand-gray/30 p-1 rounded-xl self-start sm:self-auto border border-brand-charcoal/5">
-                  <button
-                    type="button"
-                    onClick={() => setSizeUnit("in")}
-                    className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-                      sizeUnit === "in"
-                        ? "bg-brand-brown text-brand-bg shadow-sm"
-                        : "text-brand-charcoal/60 hover:text-brand-charcoal"
-                    }`}
-                  >
-                    Inches
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSizeUnit("cm")}
-                    className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-                      sizeUnit === "cm"
-                        ? "bg-brand-brown text-brand-bg shadow-sm"
-                        : "text-brand-charcoal/60 hover:text-brand-charcoal"
-                    }`}
-                  >
-                    Centimeters
-                  </button>
-                </div>
-              </div>
+                const displayLength = getMeasurementVal(1);
+                const displayShoulder = getMeasurementVal(2);
+                const displaySleeve = getMeasurementVal(3);
 
-              {/* Size Chart Table */}
-              <div className="overflow-x-auto border border-brand-charcoal/10 rounded-2xl bg-brand-gray/10 mb-6">
-                <table className="w-full text-left border-collapse text-sm">
-                  <thead>
-                    <tr className="border-b border-brand-charcoal/10 bg-brand-brown text-brand-bg">
-                      <th className="p-3 font-serif font-bold text-xs uppercase tracking-wider">Metric</th>
-                      {OVERSIZE_SIZE_CHART.sizes.map((size) => {
-                        const isCurrentSelected = 
-                          selectedSize === size || maleSize === size || femaleSize === size;
-                        return (
-                          <th
-                            key={size}
-                            onClick={() => {
-                              if (product.category?.toLowerCase().includes("couple")) {
-                                setMaleSize(size);
-                                setFemaleSize(size);
-                              } else {
-                                setSelectedSize(size);
-                              }
-                            }}
-                            className={`p-3 text-center cursor-pointer transition-all relative font-bold text-xs uppercase tracking-wider hover:bg-brand-brown-dark/95 ${
-                              isCurrentSelected ? "bg-brand-green text-brand-bg font-extrabold scale-[1.03] shadow-md" : ""
-                            }`}
-                          >
-                            {size}
-                            {isCurrentSelected && (
-                              <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-brand-bg" />
+                const shirtScale = scaleMap[activeChartSize] || 1.0;
+
+                return (
+                  <>
+                    <button
+                      onClick={() => setIsSizeChartOpen(false)}
+                      className="absolute top-6 right-6 text-brand-charcoal/40 hover:text-brand-charcoal p-1.5 rounded-full hover:bg-brand-charcoal/5 transition-all duration-200 cursor-pointer z-20"
+                    >
+                      <X className="h-5 w-5" />
+                    </button>
+
+                    {/* Title & Badge */}
+                    <div className="flex items-center gap-2 bg-brand-tan/10 text-brand-tan-dark px-3 py-1 rounded-full text-xs font-semibold w-fit mb-4">
+                      <Ruler className="h-3.5 w-3.5" />
+                      <span className="uppercase tracking-widest text-[9px]">Garment measurements</span>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+                      <div>
+                        <h2 className="text-3xl font-bold font-serif text-brand-charcoal tracking-tight">
+                          Oversize Size Chart
+                        </h2>
+                        <p className="mt-1 text-xs text-brand-charcoal/50 font-light">
+                          Garment specifications. Click size headers to apply size selection directly.
+                        </p>
+                      </div>
+
+                      {/* Unit Switcher */}
+                      <div className="flex bg-brand-gray/30 p-1 rounded-xl self-start sm:self-auto border border-brand-charcoal/5">
+                        <button
+                          type="button"
+                          onClick={() => setSizeUnit("in")}
+                          className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                            sizeUnit === "in"
+                              ? "bg-brand-brown text-brand-bg shadow-sm"
+                              : "text-brand-charcoal/60 hover:text-brand-charcoal"
+                          }`}
+                        >
+                          Inches
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSizeUnit("cm")}
+                          className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                            sizeUnit === "cm"
+                              ? "bg-brand-brown text-brand-bg shadow-sm"
+                              : "text-brand-charcoal/60 hover:text-brand-charcoal"
+                          }`}
+                        >
+                          Centimeters
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-stretch">
+                      {/* Left Column: Size Chart Table and guide */}
+                      <div className="md:col-span-7 flex flex-col justify-between space-y-6">
+                        <div>
+                          {/* Size Chart Table */}
+                          <div className="overflow-x-auto border border-brand-charcoal/10 rounded-2xl bg-brand-gray/10">
+                            <table className="w-full text-left border-collapse text-xs md:text-sm">
+                              <thead>
+                                <tr className="border-b border-brand-charcoal/10 bg-brand-brown text-brand-bg">
+                                  <th className="p-3 font-serif font-bold text-xs uppercase tracking-wider">Metric</th>
+                                  {OVERSIZE_SIZE_CHART.sizes.map((size) => {
+                                    const isCurrentSelected = 
+                                      selectedSize === size || maleSize === size || femaleSize === size;
+                                    const isHovered = hoveredSize === size;
+                                    return (
+                                      <th
+                                        key={size}
+                                        onMouseEnter={() => setHoveredSize(size)}
+                                        onMouseLeave={() => setHoveredSize(null)}
+                                        onClick={() => {
+                                          if (product.category?.toLowerCase().includes("couple")) {
+                                            setMaleSize(size);
+                                            setFemaleSize(size);
+                                          } else {
+                                            setSelectedSize(size);
+                                          }
+                                        }}
+                                        className={`p-3 text-center cursor-pointer transition-all relative font-bold text-xs uppercase tracking-wider hover:bg-brand-brown-dark/95 ${
+                                          isHovered ? "bg-brand-brown-dark/70 text-brand-bg" : ""
+                                        } ${
+                                          isCurrentSelected ? "bg-brand-green text-brand-bg font-extrabold scale-[1.03] shadow-md" : ""
+                                        }`}
+                                      >
+                                        {size}
+                                        {isCurrentSelected && (
+                                          <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-brand-bg" />
+                                        )}
+                                      </th>
+                                    );
+                                  })}
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {OVERSIZE_SIZE_CHART.rows.map((row, idx) => (
+                                  <tr 
+                                    key={row.label} 
+                                    className={`border-b border-brand-charcoal/5 last:border-0 transition-colors ${
+                                      idx % 2 === 0 ? "bg-transparent" : "bg-brand-gray/10"
+                                    }`}
+                                  >
+                                    <td className="p-3 font-semibold text-brand-charcoal text-xs md:text-sm capitalize">
+                                      {row.label}
+                                    </td>
+                                    {row.values.map((val, colIdx) => {
+                                      const size = OVERSIZE_SIZE_CHART.sizes[colIdx];
+                                      const isCurrentSelected = 
+                                        selectedSize === size || maleSize === size || femaleSize === size;
+                                      const isHovered = hoveredSize === size;
+                                      
+                                      // Format value based on unit
+                                      const displayVal = sizeUnit === "in" 
+                                        ? `${val}"` 
+                                        : `${(val * 2.54).toFixed(1)} cm`;
+
+                                      return (
+                                        <td
+                                          key={colIdx}
+                                          onMouseEnter={() => setHoveredSize(size)}
+                                          onMouseLeave={() => setHoveredSize(null)}
+                                          onClick={() => {
+                                            if (product.category?.toLowerCase().includes("couple")) {
+                                              setMaleSize(size);
+                                              setFemaleSize(size);
+                                            } else {
+                                              setSelectedSize(size);
+                                            }
+                                          }}
+                                          className={`p-3.5 text-center cursor-pointer transition-all text-xs md:text-sm ${
+                                            isHovered ? "bg-brand-charcoal/5" : ""
+                                          } ${
+                                            isCurrentSelected 
+                                              ? "bg-brand-green/10 font-bold text-brand-green-dark border-x border-brand-green/20" 
+                                              : "text-brand-charcoal/80"
+                                          }`}
+                                        >
+                                          {displayVal}
+                                        </td>
+                                      );
+                                    })}
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+
+                        {/* How to Measure Section */}
+                        <div className="bg-brand-tan/5 border border-brand-tan/20 rounded-2xl p-4 md:p-5">
+                          <h3 className="text-sm font-bold font-serif text-brand-charcoal mb-3 flex items-center gap-1.5">
+                            <span>How to Measure</span>
+                          </h3>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                            <div className="space-y-1.5">
+                              <div>
+                                <span className="font-semibold text-brand-brown">Chest:</span>
+                                <p className="text-brand-charcoal/60 leading-normal">
+                                  Measure around the fullest part of your chest, keeping the measuring tape horizontal.
+                                </p>
+                              </div>
+                              <div>
+                                <span className="font-semibold text-brand-brown">Length:</span>
+                                <p className="text-brand-charcoal/60 leading-normal">
+                                  Measure from the highest point of the shoulder down to the bottom hem of the shirt.
+                                </p>
+                              </div>
+                            </div>
+                            <div className="space-y-1.5">
+                              <div>
+                                <span className="font-semibold text-brand-brown">Shoulder:</span>
+                                <p className="text-brand-charcoal/60 leading-normal">
+                                  Measure straight across the back from one shoulder joint edge to the other.
+                                </p>
+                              </div>
+                              <div>
+                                <span className="font-semibold text-brand-brown">Sleeve Length:</span>
+                                <p className="text-brand-charcoal/60 leading-normal">
+                                  Measure from the shoulder seam down to the end of the sleeve/cuff.
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="mt-4 pt-3 border-t border-brand-charcoal/5 flex items-center justify-between text-[11px] text-brand-charcoal/50 italic font-light">
+                            <span>* Values listed correspond to the actual clothing item measurements.</span>
+                            {(selectedSize || maleSize || femaleSize) && (
+                              <span>Active Selection: <strong className="text-brand-green font-bold">{selectedSize || maleSize || femaleSize}</strong></span>
                             )}
-                          </th>
-                        );
-                      })}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {OVERSIZE_SIZE_CHART.rows.map((row, idx) => (
-                      <tr 
-                        key={row.label} 
-                        className={`border-b border-brand-charcoal/5 last:border-0 hover:bg-brand-gray/30 transition-colors ${
-                          idx % 2 === 0 ? "bg-transparent" : "bg-brand-gray/10"
-                        }`}
-                      >
-                        <td className="p-3.5 font-semibold text-brand-charcoal text-xs md:text-sm capitalize">
-                          {row.label}
-                        </td>
-                        {row.values.map((val, colIdx) => {
-                          const size = OVERSIZE_SIZE_CHART.sizes[colIdx];
-                          const isCurrentSelected = 
-                            selectedSize === size || maleSize === size || femaleSize === size;
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Right Column: Visual Shirt Scale Preview */}
+                      <div className="md:col-span-5 flex flex-col items-center justify-center p-4 border border-brand-charcoal/10 rounded-2xl bg-brand-gray/10 relative min-h-[320px] select-none">
+                        {/* Title and Scale Header inside the preview box */}
+                        <div className="absolute top-3 left-4 right-4 flex justify-between items-center z-10">
+                          <span className="text-[10px] uppercase font-bold tracking-wider text-brand-charcoal/40">Visual Scale Preview</span>
+                          <span className="text-[10px] font-bold text-brand-brown bg-brand-brown/10 px-2 py-0.5 rounded-full flex items-center gap-1">
+                            Size <span className="text-brand-green font-extrabold text-xs">{activeChartSize}</span> scale: {Math.round(shirtScale * 100)}%
+                          </span>
+                        </div>
+
+                        {/* Relative container wrapping SVG and absolute labels */}
+                        <div className="relative w-full max-w-[200px] h-[220px] mt-6 flex items-center justify-center">
+                          <svg viewBox="0 0 200 220" className="w-full max-w-[190px] h-auto text-brand-charcoal stroke-brand-charcoal fill-none stroke-[1.5]" style={{ transform: `scale(${shirtScale})`, transformOrigin: "center center", transition: "transform 300ms cubic-bezier(0.4, 0, 0.2, 1)" }}>
+                            {/* Shirt Silhouette background */}
+                            <path d="M 65,22 C 80,27 120,27 135,22 L 172,44 C 176,46 177,50 175,54 L 157,74 C 154,77 150,75 149,71 L 145,95 L 145,200 C 145,203 142,206 139,206 L 61,206 C 58,206 55,203 55,200 L 55,95 L 51,71 C 50,75 46,77 43,74 L 25,54 C 23,50 24,46 28,44 Z" className="fill-brand-brown/5 text-brand-charcoal/10 stroke-brand-charcoal/15 stroke-[1.5]" />
+                            <path d="M 65,22 C 75,32 125,32 135,22" className="stroke-brand-charcoal/15 stroke-[1.5]" />
+                            
+                            {/* Shoulder line (Top back, seam to seam) */}
+                            <g>
+                              <line x1="55" y1="35" x2="145" y2="35" className="stroke-brand-brown stroke-[1.2]" style={{ strokeDasharray: "2,2" }} />
+                              <path d="M 55,35 L 59,32 M 55,35 L 59,38 M 145,35 L 141,32 M 145,35 L 141,38" className="stroke-brand-brown stroke-[1.2]" />
+                            </g>
+                            
+                            {/* Chest line (Pit to pit) */}
+                            <g>
+                              <line x1="55" y1="78" x2="145" y2="78" className="stroke-brand-tan-dark stroke-[1.2]" style={{ strokeDasharray: "2,2" }} />
+                              <path d="M 55,78 L 59,75 M 55,78 L 59,81 M 145,78 L 141,75 M 145,78 L 141,81" className="stroke-brand-tan-dark stroke-[1.2]" />
+                            </g>
+
+                            {/* Length line (Collar to bottom hem) */}
+                            <g>
+                              <line x1="100" y1="26" x2="100" y2="206" className="stroke-brand-green stroke-[1.2]" style={{ strokeDasharray: "2,2" }} />
+                              <path d="M 100,26 L 97,30 M 100,26 L 103,30 M 100,206 L 97,202 M 100,206 L 103,202" className="stroke-brand-green stroke-[1.2]" />
+                            </g>
+
+                            {/* Sleeve line (Shoulder seam to sleeve edge) */}
+                            <g>
+                              <line x1="145" y1="35" x2="170" y2="52" className="stroke-indigo-600/60 stroke-[1.2]" style={{ strokeDasharray: "2,2" }} />
+                              <path d="M 145,35 L 150,34 M 145,35 L 147,39 M 170,52 L 165,53 M 170,52 L 168,48" className="stroke-indigo-600/80 stroke-[1.2]" />
+                            </g>
+                          </svg>
+
+                          {/* Measurement badged labels positioned precisely over coordinate points */}
+                          <div className="absolute top-[10%] left-1/2 -translate-x-1/2 bg-brand-bg/95 border border-brand-brown/30 px-2 py-0.5 rounded-lg text-[9px] font-bold text-brand-brown shadow-md scale-95 pointer-events-none transition-all duration-300 flex items-center gap-0.5">
+                            <span>Shoulder:</span> <span className="font-extrabold">{displayShoulder}</span>
+                          </div>
                           
-                          // Format value based on unit
-                          const displayVal = sizeUnit === "in" 
-                            ? `${val}"` 
-                            : `${(val * 2.54).toFixed(1)} cm`;
-
-                          return (
-                            <td
-                              key={colIdx}
-                              onClick={() => {
-                                if (product.category?.toLowerCase().includes("couple")) {
-                                  setMaleSize(size);
-                                  setFemaleSize(size);
-                                } else {
-                                  setSelectedSize(size);
-                                }
-                              }}
-                              className={`p-3.5 text-center cursor-pointer transition-all text-xs md:text-sm ${
-                                isCurrentSelected 
-                                  ? "bg-brand-green/10 font-bold text-brand-green-dark border-x border-brand-green/20" 
-                                  : "text-brand-charcoal/80"
-                              }`}
-                            >
-                              {displayVal}
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* How to Measure Section */}
-              <div className="bg-brand-tan/5 border border-brand-tan/20 rounded-2xl p-4 md:p-5">
-                <h3 className="text-sm font-bold font-serif text-brand-charcoal mb-3 flex items-center gap-1.5">
-                  <span>How to Measure</span>
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                  <div className="space-y-1.5">
-                    <div>
-                      <span className="font-semibold text-brand-brown">Chest:</span>
-                      <p className="text-brand-charcoal/60 leading-normal">
-                        Measure around the fullest part of your chest, keeping the measuring tape horizontal.
-                      </p>
+                          <div className="absolute top-[30%] left-1/2 -translate-x-1/2 bg-brand-bg/95 border border-brand-tan-dark/30 px-2 py-0.5 rounded-lg text-[9px] font-bold text-brand-tan-dark shadow-md scale-95 pointer-events-none transition-all duration-300 flex items-center gap-0.5">
+                            <span>Chest:</span> <span className="font-extrabold">{displayChest}</span>
+                          </div>
+                          
+                          <div className="absolute top-[52%] left-[4%] bg-brand-bg/95 border border-brand-green/30 px-2 py-0.5 rounded-lg text-[9px] font-bold text-brand-green shadow-md scale-95 pointer-events-none transition-all duration-300 flex flex-col items-center">
+                            <span className="text-[8px] opacity-75 font-normal">Length</span>
+                            <span className="font-extrabold leading-none mt-0.5">{displayLength}</span>
+                          </div>
+                          
+                          <div className="absolute top-[18%] right-[4%] bg-brand-bg/95 border border-indigo-200 px-2 py-0.5 rounded-lg text-[9px] font-bold text-indigo-700 shadow-md scale-95 pointer-events-none transition-all duration-300 flex flex-col items-center">
+                            <span className="text-[8px] opacity-75 font-normal">Sleeve</span>
+                            <span className="font-extrabold leading-none mt-0.5">{displaySleeve}</span>
+                          </div>
+                        </div>
+                        
+                        {/* Dynamic description of scale */}
+                        <p className="mt-4 text-[10px] text-brand-charcoal/50 text-center font-light leading-normal max-w-[220px]">
+                          Visualizing size <strong className="font-semibold text-brand-charcoal">{activeChartSize}</strong>. Hover table cells to preview dimensions of other sizes.
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <span className="font-semibold text-brand-brown">Length:</span>
-                      <p className="text-brand-charcoal/60 leading-normal">
-                        Measure from the highest point of the shoulder down to the bottom hem of the shirt.
-                      </p>
-                    </div>
-                  </div>
-                  <div className="space-y-1.5">
-                    <div>
-                      <span className="font-semibold text-brand-brown">Shoulder:</span>
-                      <p className="text-brand-charcoal/60 leading-normal">
-                        Measure straight across the back from one shoulder joint edge to the other.
-                      </p>
-                    </div>
-                    <div>
-                      <span className="font-semibold text-brand-brown">Sleeve Length:</span>
-                      <p className="text-brand-charcoal/60 leading-normal">
-                        Measure from the shoulder seam down to the end of the sleeve/cuff.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-4 pt-3 border-t border-brand-charcoal/5 flex items-center justify-between text-[11px] text-brand-charcoal/50 italic font-light">
-                  <span>* Values listed correspond to the actual clothing item measurements.</span>
-                  {(selectedSize || maleSize || femaleSize) && (
-                    <span>Active Selection: <strong className="text-brand-green font-bold">{selectedSize || maleSize || femaleSize}</strong></span>
-                  )}
-                </div>
-              </div>
+                  </>
+                );
+              })()}
             </motion.div>
           </div>
         )}
