@@ -824,7 +824,7 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: 15 }}
               transition={{ type: "spring", duration: 0.5 }}
-              className="relative w-full max-w-4xl overflow-hidden rounded-3xl bg-brand-bg p-6 md:p-8 shadow-2xl border border-brand-charcoal/5 z-10"
+              className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-3xl bg-brand-bg p-5 md:p-8 shadow-2xl border border-brand-charcoal/5 z-10"
             >
               {(() => {
                 const scaleMap: Record<string, number> = {
