@@ -134,11 +134,26 @@ export default function AdminDashboardPage() {
   const [coCustomName, setCoCustomName] = useState("");
   const [coCustomEmail, setCoCustomEmail] = useState("");
   const [coCustomPhone, setCoCustomPhone] = useState("");
-  const [coItems, setCoItems] = useState('[{"title":"","price":0,"quantity":1,"size":"M","color":"#000","image":""}]');
+  const [coSelectedItemsList, setCoSelectedItemsList] = useState<any[]>([]);
+  const [isProductSelectorOpen, setIsProductSelectorOpen] = useState(false);
+  const [psSearch, setPsSearch] = useState("");
+  const [psSelectedProduct, setPsSelectedProduct] = useState<any>(null);
+  const [psColor, setPsColor] = useState("");
+  const [psSize, setPsSize] = useState("");
+  const [psQuantity, setPsQuantity] = useState(1);
+  const [psPriceOverride, setPsPriceOverride] = useState("");
+
   const [coTotalAmount, setCoTotalAmount] = useState("");
   const [coPaymentMethod, setCoPaymentMethod] = useState("COD");
   const [coShippingCharges, setCoShippingCharges] = useState("");
   const [coCodCharges, setCoCodCharges] = useState("");
+
+  useEffect(() => {
+    const subtotal = coSelectedItemsList.reduce((sum, item) => sum + (Number(item.price || 0) * Number(item.quantity || 1)), 0);
+    const shipping = Number(coShippingCharges) || 0;
+    const cod = Number(coCodCharges) || 0;
+    setCoTotalAmount((subtotal + shipping + cod).toString());
+  }, [coSelectedItemsList, coShippingCharges, coCodCharges]);
   const [coFullName, setCoFullName] = useState("");
   const [coPhone, setCoPhone] = useState("");
   const [coAddress, setCoAddress] = useState("");
@@ -191,6 +206,37 @@ export default function AdminDashboardPage() {
       setInvTotalAmount(Math.max(0, calculatedTotal));
     }
   }, [invItems, invShippingCharges, invCodCharges, invDiscount, invDeduction, isInvoiceOpen]);
+
+  // Edit Custom Order Modal States
+  const [isEditCustomOrderOpen, setIsEditCustomOrderOpen] = useState(false);
+  const [ecoOrderId, setEcoOrderId] = useState<number | null>(null);
+  const [ecoFullName, setEcoFullName] = useState("");
+  const [ecoPhone, setEcoPhone] = useState("");
+  const [ecoEmail, setEcoEmail] = useState("");
+  const [ecoAddress, setEcoAddress] = useState("");
+  const [ecoLandmark, setEcoLandmark] = useState("");
+  const [ecoPincode, setEcoPincode] = useState("");
+  const [ecoCity, setEcoCity] = useState("");
+  const [ecoState, setEcoState] = useState("");
+  const [ecoPrice, setEcoPrice] = useState("");
+  const [ecoQuantity, setEcoQuantity] = useState("");
+  const [ecoTotalAmount, setEcoTotalAmount] = useState("");
+  const [ecoShippingCharges, setEcoShippingCharges] = useState("");
+  const [ecoCodCharges, setEcoCodCharges] = useState("");
+  const [ecoPaymentMethod, setEcoPaymentMethod] = useState("COD");
+  const [ecoStatus, setEcoStatus] = useState("PENDING");
+  const [ecoDesignNotes, setEcoDesignNotes] = useState("");
+  const [ecoColor, setEcoColor] = useState("");
+  const [ecoSize, setEcoSize] = useState("");
+  const [ecoSubmitting, setEcoSubmitting] = useState(false);
+
+  useEffect(() => {
+    const price = Number(ecoPrice) || 0;
+    const qty = Number(ecoQuantity) || 1;
+    const shipping = Number(ecoShippingCharges) || 0;
+    const cod = Number(ecoCodCharges) || 0;
+    setEcoTotalAmount((price * qty + shipping + cod).toString());
+  }, [ecoPrice, ecoQuantity, ecoShippingCharges, ecoCodCharges]);
 
 
   const fetchCustomOrders = async () => {
@@ -752,7 +798,7 @@ export default function AdminDashboardPage() {
     setCoCustomName("");
     setCoCustomEmail("");
     setCoCustomPhone("");
-    setCoItems('[{"title":"","price":0,"quantity":1,"size":"M","color":"#000","image":""}]');
+    setCoSelectedItemsList([]);
     setCoTotalAmount("");
     setCoPaymentMethod("COD");
     setCoShippingCharges("");
@@ -768,19 +814,14 @@ export default function AdminDashboardPage() {
   };
 
   const handleCreateOrderSubmit = async () => {
+    if (coSelectedItemsList.length === 0) {
+      useAlertStore.getState().showAlert("Please add at least one garment/item to the order.");
+      return;
+    }
     setCoSubmitting(true);
     try {
-      let parsedItems: any[] = [];
-      try {
-        parsedItems = JSON.parse(coItems);
-      } catch {
-        useAlertStore.getState().showAlert("Invalid items JSON format.");
-        setCoSubmitting(false);
-        return;
-      }
-
       const payload: any = {
-        items: parsedItems,
+        items: coSelectedItemsList,
         totalAmount: coTotalAmount ? Number(coTotalAmount) : 0,
         paymentMethod: coPaymentMethod,
         shippingCharges: coShippingCharges ? Number(coShippingCharges) : 0,
@@ -886,6 +927,73 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const handleEditCustomOrderClick = (ord: any) => {
+    setEcoOrderId(ord.id);
+    setEcoFullName(ord.fullName || ord.user?.name || "");
+    setEcoPhone(ord.phone || "");
+    setEcoEmail(ord.email || ord.user?.email || "");
+    setEcoAddress(ord.address || "");
+    setEcoLandmark(ord.landmark || "");
+    setEcoPincode(ord.pincode || "");
+    setEcoCity(ord.city || "");
+    setEcoState(ord.state || "");
+    setEcoPrice(ord.price?.toString() || "0");
+    setEcoQuantity(ord.quantity?.toString() || "1");
+    setEcoTotalAmount(ord.totalAmount?.toString() || "0");
+    setEcoShippingCharges(ord.shippingCharges?.toString() || "0");
+    setEcoCodCharges(ord.codCharges?.toString() || "0");
+    setEcoPaymentMethod(ord.paymentMethod || "COD");
+    setEcoStatus(ord.status || "PENDING");
+    setEcoDesignNotes(ord.designNotes || "");
+    setEcoColor(ord.color || "");
+    setEcoSize(ord.size || "");
+    setIsEditCustomOrderOpen(true);
+  };
+
+  const handleEditCustomOrderSubmit = async () => {
+    if (!ecoOrderId) return;
+    setEcoSubmitting(true);
+    try {
+      const payload = {
+        fullName: ecoFullName,
+        phone: ecoPhone,
+        email: ecoEmail,
+        address: ecoAddress,
+        landmark: ecoLandmark,
+        pincode: ecoPincode,
+        city: ecoCity,
+        state: ecoState,
+        price: Number(ecoPrice),
+        quantity: Number(ecoQuantity),
+        totalAmount: Number(ecoTotalAmount),
+        shippingCharges: Number(ecoShippingCharges),
+        codCharges: Number(ecoCodCharges),
+        paymentMethod: ecoPaymentMethod,
+        status: ecoStatus,
+        designNotes: ecoDesignNotes,
+        color: ecoColor,
+        size: ecoSize,
+      };
+
+      const res = await apiFetch(`/custom-orders/admin/${ecoOrderId}`, {
+        method: "PUT",
+        body: JSON.stringify(payload),
+      });
+
+      if (res.success) {
+        useAlertStore.getState().showAlert("Custom order updated successfully!");
+        setIsEditCustomOrderOpen(false);
+        fetchCustomOrders();
+      } else {
+        useAlertStore.getState().showAlert(res.message || "Failed to update custom order.");
+      }
+    } catch (err: any) {
+      useAlertStore.getState().showAlert(err.message || "Error updating custom order.");
+    } finally {
+      setEcoSubmitting(false);
+    }
+  };
+
   const handleDeleteOrderClick = (orderId: number) => {
     useAlertStore.getState().showConfirm("Are you sure you want to permanently delete this order?", async () => {
       try {
@@ -910,8 +1018,19 @@ export default function AdminDashboardPage() {
     setInvDate(formattedDate);
     setInvPaymentMethod(ord.paymentMethod || "COD");
     
-    // items lists
-    const ordItems = Array.isArray(ord.items) ? ord.items : [];
+    // items lists - support both custom order and standard order
+    const ordItems = Array.isArray(ord.items) 
+      ? ord.items 
+      : [
+          {
+            title: `Custom Design Garment #${ord.id}`,
+            price: ord.price || 0,
+            quantity: ord.quantity || 1,
+            size: ord.size || "N/A",
+            color: ord.color || "N/A",
+            image: ord.designImageUrl ? ord.designImageUrl.split(',')[0] : "",
+          }
+        ];
     setInvItems(ordItems);
     
     const shipping = ord.shippingCharges || 0;
@@ -2080,6 +2199,8 @@ export default function AdminDashboardPage() {
                     </div>
                   )}
                 </div>
+              </div>
+            )}
 
                 {/* ===== CREATE ORDER MODAL ===== */}
                 {isCreateOrderOpen && (
@@ -2267,14 +2388,69 @@ export default function AdminDashboardPage() {
                           </div>
                         </div>
 
-                        {/* ── Items JSON ── */}
-                        <div>
-                          <label className="text-xs font-bold uppercase tracking-wider text-brand-charcoal/50 block mb-1">Items (JSON Array)</label>
-                          <textarea value={coItems} onChange={(e) => setCoItems(e.target.value)} rows={4}
-                            className="w-full px-3 py-2.5 text-xs rounded-xl border border-brand-charcoal/10 bg-brand-bg focus:border-brand-charcoal/30 outline-none resize-none font-mono" />
-                          <p className="text-[9px] text-brand-charcoal/30 mt-1">
-                            Format: [{`{"title":"...", "price":0, "quantity":1, "size":"M", "color":"#000", "image":"..."}`}]
-                          </p>
+                        {/* ── Items List ── */}
+                        <div className="space-y-3">
+                          <div className="flex justify-between items-center">
+                            <label className="text-xs font-bold uppercase tracking-wider text-brand-charcoal/50">Purchased Garments ({coSelectedItemsList.length})</label>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setPsSearch("");
+                                setPsSelectedProduct(null);
+                                setPsColor("");
+                                setPsSize("");
+                                setPsQuantity(1);
+                                setPsPriceOverride("");
+                                setIsProductSelectorOpen(true);
+                              }}
+                              className="text-[10px] bg-brand-charcoal text-brand-bg px-2.5 py-1 rounded-lg font-semibold hover:bg-brand-charcoal/90 cursor-pointer shadow-xs"
+                            >
+                              + Add Garment
+                            </button>
+                          </div>
+
+                          {coSelectedItemsList.length === 0 ? (
+                            <div className="border border-dashed border-brand-charcoal/10 rounded-2xl p-6 text-center text-xs text-brand-charcoal/40 italic">
+                              No garments added. Click "+ Add Garment" to select from inventory.
+                            </div>
+                          ) : (
+                            <div className="border border-brand-charcoal/5 rounded-2xl overflow-hidden divide-y divide-brand-charcoal/5 bg-brand-bg text-xs">
+                              {coSelectedItemsList.map((item, idx) => (
+                                <div key={idx} className="p-3 flex items-center justify-between gap-3">
+                                  <div className="flex items-center gap-3">
+                                    {item.image && (
+                                      <div className="h-10 w-8 rounded bg-brand-gray overflow-hidden flex-shrink-0">
+                                        <img src={item.image} alt={item.title} className="object-cover h-full w-full" />
+                                      </div>
+                                    )}
+                                    <div>
+                                      <h5 className="font-semibold text-brand-charcoal">{item.title}</h5>
+                                      <p className="text-[10px] text-brand-charcoal/50 mt-0.5">
+                                        Size: {item.size} | Color: {item.color}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-4">
+                                    <div className="text-right">
+                                      <div className="font-semibold">₹{Number(item.price * item.quantity).toFixed(2)}</div>
+                                      <div className="text-[10px] text-brand-charcoal/40 font-light">
+                                        ₹{Number(item.price).toFixed(2)} x {item.quantity}
+                                      </div>
+                                    </div>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setCoSelectedItemsList(coSelectedItemsList.filter((_, i) => i !== idx));
+                                      }}
+                                      className="text-red-500 hover:text-red-700 font-semibold cursor-pointer"
+                                    >
+                                      Remove
+                                    </button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
 
@@ -2429,6 +2605,164 @@ export default function AdminDashboardPage() {
                         >
                           {eoSubmitting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
                           {eoSubmitting ? "Saving..." : "Save Changes"}
+                        </button>
+                      </div>
+                    </motion.div>
+                  </div>
+                )}
+
+                {/* ===== EDIT CUSTOM ORDER MODAL ===== */}
+                {isEditCustomOrderOpen && ecoOrderId && (
+                  <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                    {/* Backdrop */}
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="absolute inset-0 bg-brand-charcoal/40 backdrop-blur-sm"
+                      onClick={() => setIsEditCustomOrderOpen(false)}
+                    />
+                    {/* Modal Container */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 30, scale: 0.97 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 30, scale: 0.97 }}
+                      transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                      className="relative bg-brand-bg rounded-3xl border border-brand-charcoal/10 shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto z-10"
+                    >
+                      {/* Modal Header */}
+                      <div className="sticky top-0 bg-brand-bg/95 backdrop-blur-md border-b border-brand-charcoal/5 px-6 py-4 rounded-t-3xl flex items-center justify-between z-10">
+                        <div>
+                          <h3 className="text-lg font-semibold font-serif text-brand-charcoal">Edit Custom Order #{ecoOrderId}</h3>
+                          <p className="text-[10px] text-brand-charcoal/40 mt-0.5">Modify shipping details, price, quantity, color, size, and status.</p>
+                        </div>
+                        <button
+                          onClick={() => setIsEditCustomOrderOpen(false)}
+                          className="h-8 w-8 rounded-full bg-brand-charcoal/5 flex items-center justify-center text-brand-charcoal/50 hover:bg-brand-charcoal/10 cursor-pointer"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+
+                      {/* Modal Body */}
+                      <div className="p-6 space-y-6">
+                        {/* Customer billing details */}
+                        <div className="space-y-3">
+                          <label className="text-xs font-bold uppercase tracking-wider text-brand-charcoal/50">Customer Contact</label>
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <input type="text" placeholder="Name" value={ecoFullName} onChange={(e) => setEcoFullName(e.target.value)}
+                              className="w-full px-3 py-2.5 text-xs rounded-xl border border-brand-charcoal/10 bg-brand-bg focus:border-brand-charcoal/30 outline-none" />
+                            <input type="email" placeholder="Email" value={ecoEmail} onChange={(e) => setEcoEmail(e.target.value)}
+                              className="w-full px-3 py-2.5 text-xs rounded-xl border border-brand-charcoal/10 bg-brand-bg focus:border-brand-charcoal/30 outline-none" />
+                            <input type="tel" placeholder="Phone" value={ecoPhone} onChange={(e) => setEcoPhone(e.target.value)}
+                              className="w-full px-3 py-2.5 text-xs rounded-xl border border-brand-charcoal/10 bg-brand-bg focus:border-brand-charcoal/30 outline-none" />
+                          </div>
+                        </div>
+
+                        {/* Preferences */}
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          <div>
+                            <label className="text-[10px] font-bold uppercase tracking-wider text-brand-charcoal/40 block mb-1">Color</label>
+                            <input type="text" placeholder="Color" value={ecoColor} onChange={(e) => setEcoColor(e.target.value)}
+                              className="w-full px-3 py-2.5 text-xs rounded-xl border border-brand-charcoal/10 bg-brand-bg focus:border-brand-charcoal/30 outline-none" />
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-bold uppercase tracking-wider text-brand-charcoal/40 block mb-1">Size</label>
+                            <input type="text" placeholder="Size" value={ecoSize} onChange={(e) => setEcoSize(e.target.value)}
+                              className="w-full px-3 py-2.5 text-xs rounded-xl border border-brand-charcoal/10 bg-brand-bg focus:border-brand-charcoal/30 outline-none" />
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-bold uppercase tracking-wider text-brand-charcoal/40 block mb-1">Quantity</label>
+                            <input type="number" placeholder="1" value={ecoQuantity} onChange={(e) => setEcoQuantity(e.target.value)}
+                              className="w-full px-3 py-2.5 text-xs rounded-xl border border-brand-charcoal/10 bg-brand-bg focus:border-brand-charcoal/30 outline-none" />
+                          </div>
+                        </div>
+
+                        {/* Charges and details */}
+                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                          <div>
+                            <label className="text-[10px] font-bold uppercase tracking-wider text-brand-charcoal/40 block mb-1">Unit Price (₹)</label>
+                            <input type="number" placeholder="0" value={ecoPrice} onChange={(e) => setEcoPrice(e.target.value)}
+                              className="w-full px-3 py-2.5 text-xs rounded-xl border border-brand-charcoal/10 bg-brand-bg focus:border-brand-charcoal/30 outline-none" />
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-bold uppercase tracking-wider text-brand-charcoal/40 block mb-1">Shipping Fee (₹)</label>
+                            <input type="number" placeholder="0" value={ecoShippingCharges} onChange={(e) => setEcoShippingCharges(e.target.value)}
+                              className="w-full px-3 py-2.5 text-xs rounded-xl border border-brand-charcoal/10 bg-brand-bg focus:border-brand-charcoal/30 outline-none" />
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-bold uppercase tracking-wider text-brand-charcoal/40 block mb-1">COD Fee (₹)</label>
+                            <input type="number" placeholder="0" value={ecoCodCharges} onChange={(e) => setEcoCodCharges(e.target.value)}
+                              className="w-full px-3 py-2.5 text-xs rounded-xl border border-brand-charcoal/10 bg-brand-bg focus:border-brand-charcoal/30 outline-none" />
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-bold uppercase tracking-wider text-brand-charcoal/40 block mb-1">Total (₹)</label>
+                            <input type="number" disabled value={ecoTotalAmount}
+                              className="w-full px-3 py-2.5 text-xs rounded-xl border border-brand-charcoal/10 bg-brand-gray/50 outline-none font-bold" />
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-bold uppercase tracking-wider text-brand-charcoal/40 block mb-1">Payment Method</label>
+                            <select value={ecoPaymentMethod} onChange={(e) => setEcoPaymentMethod(e.target.value)}
+                              className="w-full px-3 py-2.5 text-xs rounded-xl border border-brand-charcoal/10 bg-brand-bg focus:border-brand-charcoal/30 outline-none cursor-pointer">
+                              <option value="COD">COD</option>
+                              <option value="PREPAID">Prepaid</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        {/* Status */}
+                        <div>
+                          <label className="text-[10px] font-bold uppercase tracking-wider text-brand-charcoal/40 block mb-1">Order Status</label>
+                          <select value={ecoStatus} onChange={(e) => setEcoStatus(e.target.value)}
+                            className="w-full px-3 py-2.5 text-xs rounded-xl border border-brand-charcoal/10 bg-brand-bg focus:border-brand-charcoal/30 outline-none cursor-pointer">
+                            <option value="PENDING">PENDING</option>
+                            <option value="APPROVED">APPROVED</option>
+                            <option value="REJECTED">REJECTED</option>
+                            <option value="PROCESSED">PROCESSED</option>
+                            <option value="DELIVERED">DELIVERED</option>
+                          </select>
+                        </div>
+
+                        {/* Shipping Address */}
+                        <div className="space-y-3">
+                          <label className="text-xs font-bold uppercase tracking-wider text-brand-charcoal/50">Shipping Details</label>
+                          <textarea placeholder="Address" value={ecoAddress} onChange={(e) => setEcoAddress(e.target.value)} rows={2}
+                            className="w-full px-3 py-2.5 text-xs rounded-xl border border-brand-charcoal/10 bg-brand-bg focus:border-brand-charcoal/30 outline-none resize-none" />
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            <input type="text" placeholder="Landmark" value={ecoLandmark} onChange={(e) => setEcoLandmark(e.target.value)}
+                              className="w-full px-3 py-2.5 text-xs rounded-xl border border-brand-charcoal/10 bg-brand-bg focus:border-brand-charcoal/30 outline-none" />
+                            <input type="text" placeholder="Pincode" value={ecoPincode} onChange={(e) => setEcoPincode(e.target.value)}
+                              className="w-full px-3 py-2.5 text-xs rounded-xl border border-brand-charcoal/10 bg-brand-bg focus:border-brand-charcoal/30 outline-none" />
+                            <input type="text" placeholder="City" value={ecoCity} onChange={(e) => setEcoCity(e.target.value)}
+                              className="w-full px-3 py-2.5 text-xs rounded-xl border border-brand-charcoal/10 bg-brand-bg focus:border-brand-charcoal/30 outline-none" />
+                            <input type="text" placeholder="State" value={ecoState} onChange={(e) => setEcoState(e.target.value)}
+                              className="w-full px-3 py-2.5 text-xs rounded-xl border border-brand-charcoal/10 bg-brand-bg focus:border-brand-charcoal/30 outline-none" />
+                          </div>
+                        </div>
+
+                        {/* Design Notes */}
+                        <div>
+                          <label className="text-xs font-bold uppercase tracking-wider text-brand-charcoal/50 block mb-1">Design Notes</label>
+                          <textarea value={ecoDesignNotes} onChange={(e) => setEcoDesignNotes(e.target.value)} rows={3}
+                            className="w-full px-3 py-2.5 text-xs rounded-xl border border-brand-charcoal/10 bg-brand-bg focus:border-brand-charcoal/30 outline-none resize-none" />
+                        </div>
+                      </div>
+
+                      {/* Modal Footer */}
+                      <div className="sticky bottom-0 bg-brand-bg/95 backdrop-blur-md border-t border-brand-charcoal/5 px-6 py-4 rounded-b-3xl flex items-center justify-end gap-3">
+                        <button
+                          onClick={() => setIsEditCustomOrderOpen(false)}
+                          className="px-4 py-2.5 text-xs font-semibold text-brand-charcoal/60 hover:text-brand-charcoal rounded-xl border border-brand-charcoal/10 hover:bg-brand-charcoal/5 cursor-pointer transition-all"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={handleEditCustomOrderSubmit}
+                          disabled={ecoSubmitting}
+                          className="px-5 py-2.5 text-xs font-semibold bg-brand-charcoal text-brand-bg rounded-xl hover:bg-brand-charcoal/90 cursor-pointer transition-all shadow-xs disabled:opacity-50 flex items-center gap-1.5"
+                        >
+                          {ecoSubmitting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+                          Save Changes
                         </button>
                       </div>
                     </motion.div>
@@ -2981,8 +3315,252 @@ export default function AdminDashboardPage() {
                   </div>
                 )}
 
-              </div>
-            )}
+                {/* ===== PRODUCT SELECTOR MODAL ===== */}
+                {isProductSelectorOpen && (
+                  <div className="fixed inset-0 z-[110] flex items-center justify-center bg-brand-charcoal/60 backdrop-blur-md p-4">
+                    <motion.div
+                      initial={{ scale: 0.95, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      className="w-full max-w-2xl bg-brand-bg rounded-3xl p-6 border border-brand-charcoal/10 shadow-2xl relative text-brand-charcoal max-h-[85vh] flex flex-col"
+                    >
+                      {/* Modal Header */}
+                      <div className="flex justify-between items-center border-b border-brand-charcoal/5 pb-4 mb-4">
+                        <h3 className="text-lg font-semibold font-serif">Select Garment from Inventory</h3>
+                        <button
+                          onClick={() => setIsProductSelectorOpen(false)}
+                          className="text-brand-charcoal/50 hover:text-brand-charcoal text-xl font-light cursor-pointer"
+                        >
+                          ×
+                        </button>
+                      </div>
+
+                      {/* Search Bar (Only visible when no product is selected yet) */}
+                      {!psSelectedProduct && (
+                        <div className="relative mb-4">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-brand-charcoal/30" />
+                          <input
+                            type="text"
+                            placeholder="Search products by title or category..."
+                            value={psSearch}
+                            onChange={(e) => setPsSearch(e.target.value)}
+                            className="w-full pl-10 pr-4 py-2.5 text-xs rounded-xl border border-brand-charcoal/10 bg-brand-bg focus:border-brand-charcoal/30 outline-none"
+                          />
+                        </div>
+                      )}
+
+                      {/* Modal Content - Scrollable area */}
+                      <div className="flex-grow overflow-y-auto pr-1 space-y-4">
+                        {!psSelectedProduct ? (
+                          // Grid list of products
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                            {products
+                              .filter((p: any) => {
+                                const q = psSearch.toLowerCase();
+                                return p.title?.toLowerCase().includes(q) || p.category?.toLowerCase().includes(q);
+                              })
+                              .map((prod: any) => (
+                                <div
+                                  key={prod.id}
+                                  onClick={() => {
+                                    setPsSelectedProduct(prod);
+                                    setPsColor(prod.colors?.[0] || "");
+                                    setPsSize(prod.sizes?.[0] || "");
+                                    setPsQuantity(1);
+                                    setPsPriceOverride(prod.price?.toString() || "");
+                                  }}
+                                  className="border border-brand-charcoal/5 rounded-2xl p-3 cursor-pointer hover:bg-brand-charcoal/5 transition-all text-left flex flex-col justify-between"
+                                >
+                                  <div className="aspect-[3/4] bg-brand-gray rounded-xl overflow-hidden mb-2 relative flex items-center justify-center">
+                                    {prod.images?.[0] ? (
+                                      <img src={prod.images[0]} alt={prod.title} className="object-cover w-full h-full" />
+                                    ) : (
+                                      <Package className="h-6 w-6 text-brand-charcoal/20" />
+                                    )}
+                                  </div>
+                                  <div>
+                                    <h5 className="font-semibold text-xs text-brand-charcoal truncate">{prod.title}</h5>
+                                    <p className="text-[10px] text-brand-charcoal/40 uppercase tracking-wider mt-0.5">{prod.category}</p>
+                                    <p className="text-xs font-bold text-brand-green mt-1">₹{Number(prod.price).toFixed(2)}</p>
+                                  </div>
+                                </div>
+                              ))}
+                            {products.filter((p: any) => {
+                              const q = psSearch.toLowerCase();
+                              return p.title?.toLowerCase().includes(q) || p.category?.toLowerCase().includes(q);
+                            }).length === 0 && (
+                              <div className="col-span-full py-12 text-center text-xs text-brand-charcoal/40 italic">
+                                No products matching search query found.
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          // Configure Product Options before adding
+                          <div className="space-y-6 text-xs text-left">
+                            <div className="flex gap-4 items-center bg-brand-gray/30 p-4 rounded-2xl border border-brand-charcoal/5">
+                              <div className="h-20 w-16 bg-brand-gray rounded-xl overflow-hidden flex-shrink-0">
+                                {psSelectedProduct.images?.[0] ? (
+                                  <img src={psSelectedProduct.images[0]} alt={psSelectedProduct.title} className="object-cover w-full h-full" />
+                                ) : (
+                                  <Package className="h-6 w-6 text-brand-charcoal/20" />
+                                )}
+                              </div>
+                              <div>
+                                <h4 className="font-bold text-sm">{psSelectedProduct.title}</h4>
+                                <p className="text-[10px] text-brand-charcoal/40 uppercase mt-0.5">{psSelectedProduct.category}</p>
+                                <p className="font-bold text-brand-green mt-1.5">Original Price: ₹{Number(psSelectedProduct.price).toFixed(2)}</p>
+                              </div>
+                            </div>
+
+                            {/* Options */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              {/* Colors */}
+                              <div>
+                                <label className="font-semibold text-brand-charcoal block mb-1.5">Select Color</label>
+                                {psSelectedProduct.colors && psSelectedProduct.colors.length > 0 ? (
+                                  <div className="flex flex-wrap gap-2">
+                                    {psSelectedProduct.colors.map((c: string) => (
+                                      <button
+                                        key={c}
+                                        type="button"
+                                        onClick={() => setPsColor(c)}
+                                        className={`px-3 py-1.5 rounded-lg border text-[10px] font-semibold uppercase transition-all flex items-center gap-1 cursor-pointer ${
+                                          psColor === c
+                                            ? "bg-brand-charcoal text-brand-bg border-brand-charcoal"
+                                            : "border-brand-charcoal/10 hover:bg-brand-charcoal/5"
+                                        }`}
+                                      >
+                                        {!c.includes("M:") && !c.includes("F:") && (
+                                          <span className="h-2 w-2 rounded-full border border-brand-charcoal/10" style={{ backgroundColor: c }} />
+                                        )}
+                                        {formatColor(c)}
+                                      </button>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <input
+                                    type="text"
+                                    value={psColor}
+                                    onChange={(e) => setPsColor(e.target.value)}
+                                    placeholder="Enter custom color"
+                                    className="w-full px-3 py-2 text-xs rounded-xl border border-brand-charcoal/10 bg-brand-bg focus:outline-none"
+                                  />
+                                )}
+                              </div>
+
+                              {/* Sizes */}
+                              <div>
+                                <label className="font-semibold text-brand-charcoal block mb-1.5">Select Size</label>
+                                {psSelectedProduct.sizes && psSelectedProduct.sizes.length > 0 ? (
+                                  <div className="flex flex-wrap gap-2">
+                                    {psSelectedProduct.sizes.map((s: string) => (
+                                      <button
+                                        key={s}
+                                        type="button"
+                                        onClick={() => setPsSize(s)}
+                                        className={`px-3 py-1.5 rounded-lg border text-[10px] font-bold uppercase transition-all cursor-pointer ${
+                                          psSize === s
+                                            ? "bg-brand-charcoal text-brand-bg border-brand-charcoal"
+                                            : "border-brand-charcoal/10 hover:bg-brand-charcoal/5"
+                                        }`}
+                                      >
+                                        {s}
+                                      </button>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <input
+                                    type="text"
+                                    value={psSize}
+                                    onChange={(e) => setPsSize(e.target.value)}
+                                    placeholder="Enter custom size"
+                                    className="w-full px-3 py-2 text-xs rounded-xl border border-brand-charcoal/10 bg-brand-bg focus:outline-none"
+                                  />
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                              {/* Price Override */}
+                              <div>
+                                <label className="font-semibold text-brand-charcoal block mb-1.5">Order Unit Price (₹)</label>
+                                <input
+                                  type="number"
+                                  value={psPriceOverride}
+                                  onChange={(e) => setPsPriceOverride(e.target.value)}
+                                  className="w-full px-3 py-2 text-xs rounded-xl border border-brand-charcoal/10 bg-brand-bg focus:border-brand-charcoal/30 outline-none"
+                                />
+                              </div>
+
+                              {/* Quantity */}
+                              <div>
+                                <label className="font-semibold text-brand-charcoal block mb-1.5">Quantity</label>
+                                <input
+                                  type="number"
+                                  min={1}
+                                  value={psQuantity}
+                                  onChange={(e) => setPsQuantity(Math.max(1, Number(e.target.value)))}
+                                  className="w-full px-3 py-2 text-xs rounded-xl border border-brand-charcoal/10 bg-brand-bg focus:border-brand-charcoal/30 outline-none"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Modal Footer */}
+                      <div className="flex justify-between items-center border-t border-brand-charcoal/5 pt-4 mt-4">
+                        {psSelectedProduct ? (
+                          <button
+                            type="button"
+                            onClick={() => setPsSelectedProduct(null)}
+                            className="px-4 py-2 text-xs font-semibold text-brand-charcoal/60 hover:text-brand-charcoal border border-brand-charcoal/10 rounded-xl hover:bg-brand-charcoal/5 cursor-pointer"
+                          >
+                            ← Back to List
+                          </button>
+                        ) : (
+                          <div />
+                        )}
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setIsProductSelectorOpen(false)}
+                            className="px-4 py-2 text-xs font-semibold text-brand-charcoal/60 hover:text-brand-charcoal rounded-xl border border-brand-charcoal/10 hover:bg-brand-charcoal/5 cursor-pointer"
+                          >
+                            Close
+                          </button>
+                          {psSelectedProduct && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (!psColor) {
+                                  useAlertStore.getState().showAlert("Please select a color.");
+                                  return;
+                                }
+                                if (!psSize) {
+                                  useAlertStore.getState().showAlert("Please select a size.");
+                                  return;
+                                }
+                                const newItem = {
+                                  title: psSelectedProduct.title,
+                                  price: Number(psPriceOverride) || 0,
+                                  quantity: psQuantity || 1,
+                                  size: psSize,
+                                  color: psColor,
+                                  image: psSelectedProduct.images?.[0] || "",
+                                };
+                                setCoSelectedItemsList([...coSelectedItemsList, newItem]);
+                                setIsProductSelectorOpen(false);
+                              }}
+                              className="bg-brand-charcoal text-brand-bg px-4 py-2 rounded-xl text-xs font-semibold hover:bg-brand-charcoal/90 transition-all cursor-pointer shadow-xs"
+                            >
+                              Add to Order
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </motion.div>
+                  </div>
+                )}
 
             {/* -------------------- TAB CONTENT: EXCHANGE ORDERS -------------------- */}
             {activeTab === "exchange-orders" && (
@@ -3210,7 +3788,7 @@ export default function AdminDashboardPage() {
                              </select>
                            </div>
                            
-                           <div className="grid grid-cols-2 gap-4 text-sm bg-white p-4 rounded-xl border border-brand-charcoal/5">
+                           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm bg-white p-4 rounded-xl border border-brand-charcoal/5">
                              <div>
                                <span className="block text-[10px] uppercase font-bold text-brand-charcoal/50">Customer</span>
                                <p className="font-semibold">{ord.fullName}</p>
@@ -3219,8 +3797,19 @@ export default function AdminDashboardPage() {
                              </div>
                              <div>
                                <span className="block text-[10px] uppercase font-bold text-brand-charcoal/50">Preferences</span>
-                               <p className="font-semibold">{ord.color} - Size {ord.size}</p>
-                               <p className="text-xs">Qty: {ord.quantity}</p>
+                               <p className="font-semibold">{ord.color || "No color"} - Size {ord.size || "N/A"}</p>
+                               <p className="text-xs">Qty: {ord.quantity || 1}</p>
+                             </div>
+                             <div>
+                               <span className="block text-[10px] uppercase font-bold text-brand-charcoal/50">Pricing & Billing</span>
+                               <p className="font-semibold">Unit Price: ₹{Number(ord.price || 0).toFixed(2)}</p>
+                               <p className="text-xs text-brand-charcoal/60">Subtotal: ₹{((ord.price || 0) * (ord.quantity || 1)).toFixed(2)}</p>
+                               {((ord.shippingCharges || 0) > 0 || (ord.codCharges || 0) > 0) && (
+                                 <p className="text-[10px] text-brand-charcoal/40">
+                                   Ship: ₹{ord.shippingCharges || 0} | COD: ₹{ord.codCharges || 0}
+                                 </p>
+                               )}
+                               <p className="font-bold text-brand-green mt-0.5 font-sans">Total Paid: ₹{Number(ord.totalAmount || 0).toFixed(2)}</p>
                              </div>
                            </div>
 
@@ -3232,6 +3821,23 @@ export default function AdminDashboardPage() {
                            <div className="bg-white p-4 rounded-xl border border-brand-charcoal/5 text-sm">
                              <span className="block text-[10px] uppercase font-bold text-brand-charcoal/50">Shipping Address</span>
                              <p className="mt-1 text-xs">{ord.address}, {ord.landmark && `${ord.landmark},`} {ord.city}, {ord.state} - {ord.pincode}</p>
+                           </div>
+
+                           <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-brand-charcoal/5 justify-end">
+                             <button
+                               onClick={() => handleInvoiceClick(ord)}
+                               className="bg-brand-charcoal/5 text-brand-charcoal border border-brand-charcoal/10 hover:bg-brand-charcoal/10 px-3 py-1.5 text-xs font-semibold rounded-xl flex items-center gap-1.5 cursor-pointer transition-all"
+                             >
+                               <Printer className="h-3.5 w-3.5" />
+                               Invoice Editor
+                             </button>
+                             <button
+                               onClick={() => handleEditCustomOrderClick(ord)}
+                               className="bg-brand-charcoal text-brand-bg hover:bg-brand-charcoal/90 px-3 py-1.5 text-xs font-semibold rounded-xl flex items-center gap-1.5 cursor-pointer transition-all shadow-xs"
+                             >
+                               <Edit className="h-3.5 w-3.5" />
+                               Edit Info
+                             </button>
                            </div>
                         </div>
                       </div>
